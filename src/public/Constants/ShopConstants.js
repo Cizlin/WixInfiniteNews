@@ -28,6 +28,7 @@ export const SHOP_NUMBER_OF_CHALLENGE_SWAPS_FIELD = "numberOfChallengeSwaps";
 export const SHOP_NUMBER_OF_XP_BOOSTS_FIELD = "numberOfXpBoosts";
 export const SHOP_NUMBER_OF_XP_GRANTS_FIELD = "numberOfXpGrants";
 export const SHOP_NUMBER_OF_CREDITS_FIELD = "numberOfCredits";
+export const SHOP_NUMBER_OF_SPARTAN_POINTS_FIELD = "numberOfSpartanPoints";
 
 export const SHOP_QUALITY_REFERENCE_FIELD = "qualityReference";
 

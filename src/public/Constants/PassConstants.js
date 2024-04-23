@@ -33,6 +33,7 @@ export const PASS_RANK_NUMBER_OF_CHALLENGE_SWAPS_FIELD = "numberOfChallengeSwaps
 export const PASS_RANK_NUMBER_OF_XP_BOOSTS_FIELD = "numberOfXpBoosts";
 export const PASS_RANK_NUMBER_OF_XP_GRANTS_FIELD = "numberOfXpGrants";
 export const PASS_RANK_NUMBER_OF_CREDITS_FIELD = "numberOfCredits";
+export const PASS_RANK_NUMBER_OF_SPARTAN_POINTS_FIELD = "numberOfSpartanPoints";
 
 export const PASS_BATTLE = "Battle Pass";
 export const PASS_EVENT = "Event Pass";

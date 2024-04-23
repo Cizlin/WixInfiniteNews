@@ -140,6 +140,9 @@ export async function getPassList(passPath, headers = null) {
 			else if (inventoryItemJson.CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_CREDITS_PATH_CONTENTS)) {
 				itemName = ConsumablesConstants.CONSUMABLES_CREDITS_NAME;
 			}
+			else if (inventoryItemJson.CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_PATH_CONTENTS)) {
+				itemName = ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_NAME;
+			}
 			else {
 				console.error("Matching Consumable name not found for " + inventoryItemJson.CurrencyPath);
 			}
@@ -186,6 +189,9 @@ export async function getPassList(passPath, headers = null) {
 			}
 			else if (inventoryItemJson.CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_CREDITS_PATH_CONTENTS)) {
 				itemName = ConsumablesConstants.CONSUMABLES_CREDITS_NAME;
+			}
+			else if (inventoryItemJson.CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_PATH_CONTENTS)) {
+				itemName = ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_NAME;
 			}
 			else {
 				console.error("Matching Consumable name not found for " + inventoryItemJson.CurrencyPath);
@@ -342,6 +348,10 @@ export async function processRank(
 				}
 				else if (consumableName == ConsumablesConstants.CONSUMABLES_CREDITS_NAME) {
 					rankDbJson[PassConstants.PASS_RANK_NUMBER_OF_CREDITS_FIELD] += consumableAmount;
+					validConsumable = true;
+				}
+				else if (consumableName == ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_NAME) {
+					rankDbJson[PassConstants.PASS_RANK_NUMBER_OF_SPARTAN_POINTS_FIELD] += consumableAmount;
 					validConsumable = true;
 				}
 
@@ -918,7 +928,7 @@ export async function processRank(
 // This assumes that all the items have already been added to the DB.
 export async function updateRanksInDb(rankArray, passDbId, currentlyAvailable, seasonNumber, isEvent, passName, typeDict) {
 
-	// There's only 4 consumables so this would be the easiest way to quickly get the desired IDs.
+	// There's only 5 consumables so this would be the easiest way to quickly get the desired IDs.
 	let consumableDbResults = await wixData.query(ConsumablesConstants.CONSUMABLES_DB).find();
 	let consumableDbJsons = consumableDbResults.items;
 
@@ -1382,6 +1392,7 @@ export async function getCurrentCapstoneChallengeJson(headers) {
 
 // Gets the current Capstone Challenge JSON from Waypoint and converts it to a site JSON object.
 export async function getCurrentCapstoneChallengeDbJson() {
+	// TODO: Determine how Consumables are represented in the Capstone Challenge JSONs from Waypoint.
 	let headers = await ApiFunctions.makeWaypointHeaders();
 
 	let typeDict = await GeneralBackendFunctions.generateTypeDict();
@@ -1624,121 +1635,157 @@ export async function addItemIdArrayToCapstoneChallenge(challengeId, fieldName, 
 	let itemInfoArray = []; // We're going to add the item Info to this array and return it.
 
 	// We have three tasks for each item ID: update the source (if it is (Pending) or Pending), update the sourcetype reference, and mark it currently Available.
-	const CUSTOMIZATION_DB = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationDb;
-	const SOURCE_TYPE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationSourceTypeField;
-	const CUSTOMIZATION_TYPE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationSocketReferenceField;
-	const CURRENTLY_AVAILABLE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationCurrentlyAvailableField;
+	if (fieldName != CapstoneChallengeConstants.SCAPSTONE_CHALLENGE_CONSUMABLE_REFERENCE_FIELD) {
+		const CUSTOMIZATION_DB = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationDb;
+		const SOURCE_TYPE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationSourceTypeField;
+		const CUSTOMIZATION_TYPE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationSocketReferenceField;
+		const CURRENTLY_AVAILABLE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationCurrentlyAvailableField;
+		
+		let retry = true;
+		let retryCount = 0;
+		const MAX_RETRIES = 10;
 
-	await wixData.query(CUSTOMIZATION_DB)
-		.hasSome("_id", itemIdArray)
-		.include(SOURCE_TYPE_REFERENCE_FIELD)
-		.include(CUSTOMIZATION_TYPE_REFERENCE_FIELD)
-		.find()
-		.then(async (results) => {
-			if (results.items.length > 0) {
-				let items = results.items;
-				let itemsToUpdate = []; // We only update items that need to be changed.
-				for (let i = 0; i < items.length; ++i) {
-					let item = items[i];
-					let itemChanged = false;
-					if (!item[CURRENTLY_AVAILABLE_FIELD]) {
-						item[CURRENTLY_AVAILABLE_FIELD] = true;
-						itemChanged = true;
-					}
-
-					// We need to update the source
-					const SOURCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationSourceField;
-					let sourceText = "Complete all Weekly Challenges and then complete the <i>" + challengeName.trim() + "</i> Capstone Challenge during any week it is available.";
-
-					if (item[SOURCE_FIELD].includes("Pending")) {
-						item[SOURCE_FIELD] = sourceText;
-						itemChanged = true;
-					}
-					else if (!item[SOURCE_FIELD].includes(sourceText)) {
-						item[SOURCE_FIELD] += "<p class=\"font_8\">" + sourceText + "</p>";
-						itemChanged = true;
-					}
-
-					if (itemChanged) {
-						// Add the item to the list of items to change.
-						itemsToUpdate.push(item);
-					}
-
-					// We only want to add a source type reference if it isn't already there. It won't hurt if it is, but it will change the Updated Datetime of the item.
-					let sourceTypeReferenceIncludesDesiredId = false;
-
-					for (let i = 0; i < item[SOURCE_TYPE_REFERENCE_FIELD].length; ++i) {
-						if (item[SOURCE_TYPE_REFERENCE_FIELD][i]._id == CustomizationConstants.SOURCE_TYPE_CAPSTONE_CHALLENGE_ID) {
-							sourceTypeReferenceIncludesDesiredId = true;
-							break;
-						}
-					}
-
-					// We also need to update or replace the sourcetype. Thankfully, we included this field.
-					if (item[SOURCE_TYPE_REFERENCE_FIELD].length == 1 && item[SOURCE_TYPE_REFERENCE_FIELD][0]._id == CustomizationConstants.SOURCE_TYPE_PENDING_ID) {
-						// If we have exactly one source type and it's Pending, we want to get rid of it and do a replace.
-						wixData.replaceReferences(CUSTOMIZATION_DB, SOURCE_TYPE_REFERENCE_FIELD, item._id, [CustomizationConstants.SOURCE_TYPE_CAPSTONE_CHALLENGE_ID])
-							.then(() => {
-								console.log("Added source type reference for item " + item._id + " in DB " + CUSTOMIZATION_DB);
-							})
-							.catch((error) => {
-								console.error("Error", error, "occurred while adding source type reference for item " + item._id + " in DB " + CUSTOMIZATION_DB);
-							});
-					}
-					else if (!sourceTypeReferenceIncludesDesiredId) {
-						// We just want to insert the source type in this case.
-						wixData.insertReference(CUSTOMIZATION_DB, SOURCE_TYPE_REFERENCE_FIELD, item._id, [CustomizationConstants.SOURCE_TYPE_CAPSTONE_CHALLENGE_ID])
-							.then(() => {
-								console.log("Added source type reference for item " + item._id + " in DB " + CUSTOMIZATION_DB);
-							})
-							.catch((error) => {
-								console.error("Error", error, "occurred while adding source type reference for item " + item._id + " in DB " + CUSTOMIZATION_DB);
-							});
-					}
-
-					let itemType;
-					const SOCKET_NAME_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].SocketNameField;
-					itemType = item[CUSTOMIZATION_TYPE_REFERENCE_FIELD][SOCKET_NAME_FIELD];
-
-					let itemCore = "";
-
-					if (CustomizationConstants.HAS_CORE_ARRAY.includes(customizationCategory) && !CustomizationConstants.IS_ATTACHMENTS_ARRAY.includes(customizationCategory)) {
-						// If we have cores for this item.
-						const CORE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationCoreReferenceField;
-						const CORE_NAME_FIELD = CustomizationConstants.CORE_CATEGORY_SPECIFIC_VARS[customizationCategory].CoreNameField;
-
-						let parentCores = (await wixData.queryReferenced(CUSTOMIZATION_DB, item._id, CORE_REFERENCE_FIELD)).items;
-
-						// We only care about the parent core if there's at least one core the item works with and the core isn't the "Any" shortcut.
-						if (parentCores.length >= 1 && parentCores[0][CORE_NAME_FIELD] != "Any") {
-							itemCore = parentCores[0][CORE_NAME_FIELD];
-							for (let q = 1; q < parentCores.length; ++q) {
-								itemCore += ", " + parentCores[q][CORE_NAME_FIELD];
+		while (retry && retryCount < MAX_RETRIES) {
+			await wixData.query(CUSTOMIZATION_DB)
+				.hasSome("_id", itemIdArray)
+				.include(SOURCE_TYPE_REFERENCE_FIELD)
+				.include(CUSTOMIZATION_TYPE_REFERENCE_FIELD)
+				.find()
+				.then(async (results) => {
+					if (results.items.length > 0) {
+						let items = results.items;
+						let itemsToUpdate = []; // We only update items that need to be changed.
+						for (let i = 0; i < items.length; ++i) {
+							let item = items[i];
+							let itemChanged = false;
+							if (!item[CURRENTLY_AVAILABLE_FIELD]) {
+								item[CURRENTLY_AVAILABLE_FIELD] = true;
+								itemChanged = true;
 							}
+
+							// We need to update the source
+							const SOURCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationSourceField;
+							let sourceText = "Complete all Weekly Challenges and then complete the <i>" + challengeName.trim() + "</i> Capstone Challenge during any week it is available.";
+
+							if (item[SOURCE_FIELD].includes("Pending")) {
+								item[SOURCE_FIELD] = sourceText;
+								itemChanged = true;
+							}
+							else if (!item[SOURCE_FIELD].includes(sourceText)) {
+								item[SOURCE_FIELD] += "<p class=\"font_8\">" + sourceText + "</p>";
+								itemChanged = true;
+							}
+
+							if (itemChanged) {
+								// Add the item to the list of items to change.
+								itemsToUpdate.push(item);
+							}
+
+							// We only want to add a source type reference if it isn't already there. It won't hurt if it is, but it will change the Updated Datetime of the item.
+							let sourceTypeReferenceIncludesDesiredId = false;
+
+							for (let i = 0; i < item[SOURCE_TYPE_REFERENCE_FIELD].length; ++i) {
+								if (item[SOURCE_TYPE_REFERENCE_FIELD][i]._id == CustomizationConstants.SOURCE_TYPE_CAPSTONE_CHALLENGE_ID) {
+									sourceTypeReferenceIncludesDesiredId = true;
+									break;
+								}
+							}
+
+							// We also need to update or replace the sourcetype. Thankfully, we included this field.
+							if (item[SOURCE_TYPE_REFERENCE_FIELD].length == 1 && item[SOURCE_TYPE_REFERENCE_FIELD][0]._id == CustomizationConstants.SOURCE_TYPE_PENDING_ID) {
+								// If we have exactly one source type and it's Pending, we want to get rid of it and do a replace.
+								wixData.replaceReferences(CUSTOMIZATION_DB, SOURCE_TYPE_REFERENCE_FIELD, item._id, [CustomizationConstants.SOURCE_TYPE_CAPSTONE_CHALLENGE_ID])
+									.then(() => {
+										console.log("Added source type reference for item " + item._id + " in DB " + CUSTOMIZATION_DB);
+									})
+									.catch((error) => {
+										console.error("Error", error, "occurred while adding source type reference for item " + item._id + " in DB " + CUSTOMIZATION_DB);
+									});
+							}
+							else if (!sourceTypeReferenceIncludesDesiredId) {
+								// We just want to insert the source type in this case.
+								wixData.insertReference(CUSTOMIZATION_DB, SOURCE_TYPE_REFERENCE_FIELD, item._id, [CustomizationConstants.SOURCE_TYPE_CAPSTONE_CHALLENGE_ID])
+									.then(() => {
+										console.log("Added source type reference for item " + item._id + " in DB " + CUSTOMIZATION_DB);
+									})
+									.catch((error) => {
+										console.error("Error", error, "occurred while adding source type reference for item " + item._id + " in DB " + CUSTOMIZATION_DB);
+									});
+							}
+
+							let itemType;
+							const SOCKET_NAME_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].SocketNameField;
+							itemType = item[CUSTOMIZATION_TYPE_REFERENCE_FIELD][SOCKET_NAME_FIELD];
+
+							let itemCore = "";
+
+							if (CustomizationConstants.HAS_CORE_ARRAY.includes(customizationCategory) && !CustomizationConstants.IS_ATTACHMENTS_ARRAY.includes(customizationCategory)) {
+								// If we have cores for this item.
+								const CORE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationCoreReferenceField;
+								const CORE_NAME_FIELD = CustomizationConstants.CORE_CATEGORY_SPECIFIC_VARS[customizationCategory].CoreNameField;
+
+								let parentCores = (await wixData.queryReferenced(CUSTOMIZATION_DB, item._id, CORE_REFERENCE_FIELD)).items;
+
+								// We only care about the parent core if there's at least one core the item works with and the core isn't the "Any" shortcut.
+								if (parentCores.length >= 1 && parentCores[0][CORE_NAME_FIELD] != "Any") {
+									itemCore = parentCores[0][CORE_NAME_FIELD];
+									for (let q = 1; q < parentCores.length; ++q) {
+										itemCore += ", " + parentCores[q][CORE_NAME_FIELD];
+									}
+								}
+							}
+
+							const NAME_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationNameField
+							const URL_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_URL_FIELDS[customizationCategory];
+							itemInfoArray.push({
+								itemName: item[NAME_FIELD],
+								itemUrl: GeneralConstants.INFINITE_NEWS_URL_BASE + item[URL_FIELD],
+								itemType: itemType,
+								itemCore: itemCore
+							});
 						}
+
+						console.log("Found the following items", items, "Only updating source and currentlyAvailable for these items", itemsToUpdate);
+
+						wixData.bulkUpdate(CUSTOMIZATION_DB, itemsToUpdate, options)
+							.then((results) => {
+								console.log("Results following update of currentlyAvailable and source for category", customizationCategory, "and items", itemsToUpdate, ":", results);
+							});
 					}
 
-					const NAME_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationNameField
-					const URL_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_URL_FIELDS[customizationCategory];
+					retry = false;
+				})
+				.catch((error) => {
+					console.error("Error", error, "occurred while updating newly available items for category", customizationCategory, "and ID array", 
+						itemIdArray, "Try " + ++retryCount + " of " + MAX_RETRIES);
+				});
+		}
+	}
+	else {
+		// If we have Consumables, just update the itemInfoArray.
+		let retry = true;
+		let retryCount = 0;
+		const MAX_RETRIES = 10;
+
+		while (retry && retryCount < MAX_RETRIES) {
+			try {
+				let consumables = (await wixData.query(ConsumablesConstants.CONSUMABLES_DB).hasSome("_id", itemIdArray).find()).items;
+
+				for (let i = 0; i < consumables.length; ++i) {
 					itemInfoArray.push({
-						itemName: item[NAME_FIELD],
-						itemUrl: GeneralConstants.INFINITE_NEWS_URL_BASE + item[URL_FIELD],
-						itemType: itemType,
-						itemCore: itemCore
+						itemName: consumables[ConsumablesConstants.CONSUMABLES_NAME_FIELD],
+						itemUrl: GeneralConstants.INFINITE_NEWS_URL_BASE + consumables[ConsumablesConstants.CONSUMABLES_URL_FIELD],
+						itemType: "" // This is redundant.
 					});
 				}
 
-				console.log("Found the following items", items, "Only updating source and currentlyAvailable for these items", itemsToUpdate);
-
-				wixData.bulkUpdate(CUSTOMIZATION_DB, itemsToUpdate, options)
-					.then((results) => {
-						console.log("Results following update of currentlyAvailable and source for category", customizationCategory, "and items", itemsToUpdate, ":", results);
-					});
+				retry = false;
 			}
-		})
-		.catch((error) => {
-			console.error("Error", error, "occurred while updating newly available items for category", customizationCategory, "and ID array", itemIdArray);
-		});
+			catch(error) {
+				console.error("Error", error, "occurred while retrieving consumables information. Try " + ++retryCount + " of " + MAX_RETRIES);
+			}
+		}
+	}
 
 	return itemInfoArray;
 }

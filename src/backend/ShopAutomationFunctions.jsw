@@ -593,6 +593,15 @@ export async function getConvertedShopList(processCustomizationOptions = false) 
 					}
 					mainShopSiteJson[ShopConstants.SHOP_NUMBER_OF_CREDITS_FIELD] = numCredits;
 
+					let numSpartanPoints = 0;
+					for (let j = 0; j < mainShopWaypointArray[i].IncludedCurrencies.length; ++j) {
+						if (mainShopWaypointArray[i].IncludedCurrencies[j].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_PATH_CONTENTS)) {
+							// If this currency is Credits.
+							numSpartanPoints += mainShopWaypointArray[i].IncludedCurrencies[j].Amount;
+						}
+					}
+					mainShopSiteJson[ShopConstants.SHOP_NUMBER_OF_SPARTAN_POINTS_FIELD] = numSpartanPoints;
+
 					// TODO: Make this more forward compatible if non-credit currencies or multiple currencies are introduced at some point.
 					mainShopSiteJson[ShopConstants.SHOP_COST_CREDITS_FIELD] = mainShopWaypointArray[i].Prices[0].Cost;
 					mainShopSiteJson[ShopConstants.SHOP_ITEM_NAME_FIELD] = shopWaypointJson.Title;
@@ -826,6 +835,15 @@ export async function getConvertedShopList(processCustomizationOptions = false) 
 						else if (includedConsumablesArray[j].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_CHALLENGE_SWAP_PATH_CONTENTS)) {
 							consumableName = ConsumablesConstants.CONSUMABLES_CHALLENGE_SWAP_NAME;
 						}
+						else if (includedConsumablesArray[j].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_CREDITS_PATH_CONTENTS)) {
+							consumableName = ConsumablesConstants.CONSUMABLES_CREDITS_NAME;
+						}
+						else if (includedConsumablesArray[j].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_XP_GRANT_PATH_CONTENTS)) {
+							consumableName = ConsumablesConstants.CONSUMABLES_XP_GRANT_NAME;
+						}
+						else if (includedConsumablesArray[j].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_PATH_CONTENTS)) {
+							consumableName = ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_NAME;
+						}
 
 						let consumableId = await wixData.query(ConsumablesConstants.CONSUMABLES_DB)
 							.eq(ConsumablesConstants.CONSUMABLES_NAME_FIELD, consumableName)
@@ -1000,7 +1018,7 @@ export async function updateBundleAndItemsCurrentlyAvailableStatus(itemJson, cur
 	else if (itemDb == CapstoneChallengeConstants.CAPSTONE_CHALLENGE_DB) {
 		currentlyAvailableField = CapstoneChallengeConstants.CAPSTONE_CHALLENGE_CURRENTLY_AVAILABLE_FIELD;
 		fieldsWithItemsField = CapstoneChallengeConstants.CAPSTONE_CHALLENGE_FIELDS_WITH_ITEMS_FIELD;
-		consumableReferenceField = "N/A"; // We don't support consumables in Capstone Challenges ATM.
+		consumableReferenceField = CapstoneChallengeConstants.CAPSTONE_CHALLENGE_CONSUMABLE_REFERENCE_FIELD;
 		referenceFieldToCategoryDict = CustomizationConstants.CAPSTONE_CHALLENGE_ITEM_FIELD_TO_CUSTOMIZATION_CATEGORY_DICT;
 	}
 	else {

@@ -1,4 +1,5 @@
 // Filename: public/Constants/ConsumablesConstants.js 
+// @ts-ignore
 import * as ShopConstants from 'public/Constants/ShopConstants.js';
 
 // These constants are used to identify the Consumables section.
@@ -21,11 +22,13 @@ export const CONSUMABLES_CHALLENGE_SWAP_PATH_CONTENTS = "rerollcurrency.json";
 export const CONSUMABLES_XP_BOOST_PATH_CONTENTS = "xpboost.json";
 export const CONSUMABLES_XP_GRANT_PATH_CONTENTS = "xpgrant.json";
 export const CONSUMABLES_CREDITS_PATH_CONTENTS = "cR.json";
+export const CONSUMABLES_SPARTAN_POINTS_PATH_CONTENTS = "spartanpoints.json"; //TODO: VALIDATE THIS!!!
 
 export const CONSUMABLES_XP_BOOST_NAME = "XP Boost";
 export const CONSUMABLES_XP_GRANT_NAME = "XP Grant";
 export const CONSUMABLES_CREDITS_NAME = "Credits";
 export const CONSUMABLES_CHALLENGE_SWAP_NAME = "Challenge Swap";
+export const CONSUMABLES_SPARTAN_POINTS_NAME = "Spartan Points";
 
 export const CONSUMABLES_CATEGORY_SPECIFIC_VARS = {
 	[CONSUMABLES_KEY]: {
