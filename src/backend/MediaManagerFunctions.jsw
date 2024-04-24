@@ -1322,11 +1322,8 @@ export async function getEmblemPaletteImageUrl(folderDict, headers, paletteConfi
 	}
 
 	let fileSystemSafeTitle = nameplateWaypointId.replace(/[\\/?:]/g, "_"); // Clean out some of the common illegal characters (\, /, ?, :). There likely won't be any, but best to be safe.
-
+	let fileKey = fileSystemSafeTitle.replace(/\./g, ",") + " " + type + ",png";
 	if (folderExists) {
-
-		let fileKey = fileSystemSafeTitle.replace(/\./g, ",") + " " + type + ",png";
-
 		if (fileKey in subFolderDict) {
 			// We found a matching file, but now we need to confirm that it is up-to-date by checking the ETag.
 			try {
