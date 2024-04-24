@@ -978,7 +978,6 @@ export async function getCustomizationImageUrl(folderDict, headers, title, waypo
 	// We don't proceed further if we are working with Consumables, Emblem Palettes, Exchange Listings, or Manufacturers.
 	if (customizationCategory != ConsumablesConstants.CONSUMABLES_KEY &&
 		customizationCategory != CustomizationConstants.EMBLEM_PALETTE_KEY &&
-		customizationCategory != ExchangeConstants.EXCHANGE_KEY &&
 		customizationCategory != CustomizationConstants.MANUFACTURER_KEY) {
 
 		// The types listed below all use the DB to store their folder information. We only use the constant dicts if we aren't working with them.
@@ -1386,9 +1385,6 @@ export async function getEmblemPaletteImageUrl(folderDict, headers, paletteConfi
 			catch (error) {
 				console.error(error + " occurred while checking existing file with key " + fileKey + ". Assuming it does not exist.");
 			}
-			
-
-			
 		}
 		else {
 			console.log("File not found for " + fileKey + " in " + mediaPath);

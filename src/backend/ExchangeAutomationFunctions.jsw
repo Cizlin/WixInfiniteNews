@@ -167,14 +167,15 @@ export async function getExchangeListFromWaypoint(headers) {
 }
 
 // Gets the list of Exchange items from Waypoint, fetches the data for each item, and then returns a list of items that match the current DB items.
-export async function getConvertedExchangeList() {
+export async function getConvertedExchangeList(processCustomizationOptions = false) {
 	let headers = await ApiFunctions.makeWaypointHeaders();
 
 	let typeDict = await GeneralBackendFunctions.generateTypeDict();
 
 	let exchangeWaypointJson = {};
 
-	exchangeWaypointJson = await getExchangeListFromWaypoint(headers);
+	// TODO: Confirm that the Exchange Customization Menu shop comes from the same place as the normal shop.
+	exchangeWaypointJson = (processCustomizationOptions) ? await ShopFunctions.getCustomizationOffersShopListFromWaypoint(headers) : await getExchangeListFromWaypoint(headers);
 
 	let exchangeSiteArray = [];
 
@@ -225,13 +226,17 @@ export async function getConvertedExchangeList() {
 
 	const maxRetries = 10;
 	console.log("Beginning to fill out exchange listings from API...");
-	let exchangeWaypointArray = exchangeWaypointJson.Offerings;
+	let exchangeWaypointArray = (processCustomizationOptions) ? exchangeWaypointJson : exchangeWaypointJson.Offerings;
 
 	for (let i = 0; i < exchangeWaypointArray.length; ++i) {
 		let retryCount = 0;
 		let retry = true;
 		while (retry && retryCount < maxRetries) {
 			try {
+				if (mainShopWaypointArray[i].Prices[0].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_CREDITS_PATH_CONTENTS))
+				{
+					continue;
+				}
 				console.log(exchangeWaypointArray[i].OfferingId);
 
 				let exchangeItemSiteJson = {};
@@ -296,17 +301,64 @@ export async function getConvertedExchangeList() {
 				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD] = exchangeWaypointArray[i].Prices[0].Cost;
 				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD] = exchangeItemWaypointJson.Title;
 				
-				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD] = true;
+				if (processCustomizationOptions)
+				{
+					exchangeItemSiteJson[ExchangeConstants.EXCHANGE_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD] = true;
+					exchangeItemSiteJson[ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD] = false;
+				}
+				else
+				{
+					exchangeItemSiteJson[ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD] = true;
+				}
 
-				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_BUNDLE_IMAGE_FIELD] = await MediaManagerFunctions.getCustomizationImageUrl(
+				if (processCustomizationOptions) {
+					// Get the existing ETag from the DB.
+					let existingETag = await wixData.query(ExchangeConstants.EXCHANGE_DB)
+						.eq(ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD, exchangeWaypointArray[i].OfferingId)
+						.find()
+						.then((results) => {
+							if (results.items.length > 0) {
+								return results.items[0][ExchangeConstants.EXCHANGE_IMAGE_ETAG_FIELD];
+							}
+							else {
+								return "";
+							}
+						})
+						.catch((error) => {
+							console.error("Error occurred while retrieving Image ETag from Shop DB for " + mainShopWaypointArray[i].OfferingId, error);
+						});
+
+					
+					let imageResults = await MediaManagerFunctions.getCustomizationImageUrl(
+						folderDict,
+						headers,
+						shopWaypointJson.Title,
+						shopWaypointJson.ObjectImagePath,
+						"image/png",
+						ExchangeConstants.EXCHANGE_KEY,
+						ExchangeConstants.EXCHANGE_CUSTOMIZATION_MENU,
+						null,
+						null,
+						null,
+						existingETag,
+						true
+					);
+
+					mainShopSiteJson[ShopConstants.SHOP_BUNDLE_IMAGE_FIELD] = imageResults[0]; // The image URL is here.
+					mainShopSiteJson[ShopConstants.SHOP_IMAGE_ETAG_FIELD] = imageResults[1]; // The image ETag is here.
+				}
+				else
+				{
+					exchangeItemSiteJson[ExchangeConstants.EXCHANGE_BUNDLE_IMAGE_FIELD] = await MediaManagerFunctions.getCustomizationImageUrl(
 						folderDict,
 						headers,
 						exchangeItemWaypointJson.Title,
 						exchangeItemWaypointJson.ObjectImagePath,
 						"image/png",
 						ExchangeConstants.EXCHANGE_KEY,
-						null
+						ExchangeConstants.EXCHANGE_FEATURED
 					);
+				}
 
 				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_ARMOR_REFERENCE_FIELD] = [];
 				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_ARMOR_ATTACHMENT_REFERENCE_FIELD] = [];
@@ -525,106 +577,8 @@ export async function getConvertedExchangeList() {
 	return exchangeSiteArray;
 }
 
-// Accepts a site JSON file and marks all currentlyAvailable flags on the associated items as false within the DBs.
-export async function updateBundleAndItemsCurrentlyAvailableStatus(itemJson, currentlyAvailableStatus, itemDb=ShopConstants.SHOP_DB, isCustomizationShopBundle = false) {
-
-	let options = {
-		"suppressAuth": true,
-		"suppressHooks": true
-	};
-
-	let currentlyAvailableField = "";
-	let fieldsWithItemsField = "";
-	let consumableReferenceField = "";
-	let referenceFieldToCategoryDict = {};
-
-	if (itemDb == ShopConstants.SHOP_DB) {
-		currentlyAvailableField = (isCustomizationShopBundle) ? ShopConstants.SHOP_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD : ShopConstants.SHOP_CURRENTLY_AVAILABLE_FIELD;
-		fieldsWithItemsField = ShopConstants.SHOP_FIELDS_WITH_ITEMS_FIELD;
-		consumableReferenceField = ShopConstants.SHOP_CONSUMABLE_REFERENCE_FIELD;
-		referenceFieldToCategoryDict = CustomizationConstants.SHOP_ITEM_FIELD_TO_CUSTOMIZATION_CATEGORY_DICT;
-	}
-	else if (itemDb == CapstoneChallengeConstants.CAPSTONE_CHALLENGE_DB) {
-		currentlyAvailableField = CapstoneChallengeConstants.CAPSTONE_CHALLENGE_CURRENTLY_AVAILABLE_FIELD;
-		fieldsWithItemsField = CapstoneChallengeConstants.CAPSTONE_CHALLENGE_FIELDS_WITH_ITEMS_FIELD;
-		consumableReferenceField = CapstoneChallengeConstants.CAPSTONE_CHALLENGE_CONSUMABLE_REFERENCE_FIELD;
-		referenceFieldToCategoryDict = CustomizationConstants.CAPSTONE_CHALLENGE_ITEM_FIELD_TO_CUSTOMIZATION_CATEGORY_DICT;
-	}
-	else {
-		throw "Unable to run updateBundleAndItemsCurrentlyAvailableStatus with itemDb " + itemDb + ". Exiting...";
-    }
-
-	let itemJsonCopy = structuredClone(itemJson);
-
-	itemJson[currentlyAvailableField] = currentlyAvailableStatus;
-
-	let itemInfoArray = [];
-
-	// Update the items linked to the Shop Listing or Ultimate Challenge.
-	for (let i = 0; i < itemJson[fieldsWithItemsField].length; ++i) {
-		let currentField = itemJson[fieldsWithItemsField][i];
-		//console.log(currentField);
-		if (currentField == consumableReferenceField) {
-			continue; // We do not want to process consumables in the same way as other items.
-		}
-		itemInfoArray = itemInfoArray.concat(await ShopFunctions.updateItemsCurrentlyAvailableStatus(
-			referenceFieldToCategoryDict[currentField],
-			itemJson[currentField],
-			currentlyAvailableStatus
-		));
-	}
-
-	let retry = true;
-	let retryCount = 0;
-	const MAX_RETRIES = 10;
-
-	while (retry && retryCount < MAX_RETRIES) {
-		await wixData.update(itemDb, itemJson, options)
-			.then((results) => {
-				console.log("Results following update of currentlyAvailable for item:", itemJson, ":", results);
-
-				// We only really need to add these if currentlyAvailableStatus is true, since this indicates the item has been added or updated.
-
-				// Add the items to the Shop Bundle. We want to ensure the bundle has returned first.
-				if (itemDb == ShopConstants.SHOP_DB && currentlyAvailableStatus) {
-					for (const FIELD in referenceFieldToCategoryDict) {
-						addItemIdArrayToShopItem(
-							itemJson._id,
-							FIELD,
-							itemJsonCopy[FIELD],
-							referenceFieldToCategoryDict[FIELD],
-							itemJsonCopy[ShopConstants.SHOP_ITEM_NAME_FIELD],
-							itemJsonCopy[ShopConstants.SHOP_COST_CREDITS_FIELD],
-							itemJsonCopy[ShopConstants.SHOP_IS_HCS_FIELD],
-							itemJsonCopy[ShopConstants.SHOP_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD]
-						);
-					}
-				}
-				// Add the item(s) to the Ultimate Challenge.
-				else if (itemDb == CapstoneChallengeConstants.CAPSTONE_CHALLENGE_DB && currentlyAvailableStatus) {
-					for (const FIELD in referenceFieldToCategoryDict) {
-						WaypointFunctions.addItemIdArrayToCapstoneChallenge(
-							itemJson._id,
-							FIELD,
-							itemJsonCopy[FIELD],
-							referenceFieldToCategoryDict[FIELD],
-							itemJsonCopy[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NAME_FIELD]
-						);
-					}
-				}
-
-				retry = false;
-			})
-			.catch((error) => {
-				console.error("Error", error, "occurred while updating item availability", itemJson, "Try " + ++retryCount + " of " + MAX_RETRIES);
-			});
-	}
-	
-	return itemInfoArray;
-}
-
 // We store item IDs in an array, which lets us query for items matching those IDs and then update them.
-export async function addItemIdArrayToExchangeItem(bundleId, fieldName, itemIdArray, customizationCategory, bundleName, bundleCost) {
+export async function addItemIdArrayToExchangeItem(bundleId, fieldName, itemIdArray, customizationCategory, bundleName, bundleCost, isCustomizationBundle) {
 	const PENDING_SOURCE_ID = CustomizationConstants.SOURCE_TYPE_PENDING_ID;
 	const EXCHANGE_SOURCE_ID = CustomizationConstants.SOURCE_TYPE_EXCHANGE_ID;
 
@@ -693,7 +647,16 @@ export async function addItemIdArrayToExchangeItem(bundleId, fieldName, itemIdAr
 							}
 
 							// We need to update the source
-							let sourceText = "Purchase <em>" + bundleName.trim() + "</em> from the Exchange for " + bundleCost + " Spartan Points";
+							let sourceText = "";
+							
+							if (!isCustomizationBundle)
+							{
+								sourceText = "Purchase <em>" + bundleName.trim() + "</em> from the Exchange for " + bundleCost + " Spartan Points";
+							}
+							else
+							{
+								sourceText = "Purchase <em>" + bundleName.trim() + "</em> directly from the Customization Menus for " + bundleCost + " Spartan Points";
+							}
 
 							if (item[CUSTOMIZATION_SOURCE_FIELD].includes("Pending")) {
 								item[CUSTOMIZATION_SOURCE_FIELD] = sourceText;
@@ -1159,7 +1122,7 @@ export async function refreshExchangeListings() {
 
 	for (let i = 0; i < currentlyAvailableExchangeListings.length; ++i) {
 		if (!newlyAvailableExchangeListingIds.includes(currentlyAvailableExchangeListings[i][ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD])) {
-			updateBundleAndItemsCurrentlyAvailableStatus(currentlyAvailableExcjangeListings[i], false); // This doesn't need to be done synchronously thankfully.
+			ShopFunctions.updateBundleAndItemsCurrentlyAvailableStatus(currentlyAvailableExchangeListings[i], false, ExchangeConstants.EXCHANGE_DB, false); // This doesn't need to be done synchronously thankfully.
 		}
 	}
 
@@ -1212,7 +1175,7 @@ export async function refreshExchangeListings() {
 
 						console.log("Last added datetime for ", item[ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD], " is ", item[ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD]);
 						console.log(newExchangeListingsToUpdate[i]);
-						item.childItemInfo = await updateBundleAndItemsCurrentlyAvailableStatus(newExchangeListingsToUpdate[i], true);
+						item.childItemInfo = await ShopFunctions.updateBundleAndItemsCurrentlyAvailableStatus(newExchangeListingsToUpdate[i], true, ExchangeConstants.EXCHANGE_DB, false);
 
 						// We need to ensure that the name and cost are updated and passed to the Twitter and Push Notification functions.
 						item[ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD] = newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD];
@@ -1241,4 +1204,155 @@ export async function refreshExchangeListings() {
 				generatePushNotifications(updateItemArray);
 			});
 	}
+}
+
+export async function refreshCustomizationExchangeListings() {
+	//currentlyAvailableIds = await getCurrentlyAvailableExchangeListings(true); // We need this array so that we can check each newly available listing and see if we already have it available.
+
+	let newCustomizationExchangeListings = [];
+	try {
+		newCustomizationExchangeListings = await getConvertedExchangeList(true);
+	}
+	catch (error) {
+		console.error("Error occurred while getting exchange list from API", error);
+	}
+
+	if (newCustomizationExchangeListings.length <= 0) {
+		throw "Error: No new Exchange Listings were returned. Exiting now.";
+	}
+
+	// We need a list of Waypoint IDs to query the database.
+	let newlyAvailableExchangeListingIds = []; 
+
+	for (let i = 0; i < newCustomizationExchangeListings.length; ++i) {
+		newlyAvailableExchangeListingIds.push(newCustomizationExchangeListings[i][ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD]);
+	}
+
+	let newExchangeListingsToUpdate = newCustomizationExchangeListings;
+
+	if (newlyAvailableExchangeListingIds.length > 0) {
+		// Now that we've got the old bundles being marked as no longer available, we need to mark the new bundles as currently available when they exist and add them when they don't.
+		wixData.query(ExchangeConstants.EXCHANGE_DB)
+			.hasSome(ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD, newlyAvailableExchangeListingIds)
+			.find()
+			.then(async (results) => {
+				let items = results.items;
+				console.log("Items returned: ", items);
+				let itemIds = [];
+				
+				for (let i = 0; i < items.length; i++) {
+					itemIds.push(items[i][ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD]);
+				}
+
+				console.log("Arrays to process:", itemIds, newExchangeListingsToUpdate);
+
+				for(let i = 0; i < newExchangeListingsToUpdate.length; ++i) { // We're assuming everything else has been marked correctly. Big assumption, yes, but potentially more efficient.
+					let item;
+					let itemIndex = itemIds.findIndex((itemId) => { return newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD] == itemId; });
+					console.log("Item index is ", itemIndex, "for item ID", newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD]);
+
+					if (itemIndex > -1) { // If the item was found.
+						item = items[itemIndex];
+						if (item[ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD]) {
+							console.log("Skipping this exchange bundle as it is already available in the Exchange right now.", newExchangeListingsToUpdate[i]);
+							continue; // We don't want to process listings that are actually in the Shop right now.
+						}
+
+						newExchangeListingsToUpdate[i]._id = item._id; // The DB ID ties both items together, so we need to transfer it.
+
+						// If these arrays exist, we grab them to add onto them. Otherwise, we create it from scratch.
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD] = item[ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD] || [];
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD] = item[ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD] || [];
+
+						// We have to add this here because we need the existing array of datetimes.
+						if (!item[ExchangeConstants.EXCHANGE_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD]) {
+							// We only want to add this if it isn't already marked as available through the customization menus.
+							newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD]); 
+							newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD]);
+						}
+						else if (newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD] != newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD][0]) {
+							// If the current cost doesn't match the last available cost, then we need to add a new record.
+							let currentDate = new Date();
+
+							newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD].unshift(currentDate);
+							newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD]);
+						}
+						else {
+							newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD] = item[ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD];
+							// This isn't newly available, and the price hasn't changed.
+						}
+
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD] = item[ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD]; // This listing may be available through the normal exchange, too.
+
+						console.log("Last added datetime for ", item[ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD], " is ", item[ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD]);
+						console.log(newExchangeListingsToUpdate[i]);
+						await ShopFunctions.updateBundleAndItemsCurrentlyAvailableStatus(newExchangeListingsToUpdate[i], true, ExchangeConstants.EXCHANGE_DB, true);
+					}
+					else { // If we didn't find the item, we need to add it. This is a bit involved since we also have to add references for each of its multi-references.
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD] = [];
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD] = [];
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD]);
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD]);
+						console.log(newExchangeListingsToUpdate[i]);
+
+						item = await addBundleToDb(newExchangeListingsToUpdate[i]); // We need to await this if we want to integrate with the Twitter API.
+					}
+				}
+
+				let currentOffsetObject = await wixData.query(KeyConstants.KEY_VALUE_DB)
+					.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY)
+					.find()
+					.then((results) => {
+						if (results.items.length == 0) {
+							throw "Offset not found in Key Value DB. Throwing error.";
+						}
+						else {
+							return results.items[0];
+						}
+					})
+					.catch((error) => {
+						console.error("Error occurred when determining offset. Throwing", error);
+						throw "Dying because unable to retrieve offset from Key Value DB.";
+					});
+
+				currentOffsetObject.value.offset = (resetOffset) ? 0 : currentOffsetObject.value.offset + CUSTOMIZATION_EXCHANGE_LIMIT;
+
+				wixData.update(KeyConstants.KEY_VALUE_DB, currentOffsetObject)
+					.catch((error) => {
+						console.error(error, "occurred when updating current offset value");
+						InternalNotifications.notifyOwner("Error when updating customization exchange offset.", "Resolve this issue promptly to ensure updates continue to occur.");
+					});
+
+				console.log("Current offset updated to " + currentOffsetObject.value.offset);
+			});
+	}
+}
+
+export async function deactivateUnavailableCustomizationExchangeListings() {
+	// If we find a Customization Menu exchange listing that hasn't been updated for 8 days, we can mark it unavailable through the customization menus.
+	const DAYS_BACK = 8; // We will mark these bundles deactivated if they go more than 8 days without an update (our function currently has a loop period of at least 5 hours; this may change in the future).
+
+	await wixData.query(ExchangeConstants.EXCHANGE_DB)
+		.eq(ExchangeConstants.EXCHANGE_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD, true)
+		.le("_updatedDate", new Date(Date.now() - DAYS_BACK * 24 * 60 * 60 * 1000)) // Convert the DAYS_BACK into a ms value to subtract from the current time.
+		.limit(1000)
+		.find()
+		.then((results) => {
+			let oldListings = results.items;
+			console.log("Marking the following listings as no longer available", oldListings);
+			for (let i = 0; i < oldListings.length; ++i) {
+				oldListings[i][ExchangeConstants.EXCHANGE_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD] = false;
+			}
+
+			wixData.bulkUpdate(ExchangeConstants.EXCHANGE_DB, oldListings)
+				.then(result => {
+					console.log("Results of marking the listings as no longer available: ", result, oldListings);
+				})
+				.catch((error) => {
+					console.error("Error occurred when marking old customization exchange listings as unavailable.", error);
+				});
+		})
+		.catch((error) => {
+			console.error("Error occurred while retrieving customization exchange listings that have not been touched in " + DAYS_BACK + " days.", error);
+		})
 }

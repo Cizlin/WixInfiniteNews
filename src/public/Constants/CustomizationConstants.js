@@ -619,5 +619,9 @@ export const CUSTOMIZATION_TYPE_FOLDER_DICT = {
 	[PassConstants.PASS_KEY]: {
 		[PassConstants.PASS_BATTLE]: "Battle Passes",
 		[PassConstants.PASS_EVENT]: "Event Passes"
+	},
+	[ExchangeConstants.EXCHANGE_KEY]: {
+		[ExchangeConstants.EXCHANGE_FEATURED]: "Featured",
+		[ExchangeConstants.EXCHANGE_CUSTOMIZATION_MENU]: "CustomizationMenu"
 	}
 }

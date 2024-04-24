@@ -7,6 +7,7 @@ export const EXCHANGE_DB = "ExchangeListings";
 
 export const EXCHANGE_ITEM_NAME_FIELD = "itemName";
 export const EXCHANGE_CURRENTLY_AVAILABLE_FIELD = "currentlyAvailable";
+export const EXCHANGE_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD = "availableThroughCustomization";
 export const EXCHANGE_FIELDS_WITH_ITEMS_FIELD = "fieldsWithItems";
 export const EXCHANGE_DESCRIPTION_FIELD = "description";
 export const EXCHANGE_WAYPOINT_ID_FIELD = "waypointId";
@@ -38,3 +39,6 @@ export const EXCHANGE_SPARTAN_ID_REFERENCE_FIELD = "spartanIdItems";
 export const EXCHANGE_CONSUMABLE_REFERENCE_FIELD = "consumables";
 
 export const EXCHANGE_FOLDER = "Exchange";
+
+export const EXCHANGE_FEATURED = "Featured";
+export const EXCHANGE_CUSTOMIZATION_MENU = "Customization Menu";

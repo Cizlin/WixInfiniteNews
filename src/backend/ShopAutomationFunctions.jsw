@@ -485,7 +485,10 @@ export async function getConvertedShopList(processCustomizationOptions = false) 
 		let mainShopWaypointArray = (processCustomizationOptions) ? mainShopWaypointJson : mainShopWaypointJson.Offerings;
 
 		for (let i = 0; i < mainShopWaypointArray.length; ++i) {
-
+			if (mainShopWaypointArray[i].Prices[0].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_PATH_CONTENTS))
+			{
+				continue;
+			}
 			let retryCount = 0;
 			let retry = true;
 			while (retry && retryCount < maxRetries) {
@@ -1167,7 +1170,8 @@ export async function updateBundleAndItemsCurrentlyAvailableStatus(itemJson, cur
 							itemJsonCopy[FIELD],
 							referenceFieldToCategoryDict[FIELD],
 							itemJsonCopy[ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD],
-							itemJsonCopy[ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD]
+							itemJsonCopy[ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD],
+							itemJsonCopy[ExchangeConstants.EXCHANGE_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD]
 						);
 					}
 				}

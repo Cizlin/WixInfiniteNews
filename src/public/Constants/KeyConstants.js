@@ -4,6 +4,7 @@ export const KEY_VALUE_DB = "DynamicKeyValues";
 export const KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY = "CustomizationFolderHierarchy";
 export const KEY_VALUE_EMBLEM_PALETTE_FOLDERS_KEY = "EmblemPaletteFolderHierarchy";
 export const KEY_VALUE_CUSTOMIZATION_SHOP_OFFSET_KEY = "CustomizationShopOffset";
+export const KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY = "CustomizationExchangeOffset";
 
 // Customization Import Checkpoint Keys
 export const KEY_VALUE_CUSTOMIZATION_ARMOR_COATINGS_KEY = "ArmorCoatingOffset";
