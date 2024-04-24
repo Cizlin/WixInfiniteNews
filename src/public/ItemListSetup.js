@@ -384,10 +384,16 @@ async function setOptionalFiltersExchange(setPaginationFromSave = false) {
 
 	switch(availableDropdownSelection) {
 		case "Yes":
-			optionalFilter = optionalFilter.eq(currentlyAvailableField, true);
+			optionalFilter = optionalFilter.eq(currentlyAvailableField, true).or(optionalFilter.eq(ExchangeConstants.EXCHANGE_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD, true));
+			break;
+		case "ExchangeOnly":
+			optionalFilter = optionalFilter.eq(currentlyAvailableField, true).ne(ExchangeConstants.EXCHANGE_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD, true);
+			break;
+		case "CustomizationOnly":
+			optionalFilter = optionalFilter.ne(currentlyAvailableField, true).eq(ExchangeConstants.EXCHANGE_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD, true);
 			break;
 		case "No":
-			optionalFilter = optionalFilter.ne(currentlyAvailableField, true);
+			optionalFilter = optionalFilter.ne(currentlyAvailableField, true).ne(ExchangeConstants.EXCHANGE_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD, true);
 			break;
 		default:
 			break;
