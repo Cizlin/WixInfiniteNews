@@ -168,6 +168,9 @@ $w.onReady(function () {
 					else if (itemData[CATEGORY_SPECIFIC_VARS[CATEGORY_KEYWORD + "NameField"]] == ConsumablesConstants.CONSUMABLES_CREDITS_NAME) {
 						customizationTypeString += currentItem[PassConstants.PASS_RANK_NUMBER_OF_CREDITS_FIELD];
 					}
+					else if (itemData[CATEGORY_SPECIFIC_VARS[CATEGORY_KEYWORD + "NameField"]] == ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_NAME) {
+						customizationTypeString += currentItem[PassConstants.PASS_RANK_NUMBER_OF_SPARTAN_POINTS_FIELD];
+					}
 				}
 				else {
 					// In general, we can just use the customization type referenced by the childItem.

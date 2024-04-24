@@ -154,7 +154,7 @@ $w.onReady(function () {
 			const ITEM_DB = itemData.itemDb;
 			const CUSTOMIZATION_CATEGORY = itemData.customizationCategory;
 			const CATEGORY_IS_CORE = itemData.categoryIsCore;
-			//const CATEGORY_IS_CONSUMABLE = itemData.categoryIsConsumable; // We don't support consumables in Capstone Challenges at this time, and likely won't need to.
+			const CATEGORY_IS_CONSUMABLE = itemData.categoryIsConsumable;
 
 			$item("#itemButton").link = itemData[CATEGORY_SPECIFIC_VARS[CATEGORY_KEYWORD + "UrlField"]];
 			$item("#itemImage").src = itemData[CATEGORY_SPECIFIC_VARS[CATEGORY_KEYWORD + "ImageField"]];
@@ -202,30 +202,33 @@ $w.onReady(function () {
 
 			let customizationTypeString = ""; // The string we'll be using for the CustomizationTypeText box.
 			if (!CATEGORY_IS_CORE && CustomizationConstants.IS_CUSTOMIZATION_OR_CONSUMABLE_ARRAY.includes(CUSTOMIZATION_CATEGORY)) {
-				/*if (CATEGORY_IS_CONSUMABLE) {
+				if (CATEGORY_IS_CONSUMABLE) {
 					customizationTypeString = "Amount: ";
 					// The Consumable name already tells its type, so we can use this for the number of Consumables offered at each tier (just 1 for now, but could be more later).
 					if (itemData[CATEGORY_SPECIFIC_VARS[CATEGORY_KEYWORD + "NameField"]] == ConsumablesConstants.CONSUMABLES_CHALLENGE_SWAP_NAME) {
-						customizationTypeString += currentItem[PassConstants.PASS_RANK_NUMBER_OF_CHALLENGE_SWAPS_FIELD];
+						customizationTypeString += currentItem[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_CHALLENGE_SWAPS_FIELD];
 					}
 					else if (itemData[CATEGORY_SPECIFIC_VARS[CATEGORY_KEYWORD + "NameField"]] == ConsumablesConstants.CONSUMABLES_XP_BOOST_NAME) {
-						customizationTypeString += currentItem[PassConstants.PASS_RANK_NUMBER_OF_XP_BOOSTS_FIELD];
+						customizationTypeString += currentItem[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_XP_BOOSTS_FIELD];
 					}
 					else if (itemData[CATEGORY_SPECIFIC_VARS[CATEGORY_KEYWORD + "NameField"]] == ConsumablesConstants.CONSUMABLES_XP_GRANT_NAME) {
-						customizationTypeString += currentItem[PassConstants.PASS_RANK_NUMBER_OF_XP_GRANTS_FIELD];
+						customizationTypeString += currentItem[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_XP_GRANTS_FIELD];
 					}
 					else if (itemData[CATEGORY_SPECIFIC_VARS[CATEGORY_KEYWORD + "NameField"]] == ConsumablesConstants.CONSUMABLES_CREDITS_NAME) {
-						customizationTypeString += currentItem[PassConstants.PASS_RANK_NUMBER_OF_CREDITS_FIELD];
+						customizationTypeString += currentItem[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_CREDITS_FIELD];
+					}
+					else if (itemData[CATEGORY_SPECIFIC_VARS[CATEGORY_KEYWORD + "NameField"]] == ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_NAME) {
+						customizationTypeString += currentItem[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_SPARTAN_POINTS_FIELD];
 					}
 				}
-				else {*/
+				else {
 				// In general, we can just use the customization type referenced by the childItem.
 				let customizationTypeResults = await wixData.query(CATEGORY_SPECIFIC_VARS["SocketDb"])
 					.eq("_id", itemData[CATEGORY_SPECIFIC_VARS[CATEGORY_KEYWORD + "SocketReferenceField"]])
 					.find();
 
 				customizationTypeString = customizationTypeResults.items[0][CATEGORY_SPECIFIC_VARS["SocketNameField"]];
-				//}
+				}
 			}
 			else { // If we're working with a core
 				customizationTypeString = CATEGORY_SPECIFIC_VARS[CATEGORY_KEYWORD + "Type"];

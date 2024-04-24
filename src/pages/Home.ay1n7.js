@@ -2,6 +2,7 @@ import * as CustomizationConstants from 'public/Constants/CustomizationConstants
 import * as PassConstants from 'public/Constants/PassConstants.js';
 import * as CapstoneChallengeConstants from 'public/Constants/CapstoneChallengeConstants.js';
 import * as ShopConstants from 'public/Constants/ShopConstants.js';
+import * as ConsumablesConstants from 'public/Constants/ConsumablesConstants.js';
 
 import wixData from 'wix-data';
 
@@ -42,30 +43,56 @@ $w.onReady(async function () {
 		if (ultimateChallenge[categoryWithItems].length > 0) {
 			let childItem = ultimateChallenge[categoryWithItems][0];
 
+			const CATEGORY_SPECIFIC_VARS = ((CUSTOMIZATION_CATEGORY === ConsumablesConstants.CONSUMABLES_KEY) ? ConsumablesConstants.CONSUMABLES_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY] :
+					CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY]);
+
 			// We need to retrieve the customization type.
-			const SOCKET_DB = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].SocketDb;
-			const CUSTOMIZATION_TYPE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].CustomizationSocketReferenceField;
-			const SOCKET_NAME_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].SocketNameField;
+			let childItemCustomizationType;
+			if (CUSTOMIZATION_CATEGORY === ConsumablesConstants.CONSUMABLES_KEY)
+			{
+				childItemCustomizationType = "Amount: ";
+				// The Consumable name already tells its type, so we can use this for the number of Consumables offered at each tier (just 1 for now, but could be more later).
+				if (childItem[CATEGORY_SPECIFIC_VARS.ConsumablesNameField] == ConsumablesConstants.CONSUMABLES_CHALLENGE_SWAP_NAME) {
+					childItemCustomizationType += childItem[PassConstants.PASS_RANK_NUMBER_OF_CHALLENGE_SWAPS_FIELD];
+				}
+				else if (childItem[CATEGORY_SPECIFIC_VARS.ConsumablesNameField] == ConsumablesConstants.CONSUMABLES_XP_BOOST_NAME) {
+					childItemCustomizationType += childItem[PassConstants.PASS_RANK_NUMBER_OF_XP_BOOSTS_FIELD];
+				}
+				else if (childItem[CATEGORY_SPECIFIC_VARS.ConsumablesNameField] == ConsumablesConstants.CONSUMABLES_XP_GRANT_NAME) {
+					childItemCustomizationType += childItem[PassConstants.PASS_RANK_NUMBER_OF_XP_GRANTS_FIELD];
+				}
+				else if (childItem[CATEGORY_SPECIFIC_VARS.ConsumablesNameField] == ConsumablesConstants.CONSUMABLES_CREDITS_NAME) {
+					childItemCustomizationType += childItem[PassConstants.PASS_RANK_NUMBER_OF_CREDITS_FIELD];
+				}
+				else if (childItem[CATEGORY_SPECIFIC_VARS.ConsumablesNameField] == ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_NAME) {
+					childItemCustomizationType += childItem[PassConstants.PASS_RANK_NUMBER_OF_SPARTAN_POINTS_FIELD];
+				}
+			}
+			else
+			{
+				const SOCKET_DB = CATEGORY_SPECIFIC_VARS.SocketDb;
+				const CUSTOMIZATION_TYPE_REFERENCE_FIELD = CATEGORY_SPECIFIC_VARS.CustomizationSocketReferenceField;
+				const SOCKET_NAME_FIELD = CATEGORY_SPECIFIC_VARS.SocketNameField;
 
-			let customizationTypeResults = await wixData.query(SOCKET_DB)
-				.eq("_id", childItem[CUSTOMIZATION_TYPE_REFERENCE_FIELD])
-				.find();
+				let customizationTypeResults = await wixData.query(SOCKET_DB)
+					.eq("_id", childItem[CUSTOMIZATION_TYPE_REFERENCE_FIELD])
+					.find();
 
-			let childItemCustomizationType = customizationTypeResults.items[0][SOCKET_NAME_FIELD];
+				childItemCustomizationType = customizationTypeResults.items[0][SOCKET_NAME_FIELD];
+			}
 
-			const CUSTOMIZATION_URL_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].CustomizationUrlField;
-			const CUSTOMIZATION_IMAGE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].CustomizationImageField;
-			const CUSTOMIZATION_NAME_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].CustomizationNameField;
+			const CUSTOMIZATION_IMAGE_FIELD = CATEGORY_SPECIFIC_VARS.CustomizationImageField;
+			const CUSTOMIZATION_NAME_FIELD = CATEGORY_SPECIFIC_VARS.CustomizationNameField;
 
 			//$w("#ultimateChallengeButton").link = childItem[CUSTOMIZATION_URL_FIELD];
 			$w("#ultimateChallengeImage").src = childItem[CUSTOMIZATION_IMAGE_FIELD];
 			$w("#ultimateChallengeImage").fitMode = "fit";
 			$w("#ultimateChallengeRewardText").text = childItem[CUSTOMIZATION_NAME_FIELD] + " " + childItemCustomizationType;
 
-			if ("CustomizationEffectVideoField" in CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY] &&
-				childItem[CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].CustomizationEffectVideoField]) {
+			if ("CustomizationEffectVideoField" in CATEGORY_SPECIFIC_VARS &&
+				childItem[CATEGORY_SPECIFIC_VARS.CustomizationEffectVideoField]) {
 
-				$w("#effectVideoPlayer").src = childItem[CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].CustomizationEffectVideoField];
+				$w("#effectVideoPlayer").src = childItem[CATEGORY_SPECIFIC_VARS.CustomizationEffectVideoField];
 
 				console.log("Showing video and hiding image.")
 				$w("#ultimateChallengeImage").collapse();
