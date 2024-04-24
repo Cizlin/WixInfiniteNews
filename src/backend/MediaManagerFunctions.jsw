@@ -1341,7 +1341,24 @@ export async function getEmblemPaletteImageUrl(folderDict, headers, paletteConfi
 				while (retry && retryCount < MAX_RETRIES) {
 					try {
 						fileData = await mediaManager.getFileInfo(subFolderDict[fileKey]); // We'll either use this or delete it.
+						retry = false;
+					}
+					catch (error) {
+						console.error(error + " occurred while fetching file info or ETag for " + waypointPath + "." +
+							((retry) ? ("Try " + (++retryCount) + " of " + MAX_RETRIES + "...") : ""));
+					}
+				}
 
+				if (retry)
+				{
+					console.error("Unable to retrieve file data for the image with key " + fileKey + " and palette " + paletteConfigurationId);
+					throw "Unable to retrieve file data for the image with key " + fileKey + " and palette " + paletteConfigurationId;
+				}
+
+				retry = true;
+				retryCount = 0;
+				while (retry && retryCount < MAX_RETRIES) {
+					try {
 						newETag = await getETag(headers, waypointPath, ApiConstants.WAYPOINT_URL_BASE_WAYPOINT);
 						retry = false;
 					}
@@ -1350,6 +1367,13 @@ export async function getEmblemPaletteImageUrl(folderDict, headers, paletteConfi
 							((retry) ? ("Try " + (++retryCount) + " of " + MAX_RETRIES + "...") : ""));
 					}
 				}
+				
+				if (retry)
+				{
+					console.error("Unable to retrieve ETag for the image at " + waypointPath);
+					throw "Unable to retrieve ETag for the image at " + waypointPath;
+				}
+
 				if (eTag == newETag && "fileUrl" in fileData) { // If the ETag provided by the caller matches the one returned in the header of the image, then we just use what we have.
 					return [fileData.fileUrl, newETag]; // The existing ETag is still valid, so we send it back.
 				}
@@ -1379,7 +1403,10 @@ export async function getEmblemPaletteImageUrl(folderDict, headers, paletteConfi
 	const MAX_RETRIES = 10;
 	while (retryCount < MAX_RETRIES) {
 		try {
-			return await addCustomizationImageToMediaManager(headers, waypointPath, mimeType, mediaPath, fileSystemSafeTitle + " " + type + ".png", ApiConstants.WAYPOINT_URL_BASE_WAYPOINT);
+			let results = await addCustomizationImageToMediaManager(headers, waypointPath, mimeType, mediaPath, fileSystemSafeTitle + " " + type + ".png", ApiConstants.WAYPOINT_URL_BASE_WAYPOINT);
+			subFolderDict[fileKey] = results[0];
+
+			return results;
 		}
 		catch (error) {
 			console.error(error + " occurred while fetching image from " + waypointPath + "." +
