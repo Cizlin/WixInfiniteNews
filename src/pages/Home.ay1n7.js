@@ -2,6 +2,7 @@ import * as CustomizationConstants from 'public/Constants/CustomizationConstants
 import * as PassConstants from 'public/Constants/PassConstants.js';
 import * as CapstoneChallengeConstants from 'public/Constants/CapstoneChallengeConstants.js';
 import * as ShopConstants from 'public/Constants/ShopConstants.js';
+import * as ExchangeConstants from 'public/Constants/ExchangeConstants.js';
 import * as ConsumablesConstants from 'public/Constants/ConsumablesConstants.js';
 
 import wixData from 'wix-data';
@@ -117,6 +118,13 @@ $w.onReady(async function () {
 		let shopBundle = $w("#shopDataset").getCurrentItem();
 		$w("#shopImage").fitMode = "fit";
 		$w("#shopCreditCost").text = "Credits: " + shopBundle[ShopConstants.SHOP_COST_CREDITS_FIELD];
+	});
+
+	// Update the Featured Shop Bundle Listing
+	$w("#exchangeDataset").onReady(() => {
+		let exchangeBundle = $w("#exchangeDataset").getCurrentItem();
+		$w("#exchangeImage").fitMode = "fit";
+		$w("#exchangeSpartanPointsCost").text = "Spartan Points: " + exchangeBundle[ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD];
 	});
 
 	// Update the Feature Twitch Drop listing.
