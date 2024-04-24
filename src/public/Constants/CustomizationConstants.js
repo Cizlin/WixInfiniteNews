@@ -11,6 +11,7 @@ import * as ConsumablesConstants from 'public/Constants/ConsumablesConstants.js'
 import * as ShopConstants from 'public/Constants/ShopConstants.js';
 import * as CapstoneChallengeConstants from 'public/Constants/CapstoneChallengeConstants.js';
 import * as PassConstants from 'public/Constants/PassConstants.js';
+import * as ExchangeConstants from 'public/Constants/ExchangeConstants.js';
 
 import * as GeneralConstants from 'public/Constants/GeneralConstants.js';
 
@@ -47,6 +48,7 @@ export const SOURCE_TYPE_BATTLE_PASS_PAID = "Battle Pass - Paid";
 export const SOURCE_TYPE_EVENT_PASS_ID = "bbff99ba-c34a-46f0-adcd-a5dab25a1f65";
 export const SOURCE_TYPE_EVENT_PASS = "Event Pass";
 export const SOURCE_TYPE_CAPSTONE_CHALLENGE_ID = "f473441a-a02f-4c96-bf99-8324d1bb23cb";
+export const SOURCE_TYPE_EXCHANGE_ID = "916c46d3-ad35-4b9a-a3a6-8689465dc6c6";
 
 // These constant define the DB name and key for the Emblem Palette DB.
 export const EMBLEM_PALETTE_DB = "EmblemPalettes";
@@ -192,6 +194,7 @@ export const CUSTOMIZATION_CATEGORY_SPECIFIC_VARS = {
 		"CustomizationOriginalCoresField": "originalCores",
 		"CustomizationCrossCompatibleField": "crossCompatible",
 		"ShopReferenceField": ShopConstants.SHOP_ARMOR_REFERENCE_FIELD,
+		"ExchangeReferenceField": ExchangeConstants.EXCHANGE_ARMOR_REFERENCE_FIELD,
 		"CapstoneChallengeReferenceField": CapstoneChallengeConstants.CAPSTONE_CHALLENGE_ARMOR_REFERENCE_FIELD,
 		"UrlCustomization": GeneralConstants.URL_ARMOR_CUSTOMIZATION,
 		"UrlSockets": GeneralConstants.URL_ARMOR_SOCKETS,
@@ -239,6 +242,7 @@ export const CUSTOMIZATION_CATEGORY_SPECIFIC_VARS = {
 		"CustomizationCrossCompatibleField": "crossCompatible",
 		"ParentKey": ArmorConstants.ARMOR_KEY,
 		"ShopReferenceField": ShopConstants.SHOP_ARMOR_ATTACHMENT_REFERENCE_FIELD,
+		"ExchangeReferenceField": ExchangeConstants.EXCHANGE_ARMOR_ATTACHMENT_REFERENCE_FIELD,
 		"CapstoneChallengeReferenceField": CapstoneChallengeConstants.CAPSTONE_CHALLENGE_ARMOR_ATTACHMENT_REFERENCE_FIELD,
 		"UrlCustomization": GeneralConstants.URL_ARMOR_ATTACHMENT_CUSTOMIZATION,
 		"UrlSocketParam": GeneralConstants.URL_ARMOR_ATTACHMENT_SOCKET_PARAM,
@@ -292,6 +296,7 @@ export const CUSTOMIZATION_CATEGORY_SPECIFIC_VARS = {
 		"CustomizationEffectVideoField": "effectVideo",
 		"CustomizationCrossCompatibleField": "crossCompatible",
 		"ShopReferenceField": ShopConstants.SHOP_WEAPON_REFERENCE_FIELD,
+		"ExchangeReferenceField": ExchangeConstants.EXCHANGE_WEAPON_REFERENCE_FIELD,
 		"CapstoneChallengeReferenceField": CapstoneChallengeConstants.CAPSTONE_CHALLENGE_WEAPON_REFERENCE_FIELD,
 		"UrlCustomization": GeneralConstants.URL_WEAPON_CUSTOMIZATION,
 		"UrlSockets": GeneralConstants.URL_WEAPON_SOCKETS,
@@ -344,6 +349,7 @@ export const CUSTOMIZATION_CATEGORY_SPECIFIC_VARS = {
 		"CustomizationApiLastUpdatedDatetimeField": "apiLastUpdatedDatetime",
 		"CustomizationDefaultOfCoreReferenceField": "VehicleCores",
 		"ShopReferenceField": ShopConstants.SHOP_VEHICLE_REFERENCE_FIELD,
+		"ExchangeReferenceField": ExchangeConstants.EXCHANGE_VEHICLE_REFERENCE_FIELD,
 		"CapstoneChallengeReferenceField": CapstoneChallengeConstants.CAPSTONE_CHALLENGE_VEHICLE_REFERENCE_FIELD,
 		"UrlCustomization": GeneralConstants.URL_VEHICLE_CUSTOMIZATION,
 		"UrlSockets": GeneralConstants.URL_VEHICLE_SOCKETS,
@@ -386,6 +392,7 @@ export const CUSTOMIZATION_CATEGORY_SPECIFIC_VARS = {
 		"CustomizationApiLastUpdatedDatetimeField": "apiLastUpdatedDatetime",
 		"CustomizationCrossCompatibleField": "crossCompatible",
 		"ShopReferenceField": ShopConstants.SHOP_BODY_AND_AI_REFERENCE_FIELD,
+		"ExchangeReferenceField": ExchangeConstants.EXCHANGE_BODY_AND_AI_REFERENCE_FIELD,
 		"CapstoneChallengeReferenceField": CapstoneChallengeConstants.CAPSTONE_CHALLENGE_BODY_AND_AI_REFERENCE_FIELD,
 		"UrlCustomization": GeneralConstants.URL_BODY_AND_AI_CUSTOMIZATION,
 		"UrlSocketParam": GeneralConstants.URL_BODY_AND_AI_SOCKET_PARAM,
@@ -424,6 +431,7 @@ export const CUSTOMIZATION_CATEGORY_SPECIFIC_VARS = {
 		"CustomizationApiLastUpdatedDatetimeField": "apiLastUpdatedDatetime",
 		"CustomizationCrossCompatibleField": "crossCompatible",
 		"ShopReferenceField": ShopConstants.SHOP_SPARTAN_ID_REFERENCE_FIELD,
+		"ExchangeReferenceField": ExchangeConstants.EXCHANGE_SPARTAN_ID_REFERENCE_FIELD,
 		"CapstoneChallengeReferenceField": CapstoneChallengeConstants.CAPSTONE_CHALLENGE_SPARTAN_ID_REFERENCE_FIELD,
 		"UrlCustomization": GeneralConstants.URL_SPARTAN_ID_CUSTOMIZATION,
 		"UrlSocketParam": GeneralConstants.URL_SPARTAN_ID_SOCKET_PARAM,
@@ -529,6 +537,16 @@ export const SHOP_ITEM_FIELD_TO_CUSTOMIZATION_CATEGORY_DICT = {
 	[ShopConstants.SHOP_CONSUMABLE_REFERENCE_FIELD]: ConsumablesConstants.CONSUMABLES_KEY
 }
 
+export const EXCHANGE_ITEM_FIELD_TO_CUSTOMIZATION_CATEGORY_DICT = {
+	[ExchangeConstants.EXCHANGE_ARMOR_REFERENCE_FIELD]: ArmorConstants.ARMOR_KEY,
+	[ExchangeConstants.EXCHANGE_ARMOR_ATTACHMENT_REFERENCE_FIELD]: ArmorConstants.ARMOR_ATTACHMENT_KEY,
+	[ExchangeConstants.EXCHANGE_WEAPON_REFERENCE_FIELD]: WeaponConstants.WEAPON_KEY,
+	[ExchangeConstants.EXCHANGE_VEHICLE_REFERENCE_FIELD]: VehicleConstants.VEHICLE_KEY,
+	[ExchangeConstants.EXCHANGE_BODY_AND_AI_REFERENCE_FIELD]: BodyAndAiConstants.BODY_AND_AI_KEY,
+	[ExchangeConstants.EXCHANGE_SPARTAN_ID_REFERENCE_FIELD]: SpartanIdConstants.SPARTAN_ID_KEY,
+	[ExchangeConstants.EXCHANGE_CONSUMABLE_REFERENCE_FIELD]: ConsumablesConstants.CONSUMABLES_KEY
+}
+
 export const CAPSTONE_CHALLENGE_ITEM_FIELD_TO_CUSTOMIZATION_CATEGORY_DICT = {
 	[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_ARMOR_REFERENCE_FIELD]: ArmorConstants.ARMOR_KEY,
 	[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_ARMOR_ATTACHMENT_REFERENCE_FIELD]: ArmorConstants.ARMOR_ATTACHMENT_KEY,
@@ -582,6 +600,7 @@ export const CUSTOMIZATION_CATEGORY_FOLDER_DICT = {
 	[SpartanIdConstants.SPARTAN_ID_KEY]: "Spartan ID Customization",
 	[ConsumablesConstants.CONSUMABLES_KEY]: "Consumables",
 	[ShopConstants.SHOP_KEY]: "Shop",
+	[ExchangeConstants.EXCHANGE_KEY]: "Exchange",
 	[PassConstants.PASS_KEY]: "Passes",
 	[EMBLEM_PALETTE_KEY]: "Emblem Palettes",
 	[MANUFACTURER_KEY]: "Manufacturer Logos"

@@ -4,6 +4,7 @@ import wixData from 'wix-data';
 import * as CustomizationConstants from 'public/Constants/CustomizationConstants.js';
 import * as ConsumablesConstants from 'public/Constants/ConsumablesConstants.js';
 import * as ShopConstants from 'public/Constants/ShopConstants.js';
+import * as ExchangeConstants from 'public/Constants/ExchangeConstants.js';
 import * as PassConstants from 'public/Constants/PassConstants.js';
 import * as CapstoneChallengeConstants from 'public/Constants/CapstoneChallengeConstants.js';
 import * as SpartanIdConstants from 'public/Constants/SpartanIdConstants.js';
@@ -169,6 +170,9 @@ export function initialItemSetup(customizationCategory, isCore = false) {
 				case ShopConstants.SHOP_KEY:
 					currentlyAvailableField = ShopConstants.SHOP_CURRENTLY_AVAILABLE_FIELD;
 					break;
+				
+				case ExchangeConstants.EXCHANGE_KEY:
+					currentlyAvailableField = ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD;
 
 				case PassConstants.PASS_KEY:
 					currentlyAvailableField = PassConstants.PASS_CURRENTLY_AVAILABLE_FIELD;
@@ -218,6 +222,23 @@ export function initialItemSetup(customizationCategory, isCore = false) {
 		catch (error) {
 			console.warn("Error found: " + error);
 			console.warn("This is likely because #shopContainer does not exist on this page.");
+		}
+
+		try { // This should only exist when the Exchange Listing is on the page.
+			$w("#ExchangeDataset").onReady(function() {
+				if ($w("#exchangeListRepeater").data.length > 0) {
+					$w("#exchangeListRepeater").forEachItem(($item, itemData) => {
+						$item("#exchangeBundleImage").fitMode = "fit";
+					});
+				}
+				else {
+					$w("#exchangeContainer").collapse();
+				}
+			})
+		}
+		catch (error) {
+			console.warn("Error found: " + error);
+			console.warn("This is likely because #exchangeContainer does not exist on this page.");
 		}
 
 		try { // This should only exist on pages that can have emblems/nameplates.

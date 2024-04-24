@@ -16,6 +16,7 @@ import * as ConsumablesConstants from 'public/Constants/ConsumablesConstants.js'
 
 import * as KeyConstants from 'public/Constants/KeyConstants.js';
 
+import * as ExchangeConstants from 'public/Constants/ExchangeConstants.js';
 import * as ShopConstants from 'public/Constants/ShopConstants.js';
 import * as PassConstants from 'public/Constants/PassConstants.js';
 import * as CapstoneChallengeConstants from 'public/Constants/CapstoneChallengeConstants.js';
@@ -350,6 +351,86 @@ async function setOptionalFiltersShop(setPaginationFromSave = false) {
 }
 
 // This function is used to set the optional filters (e.g. quality, release, etc.).
+async function setOptionalFiltersExchange(setPaginationFromSave = false) {
+	optionalFilter = filter;
+
+	// First we add the Quality filter.
+	let qualityDropdownSelection = $w("#qualityDropdown").value; // The item selected from the dropdown.
+	session.setItem(KeyConstants.QUALITY_KEY, qualityDropdownSelection);
+
+	switch(qualityDropdownSelection) {
+		case "Any":
+			break;
+		default:
+			// First, we find the quality listing in the Quality Ratings database. Then we use the ID of that item to match it to everything referring to that item.
+			await wixData.query(CustomizationConstants.QUALITY_DB)
+				.eq(CustomizationConstants.QUALITY_FIELD, qualityDropdownSelection)
+				.find()
+				.then( (results) => {
+					if(results.items.length > 0) {
+						let firstItem = results.items[0]; // The matching item
+						let selectedKey = firstItem._id;
+						// Add the filter to the set.
+						optionalFilter = optionalFilter.eq(qualityReferenceField, selectedKey);
+						//console.log(optionalFilter);
+					}
+				});
+			break;
+	}
+
+	// Next, we add the Available Filter.
+	let availableDropdownSelection = $w("#availableDropdown").value; // The item selected from the dropdown.
+	session.setItem(KeyConstants.AVAILABLE_KEY, availableDropdownSelection);
+
+	switch(availableDropdownSelection) {
+		case "Yes":
+			optionalFilter = optionalFilter.eq(currentlyAvailableField, true);
+			break;
+		case "No":
+			optionalFilter = optionalFilter.ne(currentlyAvailableField, true);
+			break;
+		default:
+			break;
+	}
+
+	// Next, add the Cost filter.
+	let costDropdownSelection = $w("#costDropdown").value; // The item selected from the dropdown.
+	session.setItem(KeyConstants.COST_KEY, costDropdownSelection);
+
+	// We only want to add the filter if it's valid.
+	if(Number.isInteger(parseInt(costDropdownSelection))) {
+		optionalFilter = optionalFilter.eq(ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD, parseInt(costDropdownSelection));
+	}
+
+	console.log("After all optional filtering.");
+	console.log(optionalFilter);
+
+	// Append the searchFilter contents to the optionalFilter.
+	console.log("After name filtering is added.");
+	console.log(optionalFilter.and(searchFilter.isNotEmpty(nameField)));
+
+	let finalFilter = optionalFilter.and(searchFilter.isNotEmpty(nameField));
+
+	await $w("#dynamicDataset").setFilter(finalFilter)
+		.then(function() {
+			console.log("Filter applied ", JSON.stringify(finalFilter));
+			if (!setPaginationFromSave) {
+				console.log("Resetting pagination to 1 after optional filter.");
+				$w("#pagination1").currentPage = 1;
+				$w("#dynamicDataset").loadPage(1);
+			}
+			else {
+				console.log("Setting Pagination Index after initial optional filter.");
+				setPaginationIndexFromSave();
+				console.log("Pagination Index Set after initial optional filter.");
+			}
+
+			//updateSort();
+		})
+		.catch((error) => { console.error("Could not add filter " + error) });
+}
+
+// This function is used to set the optional filters (e.g. quality, release, etc.).
 async function setOptionalFiltersPasses(setPaginationFromSave = false) {
 	optionalFilter = filter;
 
@@ -628,6 +709,62 @@ function updateSort() {
 }
 //#endregion
 
+//#region Exchange Sort code
+// Update the user-selected sort.
+function updateExchangeSort() {
+	let dropdownValue = $w("#sortDropdown").value;
+	let sortOrder = $w("#sortOrderDropdown").value;
+	let sort = wixData.sort();
+
+	if (dropdownValue == "Name") {
+		// Show the order selector.
+		$w("#sortOrderDropdown").show();
+		$w("#SortOrderTitle").show();
+
+		// Implement a name sort.
+		if (sortOrder == "Ascending") {
+			sort = sort.ascending(ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD);
+		}
+		else if (sortOrder == "Descending") {
+			sort = sort.descending(ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD);
+		}
+	}
+	else if (dropdownValue == "Cost") {
+		// Show the order selector.
+		$w("#sortOrderDropdown").show();
+		$w("#SortOrderTitle").show();
+
+		// Sort by cost, then by name.
+		if (sortOrder == "Ascending") {
+			sort = sort.ascending(ExchangeConstants.EXCHANGE_COST_CREDITS_FIELD);
+			sort = sort.ascending(ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD);
+		}
+		else if (sortOrder == "Descending") {
+			sort = sort.descending(ExchangeConstants.EXCHANGE_COST_CREDITS_FIELD);
+			sort = sort.descending(ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD);
+		}
+	}
+	else {
+		// This order is super custom, so it doesn't make sense to keep the order selector visible.
+		$w("#sortOrderDropdown").hide();
+		$w("#SortOrderTitle").hide();
+
+		// Sort in the following order:
+		// Currently Available: Descending
+		// IsHcs: Ascending
+		// Cost: Descending
+		// Name: Ascending
+		sort = sort
+			.descending(ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD)
+			.descending(ExchangeConstants.EXCHANGE_COST_CREDITS_FIELD)
+			.ascending(ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD);
+	}
+
+	console.log("Sorting as follows:", sort);
+	$w("#dynamicDataset").setSort(sort);
+}
+//#endregion
+
 export async function initialItemListSetup(customizationCategory) {
 	// We want to update the name search text ASAP.
 	let savedQuickSearchText = session.getItem(KeyConstants.QUICK_SEARCH_KEY);
@@ -648,7 +785,7 @@ export async function initialItemListSetup(customizationCategory) {
 	}
     //#endregion
 
-	if (customizationCategory == ShopConstants.SHOP_KEY) {
+	if (customizationCategory == ShopConstants.SHOP_KEY || customizationCategory === ExchangeConstants.EXCHANGE_KEY) {
 		// Hide the sort order dropdown and title by default. They will be revealed if the user changes their sort settings.
 		$w("#sortOrderDropdown").hide();
 		$w("#SortOrderTitle").hide();
@@ -683,6 +820,13 @@ export async function initialItemListSetup(customizationCategory) {
 			nameField = ShopConstants.SHOP_ITEM_NAME_FIELD;
 			qualityReferenceField = ShopConstants.SHOP_QUALITY_REFERENCE_FIELD;
 			currentlyAvailableField = ShopConstants.SHOP_CURRENTLY_AVAILABLE_FIELD;
+			break;
+
+		case ExchangeConstants.EXCHANGE_KEY:
+			// We only need to set name, qualityReference, and currentlyAvailable fields.
+			nameField = ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD;
+			qualityReferenceField = ExchangeConstants.EXCHANGE_QUALITY_REFERENCE_FIELD;
+			currentlyAvailableField = ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD;
 			break;
 
 		case PassConstants.PASS_KEY:
@@ -981,6 +1125,47 @@ export async function initialItemListSetup(customizationCategory) {
 				// Add event handlers for the sorters.
 				$w("#sortDropdown").onChange(updateSort);
 				$w("#sortOrderDropdown").onChange(updateSort);
+			});
+		}
+		else if (customizationCategory == ExchangeConstants.EXCHANGE_KEY) {
+			// This setup is for the Exchange only.
+			let savedQualityValue = session.getItem(KeyConstants.QUALITY_KEY);
+			let savedAvailableValue = session.getItem(KeyConstants.AVAILABLE_KEY);
+			let savedCostValue = session.getItem(KeyConstants.COST_KEY);
+
+			$w("#qualityDataset").onReady(async function () {
+				if (savedQualityValue)
+				{
+					console.log("Found saved Quality value: " + savedQualityValue);
+					$w("#qualityDropdown").value = savedQualityValue;
+				}
+				if (savedAvailableValue)
+				{
+					console.log("Found saved Available value: " + savedAvailableValue);
+					$w("#availableDropdown").value = savedAvailableValue;
+				}
+				if (savedCostValue) 
+				{
+					console.log("Found saved Cost value: " + savedCostValue);
+					$w("#costDropdown").value = savedCostValue;
+				}
+
+				await setOptionalFiltersExchange(true);
+
+				filterBySearch(true);
+
+				// If the Quality filter is set.
+				$w("#qualityDropdown").onChange(setOptionalFiltersExchange);
+
+				// If the Available filter is set.
+				$w("#availableDropdown").onChange(setOptionalFiltersExchange);
+
+				// If the Cost filter is set.
+				$w("#costDropdown").onChange(setOptionalFiltersExchange);
+
+				// Add event handlers for the sorters.
+				$w("#sortDropdown").onChange(updateExchangeSort);
+				$w("#sortOrderDropdown").onChange(updateExchangeSort);
 			});
 		}
 		else if (customizationCategory == PassConstants.PASS_KEY) {

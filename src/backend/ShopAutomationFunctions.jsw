@@ -22,6 +22,7 @@ import * as CustomizationConstants from 'public/Constants/CustomizationConstants
 import * as ConsumablesConstants from 'public/Constants/ConsumablesConstants.js';
 import * as CapstoneChallengeConstants from 'public/Constants/CapstoneChallengeConstants.js';
 import * as GeneralConstants from 'public/Constants/GeneralConstants.js';
+import * as ExchangeConstants from 'public/Constants/ExchangeConstants.js';
 
 import * as ArmorConstants from 'public/Constants/ArmorConstants.js';
 import * as WeaponConstants from 'public/Constants/WeaponConstants.js';
@@ -35,6 +36,7 @@ import * as MediaManagerFunctions from 'backend/MediaManagerFunctions.jsw';
 import {sendTweet} from 'backend/TwitterApiFunctions.jsw';
 import {sendDiscordMessage} from 'backend/DiscordBotFunctions.jsw';
 import * as WaypointFunctions from 'backend/WaypointBackendFunctions.jsw';
+import * as ExchangeFunctions from 'backend/ExchangeAutomationFunctions.jsw';
 import * as GeneralFunctions from 'public/General.js';
 import * as GeneralBackendFunctions from 'backend/GeneralBackendFunctions.jsw';
 import * as NotificationFunctions from 'backend/NotificationFunctions.jsw';
@@ -184,7 +186,7 @@ export async function getMainShopListFromWaypoint(headers) {
 	waypointJson.Offerings = refinedOfferings;*/
 
 	if (waypointJson.Offerings.length <= 0) {
-		throw "No offerings returned for HCS Shop; aborting to avoid data poisoning.";
+		throw "No offerings returned for Main Shop; aborting to avoid data poisoning.";
 	}
 
 	return waypointJson;
@@ -1008,18 +1010,48 @@ export async function updateBundleAndItemsCurrentlyAvailableStatus(itemJson, cur
 	let fieldsWithItemsField = "";
 	let consumableReferenceField = "";
 	let referenceFieldToCategoryDict = {};
+	
+	let numChallengeSwapsField = "";
+	let numXpBoostsField = "";
+	let numXpGrantsField = "";
+	let numSpartanPointsField = "";
+	let numCreditsField = "";
 
 	if (itemDb == ShopConstants.SHOP_DB) {
 		currentlyAvailableField = (isCustomizationShopBundle) ? ShopConstants.SHOP_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD : ShopConstants.SHOP_CURRENTLY_AVAILABLE_FIELD;
 		fieldsWithItemsField = ShopConstants.SHOP_FIELDS_WITH_ITEMS_FIELD;
 		consumableReferenceField = ShopConstants.SHOP_CONSUMABLE_REFERENCE_FIELD;
 		referenceFieldToCategoryDict = CustomizationConstants.SHOP_ITEM_FIELD_TO_CUSTOMIZATION_CATEGORY_DICT;
+
+		numChallengeSwapsField = ShopConstants.SHOP_NUMBER_OF_CHALLENGE_SWAPS_FIELD;
+		numXpBoostsField = ShopConstants.SHOP_NUMBER_OF_XP_BOOSTS_FIELD;
+		numXpGrantsField = ShopConstants.SHOP_NUMBER_OF_XP_GRANTS_FIELD;
+		numSpartanPointsField = ShopConstants.SHOP_NUMBER_OF_SPARTAN_POINTS_FIELD;
+		numCreditsField = ShopConstants.SHOP_NUMBER_OF_CREDITS_FIELD;
 	}
 	else if (itemDb == CapstoneChallengeConstants.CAPSTONE_CHALLENGE_DB) {
 		currentlyAvailableField = CapstoneChallengeConstants.CAPSTONE_CHALLENGE_CURRENTLY_AVAILABLE_FIELD;
 		fieldsWithItemsField = CapstoneChallengeConstants.CAPSTONE_CHALLENGE_FIELDS_WITH_ITEMS_FIELD;
 		consumableReferenceField = CapstoneChallengeConstants.CAPSTONE_CHALLENGE_CONSUMABLE_REFERENCE_FIELD;
 		referenceFieldToCategoryDict = CustomizationConstants.CAPSTONE_CHALLENGE_ITEM_FIELD_TO_CUSTOMIZATION_CATEGORY_DICT;
+
+		numChallengeSwapsField = CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_CHALLENGE_SWAPS_FIELD;
+		numXpBoostsField = CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_XP_BOOSTS_FIELD;
+		numXpGrantsField = CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_XP_GRANTS_FIELD;
+		numSpartanPointsField = CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_SPARTAN_POINTS_FIELD;
+		numCreditsField = CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_CREDITS_FIELD;
+	}
+	else if (itemDb === ExchangeConstants.EXCHANGE_DB) {
+		currentlyAvailableField = ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD;
+		fieldsWithItemsField = ExchangeConstants.EXCHANGE_FIELDS_WITH_ITEMS_FIELD;
+		consumableReferenceField = ExchangeConstants.EXCHANGE_CONSUMABLE_REFERENCE_FIELD;
+		referenceFieldToCategoryDict = CustomizationConstants.EXCHANGE_ITEM_FIELD_TO_CUSTOMIZATION_CATEGORY_DICT;
+
+		numChallengeSwapsField = ExchangeConstants.EXCHANGE_NUMBER_OF_CHALLENGE_SWAPS_FIELD;
+		numXpBoostsField = ExchangeConstants.EXCHANGE_NUMBER_OF_XP_BOOSTS_FIELD;
+		numXpGrantsField = ExchangeConstants.EXCHANGE_NUMBER_OF_XP_GRANTS_FIELD;
+		numSpartanPointsField = ExchangeConstants.EXCHANGE_NUMBER_OF_SPARTAN_POINTS_FIELD;
+		numCreditsField = ExchangeConstants.EXCHANGE_NUMBER_OF_CREDITS_FIELD;
 	}
 	else {
 		throw "Unable to run updateBundleAndItemsCurrentlyAvailableStatus with itemDb " + itemDb + ". Exiting...";
@@ -1031,11 +1063,55 @@ export async function updateBundleAndItemsCurrentlyAvailableStatus(itemJson, cur
 
 	let itemInfoArray = [];
 
-	// Update the items linked to the Shop Listing or Ultimate Challenge.
+	// Update the items linked to the Shop Listing, Exchange Listing, or Ultimate Challenge.
 	for (let i = 0; i < itemJson[fieldsWithItemsField].length; ++i) {
 		let currentField = itemJson[fieldsWithItemsField][i];
 		//console.log(currentField);
 		if (currentField == consumableReferenceField) {
+			// If we have Consumables, just update the itemInfoArray.
+			let retry = true;
+			let retryCount = 0;
+			const MAX_RETRIES = 10;
+
+			while (retry && retryCount < MAX_RETRIES) {
+				try {
+					let consumables = (await wixData.query(ConsumablesConstants.CONSUMABLES_DB).hasSome("_id", itemJson[currentField]).find()).items;
+
+					for (let i = 0; i < consumables.length; ++i) {
+						let numConsumables = 0;
+						switch (consumables[i][ConsumablesConstants.CONSUMABLES_NAME_FIELD])
+						{
+							case ConsumablesConstants.CONSUMABLES_CHALLENGE_SWAP_NAME:
+								numConsumables = itemJson[numChallengeSwapsField];
+								break;
+							case ConsumablesConstants.CONSUMABLES_XP_BOOST_NAME:
+								numConsumables = itemJson[numXpBoostsField];
+								break;
+							case ConsumablesConstants.CONSUMABLES_XP_GRANT_NAME:
+								numConsumables = itemJson[numXpGrantsField];
+								break;
+							case ConsumablesConstants.CONSUMABLES_CREDITS_NAME:
+								numConsumables = itemJson[numCreditsField];
+								break;
+							case ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_NAME:
+								numConsumables = itemJson[numSpartanPointsField];
+								break;
+							default:
+								console.error("No match found for consumable with name " + consumables[i][ConsumablesConstants.CONSUMABLES_NAME_FIELD]);
+						}
+						itemInfoArray.push({
+							itemName: consumables[ConsumablesConstants.CONSUMABLES_NAME_FIELD],
+							itemUrl: GeneralConstants.INFINITE_NEWS_URL_BASE + consumables[ConsumablesConstants.CONSUMABLES_URL_FIELD],
+							itemType: "x" + numConsumables
+						});
+					}
+
+					retry = false;
+				}
+				catch(error) {
+					console.error("Error", error, "occurred while retrieving consumables information. Try " + ++retryCount + " of " + MAX_RETRIES);
+				}
+			}
 			continue; // We do not want to process consumables in the same way as other items.
 		}
 		itemInfoArray = itemInfoArray.concat(await updateItemsCurrentlyAvailableStatus(
@@ -1080,6 +1156,18 @@ export async function updateBundleAndItemsCurrentlyAvailableStatus(itemJson, cur
 							itemJsonCopy[FIELD],
 							referenceFieldToCategoryDict[FIELD],
 							itemJsonCopy[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NAME_FIELD]
+						);
+					}
+				}
+				else if (itemDb === ExchangeConstants.EXCHANGE_DB && currentlyAvailableStatus) {
+					for (const FIELD in referenceFieldToCategoryDict) {
+						ExchangeFunctions.addItemIdArrayToExchangeItem(
+							itemJson._id,
+							FIELD,
+							itemJsonCopy[FIELD],
+							referenceFieldToCategoryDict[FIELD],
+							itemJsonCopy[ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD],
+							itemJsonCopy[ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD]
 						);
 					}
 				}
@@ -1284,10 +1372,31 @@ export async function addItemIdArrayToShopItem(bundleId, fieldName, itemIdArray,
 				let consumables = (await wixData.query(ConsumablesConstants.CONSUMABLES_DB).hasSome("_id", itemIdArray).find()).items;
 
 				for (let i = 0; i < consumables.length; ++i) {
+					let numConsumables = 0;
+					switch (consumables[i][ConsumablesConstants.CONSUMABLES_NAME_FIELD])
+					{
+						case ConsumablesConstants.CONSUMABLES_CHALLENGE_SWAP_NAME:
+							numConsumables = itemJson[numChallengeSwapsField];
+							break;
+						case ConsumablesConstants.CONSUMABLES_XP_BOOST_NAME:
+							numConsumables = itemJson[numXpBoostsField];
+							break;
+						case ConsumablesConstants.CONSUMABLES_XP_GRANT_NAME:
+							numConsumables = itemJson[numXpGrantsField];
+							break;
+						case ConsumablesConstants.CONSUMABLES_CREDITS_NAME:
+							numConsumables = itemJson[numCreditsField];
+							break;
+						case ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_NAME:
+							numConsumables = itemJson[numSpartanPointsField];
+							break;
+						default:
+							console.error("No match found for consumable with name " + consumables[i][ConsumablesConstants.CONSUMABLES_NAME_FIELD]);
+					}
 					itemInfoArray.push({
 						itemName: consumables[ConsumablesConstants.CONSUMABLES_NAME_FIELD],
 						itemUrl: GeneralConstants.INFINITE_NEWS_URL_BASE + consumables[ConsumablesConstants.CONSUMABLES_URL_FIELD],
-						itemType: "" // This is redundant.
+						itemType: "x" + numConsumables
 					});
 				}
 

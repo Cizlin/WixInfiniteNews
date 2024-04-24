@@ -5,6 +5,7 @@ import { mediaManager } from 'wix-media-backend';
 // Import Constants.
 import * as CustomizationConstants from 'public/Constants/CustomizationConstants.js';
 import * as ConsumablesConstants from 'public/Constants/ConsumablesConstants.js';
+import * as ExchangeConstants from 'public/Constants/ExchangeConstants.js';
 
 import * as KeyConstants from 'public/Constants/KeyConstants.js';
 import * as ApiConstants from 'public/Constants/ApiConstants.js';
@@ -974,9 +975,10 @@ export async function getCustomizationImageUrl(folderDict, headers, title, waypo
 	}
 
 	let mediaPath = "/" + GeneralConstants.CUSTOMIZATION_ROOT_FOLDER + "/" + CATEGORY_FOLDER + "/";
-	// We don't proceed further if we are working with Consumables, Emblem Palettes, or Manufacturers.
+	// We don't proceed further if we are working with Consumables, Emblem Palettes, Exchange Listings, or Manufacturers.
 	if (customizationCategory != ConsumablesConstants.CONSUMABLES_KEY &&
 		customizationCategory != CustomizationConstants.EMBLEM_PALETTE_KEY &&
+		customizationCategory != ExchangeConstants.EXCHANGE_KEY &&
 		customizationCategory != CustomizationConstants.MANUFACTURER_KEY) {
 
 		// The types listed below all use the DB to store their folder information. We only use the constant dicts if we aren't working with them.
@@ -1083,7 +1085,7 @@ export async function getCustomizationImageUrl(folderDict, headers, title, waypo
 	//console.log("Item Directory Path: " + mediaPath);
 
 	let fileSystemSafeTitle = title.replace(/[\\/?:]/g, "_"); // Clean out some of the common illegal characters (\, /, ?, :).
-	let filenameType = (customizationCategory == ShopConstants.SHOP_KEY) ? "Bundle" :  // If this is a Shop Bundle, the type in the name is Bundle.
+	let filenameType = (customizationCategory == ShopConstants.SHOP_KEY || customizationCategory === ExchangeConstants.EXCHANGE_KEY) ? "Bundle" :  // If this is a Shop or Exchange Bundle, the type in the name is Bundle.
 		(customizationType == CustomizationConstants.ITEM_TYPES.core) ? CustomizationConstants.CORE_CATEGORY_SPECIFIC_VARS[customizationCategory].CoreType : // If core, [CoreType].
 			customizationType; // Otherwise it is the type provided by the caller.
 

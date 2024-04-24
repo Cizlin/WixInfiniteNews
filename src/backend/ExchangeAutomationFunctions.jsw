@@ -1,0 +1,1244 @@
+// These functions are used to retrieve the list of bundles currently sold in the Shop and add them to the Shop database.
+// Let's follow this process:
+// 1) Get a list of Shop items currently in the DB that are marked as Currently Available.
+// 2) Get the list of current HCS and Main Shop items from Waypoint and add any that are missing thus far.
+// 3) For any Shop items in our previous list that aren't in the new list, mark those as not Currently Available and do the same for their linked items.
+// 4) Link the bundles to their included customization items. Mark those items as Currently Available and update their Source listings if necessary (if Source.includes("Pending")).
+// 5) Create a Tweet indicating the Bundles that are newly available. If possible, create a thread with each successive Tweet containing a link to the Infinite News page for the Bundle.
+
+// Import Wix functions and tools.
+import wixData from 'wix-data';
+import wixFetch from 'wix-fetch';
+import { getSecret } from 'wix-secrets-backend';
+
+// Import 3rd party packages.
+import structuredClone from '@ungap/structured-clone';
+
+// Import constants.
+import * as KeyConstants from 'public/Constants/KeyConstants.js';
+import * as ExchangeConstants from 'public/Constants/ExchangeConstants.js';
+import * as ApiConstants from 'public/Constants/ApiConstants.js';
+import * as CustomizationConstants from 'public/Constants/CustomizationConstants.js';
+import * as ConsumablesConstants from 'public/Constants/ConsumablesConstants.js';
+import * as CapstoneChallengeConstants from 'public/Constants/CapstoneChallengeConstants.js';
+import * as GeneralConstants from 'public/Constants/GeneralConstants.js';
+
+import * as ArmorConstants from 'public/Constants/ArmorConstants.js';
+import * as WeaponConstants from 'public/Constants/WeaponConstants.js';
+import * as VehicleConstants from 'public/Constants/VehicleConstants.js';
+import * as SpartanIdConstants from 'public/Constants/SpartanIdConstants.js';
+
+// Import helper functions.
+import * as ApiFunctions from 'backend/ApiFunctions.jsw';
+import * as MediaManagerFunctions from 'backend/MediaManagerFunctions.jsw';
+
+import {sendTweet} from 'backend/TwitterApiFunctions.jsw';
+import {sendDiscordMessage} from 'backend/DiscordBotFunctions.jsw';
+import * as WaypointFunctions from 'backend/WaypointBackendFunctions.jsw';
+import * as GeneralFunctions from 'public/General.js';
+import * as GeneralBackendFunctions from 'backend/GeneralBackendFunctions.jsw';
+import * as NotificationFunctions from 'backend/NotificationFunctions.jsw';
+import * as InternalNotifications from 'backend/InternalNotificationFunctions.jsw';
+import * as ShopFunctions from 'backend/ShopAutomationFunctions.jsw';
+
+let resetOffset = false;
+
+// Gets a list of all currently available exchange items, including the items contained within bundles.
+export async function getCurrentlyAvailableExchangeListings() {
+	let retry = true;
+	let retryCount = 0;
+	const MAX_RETRIES = 10;
+
+	let currentlyAvailableExchangeListings = [];
+
+	let currentlyAvailableField = ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD;
+
+	while (retry && retryCount < MAX_RETRIES) {
+		currentlyAvailableExchangeListings = await wixData.query(ExchangeConstants.EXCHANGE_DB)
+			.eq(currentlyAvailableField, true)
+			.limit(1000)
+			.find()
+			.then((results) => {
+				retry = false;
+				return results.items;
+			})
+			.catch ((error) => {
+				console.error("Error occurred while retrieving currently available exchange listings from DB. Attempt " + (++retryCount) + " of " + MAX_RETRIES + ": " + error);
+
+				if (retryCount >= MAX_RETRIES) {
+					throw "Unable to retrieve currently available exchange listings after " + MAX_RETRIES + " attempts. Exiting Exchange import...";
+				}
+
+				return [];
+			});
+	}
+	
+	// We need to get the multi-references for each exchange listing; namely, the items each listing includes.
+	for (let i = 0; i < currentlyAvailableExchangeListings.length; ++i) {
+		// We can actually improve the performance by only querying the fields with items.
+		for (let j = 0; j < currentlyAvailableExchangeListings[i][ExchangeConstants.EXCHANGE_FIELDS_WITH_ITEMS_FIELD].length; ++j) {
+			let itemField = currentlyAvailableExchangeListings[i][ExchangeConstants.EXCHANGE_FIELDS_WITH_ITEMS_FIELD][j];
+
+			retry = true;
+			retryCount = 0;
+			while (retry && retryCount < MAX_RETRIES) {
+				currentlyAvailableExchangeListings[i][itemField] = await wixData.queryReferenced(ExchangeConstants.EXCHANGE_DB, currentlyAvailableExchangeListings[i]._id, itemField)
+					.then((results) => {
+						let idArray = [];
+						results.items.forEach((item) => {
+							idArray.push(item._id);
+						});
+						retry = false;
+						return idArray;
+					})
+					.catch((error) => {
+						console.error("Error occurred while retrieving " + itemField + " data for currently available exchange listing " + currentlyAvailableExchangeListings[i]._id + " from DB. Attempt " + 
+							(++retryCount) + " of " + MAX_RETRIES + ": " + error);
+
+						if (retryCount >= MAX_RETRIES) {
+							throw "Unable to retrieve " + itemField + " data for currently available exchange listing " + currentlyAvailableExchangeListings[i]._id + " after " + 
+								MAX_RETRIES + " attempts. Exiting Exchange import...";
+						}
+
+						return [];
+					});
+			}
+		}
+	}
+
+	console.log("Currently available Exchange Listings, ", currentlyAvailableExchangeListings);
+
+	return currentlyAvailableExchangeListings;
+}
+
+// Gets list of Exchange items from Waypoint.
+export async function getExchangeListFromWaypoint(headers) {
+	const XUID = await getSecret(ApiConstants.SECRETS_XUID_KEY);
+
+	let retry = true;
+	let waypointJson = {};
+
+	let url = ApiConstants.WAYPOINT_URL_BASE_ECONOMY + ApiConstants.WAYPOINT_URL_XUID_PREFIX + XUID + ApiConstants.WAYPOINT_URL_XUID_SUFFIX +
+		ApiConstants.WAYPOINT_URL_SUFFIX_ECONOMY_STORE_EXCHANGE;
+
+	let remakeHeaders = false;
+
+	while (retry) {
+		if (remakeHeaders) { // We need to remake the headers, but we do it by adjusting the actual contents of the JSON.
+			let spartanToken = await ApiFunctions.getSpartanToken();
+			let clearance = await ApiFunctions.getClearance();
+
+			headers[ApiConstants.WAYPOINT_SPARTAN_TOKEN_HEADER] = spartanToken;
+			headers[ApiConstants.WAYPOINT_343_CLEARANCE_HEADER] = clearance;
+
+			retry = false; // For now, let's just do a single retry after fixing the headers.
+		}
+
+		waypointJson = await wixFetch.fetch(url, {
+				"method": "get",
+				"headers": headers
+			})
+			.then( (httpResponse) => {
+				if (httpResponse.ok) {
+					retry = false;
+					return httpResponse.json();
+				} 
+				else { // We want to retry once with updated headers if we got an error.
+					console.warn("Headers did not work. Got HTTP response " + httpResponse.status + ": " + httpResponse.statusText + " when trying to retrieve from " + httpResponse.url);
+					return { "Offerings" : [] };
+				}
+			} )
+			.then((json) => {
+				return json;
+			})
+			.catch(err => {
+				console.error(err);
+				return { "Offerings" : [] };
+			});
+
+		remakeHeaders = retry; // If we retry, remake the headers first.
+	}
+
+	if (waypointJson.Offerings.length <= 0) {
+		throw "No offerings returned for Exchange; aborting to avoid data poisoning.";
+	}
+
+	return waypointJson;
+}
+
+// Gets the list of Exchange items from Waypoint, fetches the data for each item, and then returns a list of items that match the current DB items.
+export async function getConvertedExchangeList() {
+	let headers = await ApiFunctions.makeWaypointHeaders();
+
+	let typeDict = await GeneralBackendFunctions.generateTypeDict();
+
+	let exchangeWaypointJson = {};
+
+	exchangeWaypointJson = await getExchangeListFromWaypoint(headers);
+
+	let exchangeSiteArray = [];
+
+	console.log("Retrieving Exchange-exclusive folderDict...");
+	let folderDict;
+	let results = await wixData.query(KeyConstants.KEY_VALUE_DB)
+		.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + CustomizationConstants.CUSTOMIZATION_CATEGORY_FOLDER_DICT[ExchangeConstants.EXCHANGE_KEY] + "/")
+		.find()
+		.catch((error) => {
+			console.error(error, "occurred while querying Key Value DB.");
+			return {
+				items: []
+			};
+		});
+
+	if (results.items.length > 0) {
+		folderDict = results.items[0].value;
+	}
+	else {
+		throw "Could not retrieve folder dict. Cannot get customization image urls.";
+	}
+
+	console.log("Exchange-exclusive Folder dict retrieved!");
+
+	let qualityDict = {}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs. Let's us avoid querying the DB for every quality inquiry.
+
+	console.log("Querying for quality data");
+	let qualityResults = await wixData.query(CustomizationConstants.QUALITY_DB)
+		.find()
+		.catch((error) => {
+			console.error(error, "occurred while filling in quality dict");
+			return {
+				items: []
+			};
+		});
+
+	console.log("Quality data returned");
+
+	if (qualityResults.items.length > 0) {
+		console.log("Quality values found", qualityResults);
+		for (let i = 0; i < qualityResults.items.length; ++i) {
+			qualityDict[qualityResults.items[i].quality] = qualityResults.items[i]._id;
+		}
+	}
+	else {
+		throw "No quality values found in the DB! Major emergency!";
+	}
+
+	const maxRetries = 10;
+	console.log("Beginning to fill out exchange listings from API...");
+	let exchangeWaypointArray = exchangeWaypointJson.Offerings;
+
+	for (let i = 0; i < exchangeWaypointArray.length; ++i) {
+		let retryCount = 0;
+		let retry = true;
+		while (retry && retryCount < maxRetries) {
+			try {
+				console.log(exchangeWaypointArray[i].OfferingId);
+
+				let exchangeItemSiteJson = {};
+				let exchangeItemWaypointJson = await ApiFunctions.getCustomizationItem(headers, exchangeWaypointArray[i].OfferingDisplayPath);
+
+				let qualityId = qualityDict[exchangeItemWaypointJson.Quality];
+
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_QUALITY_REFERENCE_FIELD] = qualityId;
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_DESCRIPTION_FIELD] = exchangeItemWaypointJson.Description;
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD] = exchangeWaypointArray[i].OfferingId;
+
+				let lastAvailableDatetime = new Date();
+				lastAvailableDatetime.setHours(18, 0, 0, 0); // This sets the datetime to today's date with the time 18:00:00.000 UTC.
+
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD] = lastAvailableDatetime;
+
+				let numChallengeSwaps = 0;
+				for (let j = 0; j < exchangeWaypointArray[i].IncludedCurrencies.length; ++j) {
+					if (exchangeWaypointArray[i].IncludedCurrencies[j].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_CHALLENGE_SWAP_PATH_CONTENTS)) {
+						// If this currency is a Challenge Swap
+						numChallengeSwaps += exchangeWaypointArray[i].IncludedCurrencies[j].Amount;
+					}
+				}
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_NUMBER_OF_CHALLENGE_SWAPS_FIELD] = numChallengeSwaps;
+
+				let numXpBoosts = 0;
+				for (let j = 0; j < exchangeWaypointArray[i].IncludedCurrencies.length; ++j) {
+					if (exchangeWaypointArray[i].IncludedCurrencies[j].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_XP_BOOST_PATH_CONTENTS)) {
+						// If this currency is a Challenge Swap
+						numXpBoosts += exchangeWaypointArray[i].IncludedCurrencies[j].Amount;
+					}
+				}
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_NUMBER_OF_XP_BOOSTS_FIELD] = numXpBoosts;
+
+				let numXpGrants = 0;
+				for (let j = 0; j < exchangeWaypointArray[i].IncludedCurrencies.length; ++j) {
+					if (exchangeWaypointArray[i].IncludedCurrencies[j].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_XP_GRANT_PATH_CONTENTS)) {
+						// If this currency is a Challenge Swap
+						numXpGrants += exchangeWaypointArray[i].IncludedCurrencies[j].Amount;
+					}
+				}
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_NUMBER_OF_XP_GRANTS_FIELD] = numXpGrants;
+
+				let numCredits = 0;
+				for (let j = 0; j < exchangeWaypointArray[i].IncludedCurrencies.length; ++j) {
+					if (exchangeWaypointArray[i].IncludedCurrencies[j].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_CREDITS_PATH_CONTENTS)) {
+						// If this currency is Credits.
+						numCredits += exchangeWaypointArray[i].IncludedCurrencies[j].Amount;
+					}
+				}
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_NUMBER_OF_CREDITS_FIELD] = numCredits;
+
+				let numSpartanPoints = 0;
+				for (let j = 0; j < exchangeWaypointArray[i].IncludedCurrencies.length; ++j) {
+					if (exchangeWaypointArray[i].IncludedCurrencies[j].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_PATH_CONTENTS)) {
+						// If this currency is Credits.
+						numSpartanPoints += exchangeWaypointArray[i].IncludedCurrencies[j].Amount;
+					}
+				}
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_NUMBER_OF_SPARTAN_POINTS_FIELD] = numSpartanPoints;
+
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD] = exchangeWaypointArray[i].Prices[0].Cost;
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD] = exchangeItemWaypointJson.Title;
+				
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD] = true;
+
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_BUNDLE_IMAGE_FIELD] = await MediaManagerFunctions.getCustomizationImageUrl(
+						folderDict,
+						headers,
+						exchangeItemWaypointJson.Title,
+						exchangeItemWaypointJson.ObjectImagePath,
+						"image/png",
+						ExchangeConstants.EXCHANGE_KEY,
+						null
+					);
+
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_ARMOR_REFERENCE_FIELD] = [];
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_ARMOR_ATTACHMENT_REFERENCE_FIELD] = [];
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_WEAPON_REFERENCE_FIELD] = [];
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_VEHICLE_REFERENCE_FIELD] = [];
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_BODY_AND_AI_REFERENCE_FIELD] = [];
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_SPARTAN_ID_REFERENCE_FIELD] = [];
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_CONSUMABLE_REFERENCE_FIELD] = [];
+
+				// Initialize the field names with items arrays.
+				exchangeItemSiteJson[ExchangeConstants.EXCHANGE_FIELDS_WITH_ITEMS_FIELD] = [];
+
+				let includedItemsArray = exchangeWaypointArray[i].IncludedItems;
+
+				for (let j = 0; j < includedItemsArray.length; j++) {
+					let foundType = false; // Should become true if the type is found.
+					for (let typeCategory in typeDict) {
+						if (typeDict[typeCategory].includes(includedItemsArray[j].ItemType)) { // If the ItemType belongs to this typeCategory.
+							let possibleMultiCore = false;
+
+							foundType = true; // We found the type.
+							let waypointIdMatchArray = includedItemsArray[j].ItemPath.match(GeneralConstants.REGEX_WAYPOINT_ID_FROM_PATH); // We'll be parsing this info from the path now.
+							let waypointId = "";
+							if (waypointIdMatchArray.length > 0) {
+								waypointId = waypointIdMatchArray[0]; 
+								//console.log(waypointId);
+							}
+
+							let exactWaypointId = waypointId;
+
+							let typeCategoryArray = [typeCategory];
+
+							let newWaypointId = false;
+
+							let matches = waypointId.match(GeneralConstants.REGEX_FIRST_CHARS_FROM_NEW_WAYPOINT_ID);
+
+							if (matches) {
+								waypointId = matches[0];
+								newWaypointId = true;
+							}
+
+							if (includedItemsArray[j].ItemType.includes("Emblem")) {
+								// Emblems marked as cross compatible award all variants at once (Armor Emblem, Weapon Emblem, Vehicle Emblem, Nameplate).
+								// Related emblems share the tail end of their waypoint IDs (old version).
+								// New emblems share the first seven digits of their waypoint IDs. Check for this first (done above).
+								if (!matches) {
+									matches = waypointId.match(GeneralConstants.REGEX_FINAL_CHARS_FROM_WAYPOINT_ID);
+									if (matches) {
+										waypointId = matches[0];
+									}
+								}
+
+								let possibleTypeCategories = [
+									ArmorConstants.ARMOR_KEY,
+									WeaponConstants.WEAPON_KEY,
+									VehicleConstants.VEHICLE_KEY,
+									SpartanIdConstants.SPARTAN_ID_KEY
+								];
+
+								for (let q = 0; q < possibleTypeCategories.length; ++q) {
+									if (!typeCategoryArray.includes(possibleTypeCategories[q])) {
+										typeCategoryArray.push(possibleTypeCategories[q]);
+									}
+								}
+							}	
+
+							if (includedItemsArray[j].ItemType.includes("Coating")) {
+								// Coatings marked as cross compatible award all variants on all cores at once.
+								// Related coatings share the tail end of their waypoint IDs (old). New coatings share the first seven digits in their IDs.
+								possibleMultiCore = true;
+
+								if (!matches) {
+									matches = waypointId.match(GeneralConstants.REGEX_FINAL_CHARS_FROM_WAYPOINT_ID);
+									if (matches) {
+										waypointId = matches[0];
+									}
+								}
+							}							
+
+							for (let q = 0; q < typeCategoryArray.length; ++q) {
+								let currentTypeCategory = typeCategoryArray[q];
+								const EXCHANGE_ITEM_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[currentTypeCategory].ExchangeReferenceField;
+								
+								let itemId = "";
+								let itemIdArray = []; // This will only be used if possibleMultiCore is set.
+								let errorOccurred = false;
+								if (!newWaypointId) {
+									try {
+										if (possibleMultiCore) {
+											itemIdArray = await ShopFunctions.getItemId(currentTypeCategory, waypointId, possibleMultiCore, exactWaypointId);
+											//console.log(itemIdArray, "Contents of item Id Array");
+										}
+										else {
+											itemId = await ShopFunctions.getItemId(currentTypeCategory, waypointId);
+										}
+									}
+									catch (error) {
+										console.error("Couldn't get item ID for waypoint ID " + waypointId + " due to " + error);
+										errorOccurred = true;
+									}
+								}
+
+								if (errorOccurred || newWaypointId) {
+									console.log("Querying API for Waypoint ID...");
+									let itemJson = await ApiFunctions.getCustomizationItem(headers, includedItemsArray[j].ItemPath);
+
+									let matches;
+									if (!newWaypointId) {
+										matches = itemJson.CommonData.Id.match(GeneralConstants.REGEX_FINAL_CHARS_FROM_WAYPOINT_ID);
+									}
+									else
+									{
+										matches = itemJson.CommonData.Id.match(GeneralConstants.REGEX_FIRST_CHARS_FROM_NEW_WAYPOINT_ID);
+									}
+
+									if (matches) {
+										waypointId = matches[0];
+									}
+
+									if (possibleMultiCore) {
+										itemIdArray = await ShopFunctions.getItemId(currentTypeCategory, waypointId, possibleMultiCore, itemJson.CommonData.Id);
+									}
+									else if (includedItemsArray[j].ItemType.includes("Emblem")) {
+										// Emblems will only match a portion of their ID, the first seven digits.
+										itemId = await ShopFunctions.getItemId(currentTypeCategory, waypointId);
+									}
+									else {
+										// The default case should always use the exact ID to avoid duplicate errors.
+										itemId = await ShopFunctions.getItemId(currentTypeCategory, itemJson.CommonData.Id);
+									}
+								}
+
+								if (possibleMultiCore) {
+									for (let q = 0; q < itemIdArray.length; ++q) {
+										if (!exchangeItemSiteJson[EXCHANGE_ITEM_REFERENCE_FIELD].includes(itemIdArray[q])) {
+											exchangeItemSiteJson[EXCHANGE_ITEM_REFERENCE_FIELD].push(itemIdArray[q]);
+										}
+									}
+								}
+								else {
+									if (!exchangeItemSiteJson[EXCHANGE_ITEM_REFERENCE_FIELD].includes(itemId)) {
+										exchangeItemSiteJson[EXCHANGE_ITEM_REFERENCE_FIELD].push(itemId);
+									}
+								}
+
+								if (!exchangeItemSiteJson[ExchangeConstants.EXCHANGE_FIELDS_WITH_ITEMS_FIELD].includes(EXCHANGE_ITEM_REFERENCE_FIELD)) {
+									exchangeItemSiteJson[ExchangeConstants.EXCHANGE_FIELDS_WITH_ITEMS_FIELD].push(EXCHANGE_ITEM_REFERENCE_FIELD);
+								}
+							}
+
+							break;
+						}
+					}
+
+					if (foundType) {
+						continue;
+					}
+					else {
+						console.warn("Discovered item with type " + includedItemsArray[j].ItemType + " that does not fit within an expected category.");
+					}
+				}
+
+				let includedConsumablesArray = exchangeWaypointArray[i].IncludedCurrencies;
+
+				for (let j = 0; j < includedConsumablesArray.length; ++j) {
+					let consumableName = "";
+					if (includedConsumablesArray[j].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_XP_BOOST_PATH_CONTENTS)) {
+						consumableName = ConsumablesConstants.CONSUMABLES_XP_BOOST_NAME;
+					}
+					else if (includedConsumablesArray[j].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_CHALLENGE_SWAP_PATH_CONTENTS)) {
+						consumableName = ConsumablesConstants.CONSUMABLES_CHALLENGE_SWAP_NAME;
+					}
+					else if (includedConsumablesArray[j].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_CREDITS_PATH_CONTENTS)) {
+						consumableName = ConsumablesConstants.CONSUMABLES_CREDITS_NAME;
+					}
+					else if (includedConsumablesArray[j].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_XP_GRANT_PATH_CONTENTS)) {
+						consumableName = ConsumablesConstants.CONSUMABLES_XP_GRANT_NAME;
+					}
+					else if (includedConsumablesArray[j].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_PATH_CONTENTS)) {
+						consumableName = ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_NAME;
+					}
+
+					let consumableId = await wixData.query(ConsumablesConstants.CONSUMABLES_DB)
+						.eq(ConsumablesConstants.CONSUMABLES_NAME_FIELD, consumableName)
+						.find()
+						.then((results) => {
+							if (results.items.length > 0) {
+								return results.items[0]._id;
+							}
+							else {
+								throw "No Consumables returned from DB for name " + consumableName;
+							}
+						});
+
+					exchangeItemSiteJson[ExchangeConstants.EXCHANGE_CONSUMABLE_REFERENCE_FIELD].push(consumableId);
+					if (!mainShopSiteJson[ExchangeConstants.EXCHANGE_FIELDS_WITH_ITEMS_FIELD].includes(ExchangeConstants.EXCHANGE_CONSUMABLE_REFERENCE_FIELD)) {
+						mainShopSiteJson[ExchangeConstants.EXCHANGE_FIELDS_WITH_ITEMS_FIELD].push(ExchangeConstants.EXCHANGE_CONSUMABLE_REFERENCE_FIELD);
+					}
+				}
+
+				exchangeSiteArray.push(exchangeItemSiteJson);
+				retry = false;
+			}
+			catch (error) {
+				console.error("Try " + (++retryCount) + " of " + maxRetries + ". Failed to add ", exchangeWaypointArray[i], " due to error ", error);
+				await GeneralFunctions.sleep(2000);
+
+				if (retryCount >= maxRetries) {
+					throw "Exceeded max retry attempts while trying to add " + exchangeWaypointArray[i].OfferingId;
+				}
+			}
+		}
+	}
+
+	console.log("After execution: ", exchangeSiteArray);
+	return exchangeSiteArray;
+}
+
+// Accepts a site JSON file and marks all currentlyAvailable flags on the associated items as false within the DBs.
+export async function updateBundleAndItemsCurrentlyAvailableStatus(itemJson, currentlyAvailableStatus, itemDb=ShopConstants.SHOP_DB, isCustomizationShopBundle = false) {
+
+	let options = {
+		"suppressAuth": true,
+		"suppressHooks": true
+	};
+
+	let currentlyAvailableField = "";
+	let fieldsWithItemsField = "";
+	let consumableReferenceField = "";
+	let referenceFieldToCategoryDict = {};
+
+	if (itemDb == ShopConstants.SHOP_DB) {
+		currentlyAvailableField = (isCustomizationShopBundle) ? ShopConstants.SHOP_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD : ShopConstants.SHOP_CURRENTLY_AVAILABLE_FIELD;
+		fieldsWithItemsField = ShopConstants.SHOP_FIELDS_WITH_ITEMS_FIELD;
+		consumableReferenceField = ShopConstants.SHOP_CONSUMABLE_REFERENCE_FIELD;
+		referenceFieldToCategoryDict = CustomizationConstants.SHOP_ITEM_FIELD_TO_CUSTOMIZATION_CATEGORY_DICT;
+	}
+	else if (itemDb == CapstoneChallengeConstants.CAPSTONE_CHALLENGE_DB) {
+		currentlyAvailableField = CapstoneChallengeConstants.CAPSTONE_CHALLENGE_CURRENTLY_AVAILABLE_FIELD;
+		fieldsWithItemsField = CapstoneChallengeConstants.CAPSTONE_CHALLENGE_FIELDS_WITH_ITEMS_FIELD;
+		consumableReferenceField = CapstoneChallengeConstants.CAPSTONE_CHALLENGE_CONSUMABLE_REFERENCE_FIELD;
+		referenceFieldToCategoryDict = CustomizationConstants.CAPSTONE_CHALLENGE_ITEM_FIELD_TO_CUSTOMIZATION_CATEGORY_DICT;
+	}
+	else {
+		throw "Unable to run updateBundleAndItemsCurrentlyAvailableStatus with itemDb " + itemDb + ". Exiting...";
+    }
+
+	let itemJsonCopy = structuredClone(itemJson);
+
+	itemJson[currentlyAvailableField] = currentlyAvailableStatus;
+
+	let itemInfoArray = [];
+
+	// Update the items linked to the Shop Listing or Ultimate Challenge.
+	for (let i = 0; i < itemJson[fieldsWithItemsField].length; ++i) {
+		let currentField = itemJson[fieldsWithItemsField][i];
+		//console.log(currentField);
+		if (currentField == consumableReferenceField) {
+			continue; // We do not want to process consumables in the same way as other items.
+		}
+		itemInfoArray = itemInfoArray.concat(await ShopFunctions.updateItemsCurrentlyAvailableStatus(
+			referenceFieldToCategoryDict[currentField],
+			itemJson[currentField],
+			currentlyAvailableStatus
+		));
+	}
+
+	let retry = true;
+	let retryCount = 0;
+	const MAX_RETRIES = 10;
+
+	while (retry && retryCount < MAX_RETRIES) {
+		await wixData.update(itemDb, itemJson, options)
+			.then((results) => {
+				console.log("Results following update of currentlyAvailable for item:", itemJson, ":", results);
+
+				// We only really need to add these if currentlyAvailableStatus is true, since this indicates the item has been added or updated.
+
+				// Add the items to the Shop Bundle. We want to ensure the bundle has returned first.
+				if (itemDb == ShopConstants.SHOP_DB && currentlyAvailableStatus) {
+					for (const FIELD in referenceFieldToCategoryDict) {
+						addItemIdArrayToShopItem(
+							itemJson._id,
+							FIELD,
+							itemJsonCopy[FIELD],
+							referenceFieldToCategoryDict[FIELD],
+							itemJsonCopy[ShopConstants.SHOP_ITEM_NAME_FIELD],
+							itemJsonCopy[ShopConstants.SHOP_COST_CREDITS_FIELD],
+							itemJsonCopy[ShopConstants.SHOP_IS_HCS_FIELD],
+							itemJsonCopy[ShopConstants.SHOP_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD]
+						);
+					}
+				}
+				// Add the item(s) to the Ultimate Challenge.
+				else if (itemDb == CapstoneChallengeConstants.CAPSTONE_CHALLENGE_DB && currentlyAvailableStatus) {
+					for (const FIELD in referenceFieldToCategoryDict) {
+						WaypointFunctions.addItemIdArrayToCapstoneChallenge(
+							itemJson._id,
+							FIELD,
+							itemJsonCopy[FIELD],
+							referenceFieldToCategoryDict[FIELD],
+							itemJsonCopy[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NAME_FIELD]
+						);
+					}
+				}
+
+				retry = false;
+			})
+			.catch((error) => {
+				console.error("Error", error, "occurred while updating item availability", itemJson, "Try " + ++retryCount + " of " + MAX_RETRIES);
+			});
+	}
+	
+	return itemInfoArray;
+}
+
+// We store item IDs in an array, which lets us query for items matching those IDs and then update them.
+export async function addItemIdArrayToExchangeItem(bundleId, fieldName, itemIdArray, customizationCategory, bundleName, bundleCost) {
+	const PENDING_SOURCE_ID = CustomizationConstants.SOURCE_TYPE_PENDING_ID;
+	const EXCHANGE_SOURCE_ID = CustomizationConstants.SOURCE_TYPE_EXCHANGE_ID;
+
+	if (itemIdArray.length <= 0) {
+		console.log("No processing necessary as itemIdArray is empty for " + customizationCategory + " and Exchange Bundle Name " + bundleName);
+		return [];
+	}
+
+	let options = {
+		"suppressAuth": true,
+		"suppressHooks": true
+	};
+
+	let itemInfoArray = [];
+
+	let retry = true;
+	let retryCount = 0;
+	const MAX_RETRIES = 10;
+
+	while (retry && retryCount < MAX_RETRIES) {
+		await wixData.replaceReferences(ExchangeConstants.EXCHANGE_DB, fieldName, bundleId, itemIdArray, options)
+			.then(() => {
+				retry = false;
+				//console.log("Added references for Exchange item ", bundleId, " and fieldName ", fieldName);
+			})
+			.catch((error) => {
+				console.error("Error", error, "occurred. Failed to add references for Exchange item ", bundleId, " and fieldName ", fieldName, "Try " + ++retryCount + " of " + MAX_RETRIES);
+			});
+	}
+
+	// We have three tasks for each item ID: update the source (if it is (Pending) or Pending), update the sourcetype reference, and mark it currently Available.
+	// Consumables need to be done manually due to the lack of a single source for them.
+	if (fieldName != ExchangeConstants.EXCHANGE_CONSUMABLE_REFERENCE_FIELD) {
+		const CUSTOMIZATION_DB = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationDb;
+		const CUSTOMIZATION_SOURCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationSourceField;
+		const CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationSourceTypeField;
+		const CUSTOMIZATION_CURRENTLY_AVAILABLE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationCurrentlyAvailableField;
+
+		const SOCKET_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationSocketReferenceField;
+		const NAME_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationNameField;
+		const URL_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_URL_FIELDS[customizationCategory];
+
+		const SOCKET_NAME_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].SocketNameField;
+
+		let retry = true;
+		let retryCount = 0;
+		const MAX_RETRIES = 10;
+
+		while (retry && retryCount < MAX_RETRIES) {
+			await wixData.query(CUSTOMIZATION_DB)
+				.hasSome("_id", itemIdArray)
+				.include(SOCKET_REFERENCE_FIELD)
+				.include(CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD)
+				.find()
+				.then(async (results) => {
+					if (results.items.length > 0) {
+						let items = results.items;
+						let itemsToUpdate = []; // We only update items that need to be changed.
+
+						for (let i = 0; i < items.length; ++i) {
+							let item = items[i];
+							let itemChanged = false;
+							if (!item[CUSTOMIZATION_CURRENTLY_AVAILABLE_FIELD]) {
+								item[CUSTOMIZATION_CURRENTLY_AVAILABLE_FIELD] = true;
+								itemChanged = true;
+							}
+
+							// We need to update the source
+							let sourceText = "Purchase <em>" + bundleName.trim() + "</em> from the Exchange for " + bundleCost + " Spartan Points";
+
+							if (item[CUSTOMIZATION_SOURCE_FIELD].includes("Pending")) {
+								item[CUSTOMIZATION_SOURCE_FIELD] = sourceText;
+								itemChanged = true;
+							}
+							else if (!item[CUSTOMIZATION_SOURCE_FIELD].includes(sourceText)) {
+								item[CUSTOMIZATION_SOURCE_FIELD] += "<p class=\"font_8\">" + sourceText + "</p>";
+								itemChanged = true;
+							}
+
+							if (itemChanged) {
+								// Add the item to the list of items to change.
+								itemsToUpdate.push(item);
+							}
+
+							// We only want to add a source type reference if it isn't already there. It won't hurt if it is, but it will change the Updated Datetime of the item.
+							let sourceTypeReferenceIncludesDesiredId = false;
+
+							for (let i = 0; i < item[CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD].length; ++i) {
+								if (item[CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD][i]._id == EXCHANGE_SOURCE_ID) {
+									sourceTypeReferenceIncludesDesiredId = true;
+									break;
+								}
+							}
+
+							let sourceTypeRetry = true;
+							let sourceTypeRetryCount = 0;
+							const MAX_SOURCE_TYPE_RETRIES = 10;
+
+							// We also need to update or replace the sourcetype. Thankfully, we included this field.
+							while (sourceTypeRetry && sourceTypeRetryCount < MAX_SOURCE_TYPE_RETRIES) {
+								if (item[CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD].length == 1 && item[CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD][0]._id == PENDING_SOURCE_ID) {
+									// If we have exactly one source type and it's Pending, we want to get rid of it and do a replace.
+									await wixData.replaceReferences(CUSTOMIZATION_DB, CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD, item._id, [EXCHANGE_SOURCE_ID])
+										.then (() => {
+											console.log("Added source type reference for item " + item._id + " in DB " + CUSTOMIZATION_DB);
+											sourceTypeRetry = false;
+										})
+										.catch((error) => {
+											console.error("Error", error, "occurred while adding source type reference for item " + item._id + " in DB " + CUSTOMIZATION_DB, "Try " + ++sourceTypeRetryCount + " of " + 
+												MAX_SOURCE_TYPE_RETRIES);
+										});
+								}
+								else if (!sourceTypeReferenceIncludesDesiredId) {
+									// We just want to insert the source type in this case.
+									await wixData.insertReference(CUSTOMIZATION_DB, CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD, item._id, [EXCHANGE_SOURCE_ID])
+										.then (() => {
+											console.log("Added source type reference for item " + item._id + " in DB " + CUSTOMIZATION_DB);
+											sourceTypeRetry = false;
+										})
+										.catch((error) => {
+											console.error("Error", error, "occurred while adding source type reference for item " + item._id + " in DB " + CUSTOMIZATION_DB, "Try " + ++sourceTypeRetryCount + " of " + 
+												MAX_SOURCE_TYPE_RETRIES);
+										});
+								}
+								else {
+									// Skip the source type retry.
+									sourceTypeRetry = false;
+								}
+							}
+
+							let itemType = item[SOCKET_REFERENCE_FIELD][SOCKET_NAME_FIELD];
+
+							let itemCore = "";
+
+							if (CustomizationConstants.HAS_CORE_ARRAY.includes(customizationCategory) && !CustomizationConstants.IS_ATTACHMENTS_ARRAY.includes(customizationCategory)) {
+								// If we have cores for this item.
+								const CORE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationCoreReferenceField;
+								const CORE_NAME_FIELD = CustomizationConstants.CORE_CATEGORY_SPECIFIC_VARS[customizationCategory].CoreNameField;
+
+								let parentCores = (await wixData.queryReferenced(CUSTOMIZATION_DB, item._id, CORE_REFERENCE_FIELD)).items;
+
+								// We only care about the parent core if there's only one core the item works with and the core isn't the "Any" shortcut.
+								if (parentCores.length == 1 && parentCores[0][CORE_NAME_FIELD] != "Any") {
+									itemCore = parentCores[0][CORE_NAME_FIELD];
+								}
+							}
+
+							itemInfoArray.push({
+								itemName: item[NAME_FIELD],
+								itemUrl: GeneralConstants.INFINITE_NEWS_URL_BASE + item[URL_FIELD],
+								itemType: itemType,
+								itemCore: itemCore
+							});
+						}
+
+						console.log("Found the following items", items, "Only updating source and currentlyAvailable for these items", itemsToUpdate);
+
+						wixData.bulkUpdate(CUSTOMIZATION_DB, itemsToUpdate, options)
+							.then((results) => {
+								console.log("Results following update of currentlyAvailable and source for category", customizationCategory, "and items", itemsToUpdate, ":", results);
+							});
+					}
+
+					retry = false;
+				})
+				.catch((error) => {
+					console.error("Error", error, "occurred while updating newly available items for category", customizationCategory, "and ID array", itemIdArray, "Try " + ++retryCount + " of " + MAX_RETRIES);
+				});
+		}
+	}
+	else {
+		// If we have Consumables, just update the itemInfoArray.
+		let retry = true;
+		let retryCount = 0;
+		const MAX_RETRIES = 10;
+
+		while (retry && retryCount < MAX_RETRIES) {
+			try {
+				let consumables = (await wixData.query(ConsumablesConstants.CONSUMABLES_DB).hasSome("_id", itemIdArray).find()).items;
+
+				for (let i = 0; i < consumables.length; ++i) {
+					let numConsumables = 0;
+					switch (consumables[i][ConsumablesConstants.CONSUMABLES_NAME_FIELD])
+					{
+						case ConsumablesConstants.CONSUMABLES_CHALLENGE_SWAP_NAME:
+							numConsumables = itemJson[numChallengeSwapsField];
+							break;
+						case ConsumablesConstants.CONSUMABLES_XP_BOOST_NAME:
+							numConsumables = itemJson[numXpBoostsField];
+							break;
+						case ConsumablesConstants.CONSUMABLES_XP_GRANT_NAME:
+							numConsumables = itemJson[numXpGrantsField];
+							break;
+						case ConsumablesConstants.CONSUMABLES_CREDITS_NAME:
+							numConsumables = itemJson[numCreditsField];
+							break;
+						case ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_NAME:
+							numConsumables = itemJson[numSpartanPointsField];
+							break;
+						default:
+							console.error("No match found for consumable with name " + consumables[i][ConsumablesConstants.CONSUMABLES_NAME_FIELD]);
+					}
+					itemInfoArray.push({
+						itemName: consumables[ConsumablesConstants.CONSUMABLES_NAME_FIELD],
+						itemUrl: GeneralConstants.INFINITE_NEWS_URL_BASE + consumables[ConsumablesConstants.CONSUMABLES_URL_FIELD],
+						itemType: "x" + numConsumables
+					});
+				}
+
+				retry = false;
+			}
+			catch(error) {
+				console.error("Error", error, "occurred while retrieving consumables information. Try " + ++retryCount + " of " + MAX_RETRIES);
+			}
+		}
+	}
+
+	return itemInfoArray;
+}
+
+async function addBundleToDb(exchangeBundleJson) {
+	let options = {
+		"suppressAuth": true,
+		"suppressHooks": true
+	};
+
+	let exchangeBundleJsonCopy = structuredClone(exchangeBundleJson); // This ensures that insertions don't throw out our multi-references.
+
+	console.log("Adding Exchange Bundle " + exchangeBundleJson[ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD]);
+
+	let addedBundle = {}
+	
+	let retry = true;
+	let retryCount = 0;
+	const MAX_RETRIES = 10;
+
+	while (retry && retryCount < MAX_RETRIES) {
+		addedBundle = await wixData.insert(ExchangeConstants.EXCHANGE_DB, exchangeBundleJsonCopy, options) // This needs to await since we need the URL from the bundle for Twitter API stuff.
+			.then((results) => {
+				console.log("Inserted this bundle to the Exchange DB: ", results);
+
+				retry = false;
+				return results;
+			})
+			.catch((error) => {
+				console.error("Error", error, "occurred while attempting to add this Bundle to DB:", exchangeBundleJsonCopy, "Try " + ++retryCount + " of " + MAX_RETRIES);
+			});
+	}
+
+	addedBundle.childItemInfo = [];
+
+	for (const FIELD in CustomizationConstants.EXCHANGE_ITEM_FIELD_TO_CUSTOMIZATION_CATEGORY_DICT) {
+		let childItemInfoArray = await addItemIdArrayToExchangeItem(
+			addedBundle._id,
+			FIELD,
+			exchangeBundleJson[FIELD],
+			CustomizationConstants.EXCHANGE_ITEM_FIELD_TO_CUSTOMIZATION_CATEGORY_DICT[FIELD],
+			exchangeBundleJson[ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD],
+			exchangeBundleJson[ExchangeConstants.EXCHANGE_COST_CREDITS_FIELD]
+		);
+
+		if (childItemInfoArray) {
+			addedBundle.childItemInfo = addedBundle.childItemInfo.concat(childItemInfoArray);
+		}
+	}
+
+	return addedBundle;
+}
+
+// This function generates the Twitter and Discord notifications
+export async function generateSocialNotifications(updateItemArray) {
+
+	// First, we count how many of each type of bundle has newly appeared.
+	let numReturningBundles = 0;
+	let numNewBundles = 0;
+
+	for (let i = 0; i < updateItemArray.length; ++i) {
+
+		console.log("Checking to see if this item is new/returning", updateItemArray[i]);
+		let lastAvailableDatetime = new Date(updateItemArray[i][ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD]);
+		if (new Date(lastAvailableDatetime.toDateString()) < new Date(new Date().toDateString())) { // If the lastAvailableDatetime is before today, the item is returning.
+			updateItemArray[i].returning = true;
+			numReturningBundles++;
+		}
+		else {
+			updateItemArray[i].returning = false;
+			numNewBundles++;
+		}
+	}
+
+	// Then, we format each count and add it to an array that will then be formatted into the final Tweet structure.
+	let bundleSummaryArray = []; // Entries in this array will be of the form "[num] [returning/new]  Bundles"
+
+	if (numReturningBundles > 0) {
+		if (numReturningBundles == 1) {
+			bundleSummaryArray.push(numReturningBundles + " returning Listing");
+		}
+		else {
+			bundleSummaryArray.push(numReturningBundles + " returning Listings");
+		}
+	}
+	if (numNewBundles > 0) {
+		if (numNewBundles == 1) {
+			bundleSummaryArray.push(numNewBundles + " new Listing");
+		}
+		else {
+			bundleSummaryArray.push(numNewBundles + " new Listings");
+		}
+	}
+
+	let mainTweetText = "Today's #HaloInfinite Exchange contains ";
+
+	for (let i = 0; i < bundleSummaryArray.length; ++i) {
+		if (i < bundleSummaryArray.length - 1) { // If we aren't at the end of the list.
+			mainTweetText += bundleSummaryArray[i] + ", ";
+		}
+		else {
+			if (bundleSummaryArray.length > 1) {
+				mainTweetText += "and ";
+			}
+			mainTweetText += bundleSummaryArray[i] + ".\n\n";
+		}
+	}
+
+	// Then, we need to assemble the lines summarizing each bundle/item.
+	// These arrays will includes strings with one of two formats: "- [bundleName] ([creditCost] Spartan Points)" or "- [bundleName] ([creditCost] Spartan Points, last added [MM/DD/YYYY])"
+	let mainItemListingArray = []; 
+	let mainItemArray = [];
+
+	for (let i = 0; i < updateItemArray.length; ++i) {
+		if (updateItemArray[i].returning) {
+			let lastAvailableDatetime = new Date(updateItemArray[i][ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD]);
+
+			let dateString = GeneralFunctions.getLongMonthDayYearFromDate(lastAvailableDatetime);
+
+			mainItemListingArray.push("- " + updateItemArray[i][ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD] + " (" + 
+				updateItemArray[i][ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD] + " Spartan Points, last added " + dateString + ")");
+			mainItemArray.push(updateItemArray[i]);
+		}
+		else {
+			mainItemListingArray.push("- " + updateItemArray[i][ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD] + " (" + 
+				updateItemArray[i][ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD] + " Spartan Points)");
+			mainItemArray.push(updateItemArray[i]);
+		}
+	}
+
+	let tweetTextArray = [mainTweetText];	// We'll print the contents of these arrays in order as individual Tweets.
+
+	let currentTweetIndex = 0;
+
+	// Now to assemble the full tweets. Note that we might need additional tweets if we can't fit everything in the first one.
+	for (let i = 0; i < mainItemListingArray.length; ++i) {
+		if (tweetTextArray[currentTweetIndex].length + mainItemListingArray[i].length > 280) {
+			// Move to the next Tweet if we can't send this one.
+			++currentTweetIndex;
+			tweetTextArray.push(mainItemListingArray[i] + "\n");
+		}
+		else {
+			tweetTextArray[currentTweetIndex] += mainItemListingArray[i] + "\n";
+		}
+	}
+
+	const NUM_ARMOR_CORES = await WaypointFunctions.getNumCores(ArmorConstants.ARMOR_KEY);
+	const NUM_WEAPON_CORES = await WaypointFunctions.getNumCores(WeaponConstants.WEAPON_KEY);
+	const NUM_VEHICLE_CORES = await WaypointFunctions.getNumCores(VehicleConstants.VEHICLE_KEY);
+
+	if (mainItemListingArray.length > 0) {
+		console.log(tweetTextArray[0]);
+		let parentId = await sendTweet(tweetTextArray[0]);
+		for (let i = 1; i < tweetTextArray.length; ++i) {
+			console.log(tweetTextArray[i]);
+			parentId = await sendTweet(tweetTextArray[i], parentId);
+		}
+
+		let discordMessageText = "";
+		tweetTextArray.forEach((tweet) => {
+			discordMessageText += tweet;
+		});
+
+		await sendDiscordMessage("shop", discordMessageText, true); // Include notification in the message.
+
+		for (let i = 0; i < mainItemArray.length; ++i) {
+			// Twitter links are always 23 characters, so while this may be longer at first, it should be parsed successfully when shortened down to 23 chars...I think...
+			const URL_LENGTH_SHORTENING_OFFSET = (GeneralConstants.INFINITE_NEWS_URL_BASE + mainItemArray[i][ExchangeConstants.EXCHANGE_URL_FIELD]).length - 23;
+			let subTweetText = GeneralConstants.INFINITE_NEWS_URL_BASE + mainItemArray[i][ExchangeConstants.EXCHANGE_URL_FIELD] + 
+				"\nThe " + mainItemArray[i][ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD] + " Listing includes:\n";
+
+			// Subtweets may not be longer than 280 characters. Need to adjust for this.
+			let subTweetTextArray = [subTweetText];
+			let currentSubTweetIndex = 0;
+
+			let emblemNamesToSkip = [];
+			let armorCoatingNamesToSkip = [];
+			let weaponCoatingNamesToSkip = [];
+			let vehicleCoatingNamesToSkip = [];
+
+			for (let j = 0; j < mainItemArray[i].childItemInfo.length; ++j) {
+				let childItem = mainItemArray[i].childItemInfo[j];
+				if (childItem.itemCore === "None") {
+					continue; // We don't need to report items that can't be equipped.
+				}
+				let childItemText = "- " + childItem.itemName + " " + childItem.itemType + ((childItem.itemCore != "") ? (" (" + childItem.itemCore + ")") : "") + "\n";
+				
+				// We want to abbreviate sets of four identical emblem types as "Emblem Set". This will shorten our Tweet count considerably.
+				if (childItem.itemType.includes("Nameplate") || childItem.itemType.includes("Emblem")) {
+					if (emblemNamesToSkip.includes(childItem.itemName)) { // We already noted this Emblem Set. Let's proceed.
+						continue;
+					}
+
+					let matchingEmblemsFound = 0; // Count the number of matching emblems in the list.
+					mainItemArray[i].childItemInfo.forEach((item) => {
+						if (item.itemName == childItem.itemName && (item.itemType.includes("Nameplate") || item.itemType.includes("Emblem"))) {
+							++matchingEmblemsFound;
+						}
+					});
+
+					if (matchingEmblemsFound >= 4) { // If we found all four types of emblem in the list.
+						childItemText = "- " + childItem.itemName + " Emblem Set\n";
+						emblemNamesToSkip.push(childItem.itemName);
+					}
+				}
+
+				// We also want to abbreviate sets of coatings into a single aggregate.
+				if (childItem.itemType.includes("Coating")) {
+					if (childItem.itemType.includes("Armor Coating") && armorCoatingNamesToSkip.includes(childItem.itemName)
+					|| childItem.itemType.includes("Weapon Coating") && weaponCoatingNamesToSkip.includes(childItem.itemName)
+					|| childItem.itemType.includes("Vehicle Coating") && vehicleCoatingNamesToSkip.includes(childItem.itemName)) { // We already noted this Coating. Let's proceed.
+						continue;
+					}
+
+					let matchingCoatingsFound = 0; // Count the number of matching coatings in the list.
+					mainItemArray[i].childItemInfo.forEach((item) => {
+						if (item.itemName == childItem.itemName && item.itemType == childItem.itemType) {
+							++matchingCoatingsFound;
+						}
+					});
+
+					if (childItem.itemType.includes("Armor Coating") && matchingCoatingsFound >= NUM_ARMOR_CORES
+					|| childItem.itemType.includes("Weapon Coating") && matchingCoatingsFound >= NUM_WEAPON_CORES
+					|| childItem.itemType.includes("Vehicle Coating") && matchingCoatingsFound >= NUM_VEHICLE_CORES) { // If we found an instance of the coating on all available cores.
+						childItemText = "- " + childItem.itemName + " " + childItem.itemType + " (All Cores)\n";
+						if (childItem.itemType.includes("Armor Coating")) { armorCoatingNamesToSkip.push(childItem.itemName); }
+						if (childItem.itemType.includes("Weapon Coating")) { weaponCoatingNamesToSkip.push(childItem.itemName); }
+						if (childItem.itemType.includes("Vehicle Coating")) { vehicleCoatingNamesToSkip.push(childItem.itemName); }
+					}
+				}
+
+				if (currentSubTweetIndex != 0 && subTweetTextArray[currentSubTweetIndex].length + childItemText.length > 280) {
+					++currentSubTweetIndex;
+					subTweetTextArray.push(childItemText);
+				} 
+				// Account for URL shortening.
+				else if (currentSubTweetIndex == 0 && subTweetTextArray[currentSubTweetIndex].length + childItemText.length - URL_LENGTH_SHORTENING_OFFSET > 280) {
+					++currentSubTweetIndex;
+					subTweetTextArray.push(childItemText);
+				}
+				else {
+					subTweetTextArray[currentSubTweetIndex] += childItemText;
+				}
+			}
+			
+			console.log("Subtweet Array has length " + subTweetTextArray.length, subTweetTextArray);
+
+			for (let i = 0; i < subTweetTextArray.length; ++i) {
+				console.log(subTweetTextArray[i]);
+				parentId = await sendTweet(subTweetTextArray[i], parentId);
+			}
+
+			let discordMessageSubText = "";
+			subTweetTextArray.forEach((tweet) => {
+				discordMessageSubText += tweet;
+			});
+
+			await sendDiscordMessage("shop", discordMessageSubText); // Include notification in the message.
+		}
+	}
+}
+
+export async function generatePushNotifications(updateItemArray) {
+	if (updateItemArray.length > 1) {
+		let title = "New Exchange Listings Available!";
+		let subtitle = "";
+		let body = "Click here to view all the new Exchange Listings";
+		let url = GeneralConstants.INFINITE_NEWS_URL_BASE + ExchangeConstants.EXCHANGE_LISTINGS_URL_SUFFIX;
+
+		NotificationFunctions.sendPushNotification(title, body, subtitle, url);
+		return;
+	}
+
+	for (let i = 0; i < updateItemArray.length; ++i) {
+		// We'll make notifications in the following form:
+		/*
+			title: "[itemName]",
+			body: "New Bundle available! Click here to view it.",
+			subtitle: "[costCredits] Credits",
+			url: "https://www.haloinfinitenews.com" + [link-shop-listings-itemName]
+		*/
+
+		NotificationFunctions.sendPushNotification(updateItemArray[i][ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD],
+			"New Halo Infinite Exchange Listing available now for " + updateItemArray[i][ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD] 
+				+ " Spartan Points! Click here to view it.",
+			"",
+			GeneralConstants.INFINITE_NEWS_URL_BASE + updateItemArray[i][ExchangeConstants.EXCHANGE_URL_FIELD]);
+	}
+}
+
+// This function will be called by the job scheduler.
+export async function refreshExchangeListings() {
+	let currentlyAvailableExchangeListings = await getCurrentlyAvailableExchangeListings();
+	let newlyAvailableExchangeListings = await getConvertedExchangeList();
+
+	if (currentlyAvailableExchangeListings.length <= 0) {
+		throw "Error: No currently available Exchange Listings were returned. Exiting now to avoid data poisoning.";
+	}
+
+	if (newlyAvailableExchangeListings.length <= 0) {
+		throw "Error: No new Exchange Listings were returned. Exiting now to avoid notification spam.";
+	}
+
+	// The bundles should always have unique waypoint IDs so we can just check to see if each currently available item is in the newlyAvailable list.
+	// If not, we mark it as not currently available.
+	let newlyAvailableExchangeListingIds = []; 
+	let currentlyAvailableExchangeListingIds = []; // We need this array so that we can check each newly available listing and see if we already have it available.
+
+	for (let i = 0; i < newlyAvailableExchangeListings.length; ++i) {
+		newlyAvailableExchangeListingIds.push(newlyAvailableExchangeListings[i][ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD]);
+	}
+
+	for (let i = 0; i < currentlyAvailableExchangeListings.length; ++i) {
+		currentlyAvailableExchangeListingIds.push(currentlyAvailableExchangeListings[i][ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD]);
+	}
+
+	for (let i = 0; i < currentlyAvailableExchangeListings.length; ++i) {
+		if (!newlyAvailableExchangeListingIds.includes(currentlyAvailableExchangeListings[i][ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD])) {
+			updateBundleAndItemsCurrentlyAvailableStatus(currentlyAvailableExcjangeListings[i], false); // This doesn't need to be done synchronously thankfully.
+		}
+	}
+
+	let newExchangeListingsToUpdate = [];
+
+	for (let i = 0; i < newlyAvailableExchangeListings.length; ++i) {
+		if (!currentlyAvailableExchangeListingIds.includes(newlyAvailableExchangeListings[i][ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD])) {
+			// If there's a listing not in the previously available array, we need to update it or add it and report that it's new.
+			newExchangeListingsToUpdate.push(newlyAvailableExchangeListings[i]);
+		}			
+	}
+
+	if (newlyAvailableExchangeListingIds.length > 0) {
+		// Now that we've got the old bundles being marked as no longer available, we need to mark the new bundles as currently available when they exist and add them when they don't.
+		wixData.query(ExchangeConstants.EXCHANGE_DB)
+			.hasSome(ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD, newlyAvailableExchangeListingIds)
+			.find()
+			.then(async (results) => {
+				let items = results.items;
+				console.log("Items returned: ", items);
+				let itemIds = [];
+				
+				for (let i = 0; i < items.length; i++) {
+					itemIds.push(items[i][ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD]);
+				}
+
+				let updateItemArray = [];
+
+				console.log("Arrays to process:", itemIds, newExchangeListingsToUpdate);
+
+				for(let i = 0; i < newExchangeListingsToUpdate.length; ++i) { // We're assuming everything else has been marked correctly. Big assumption, yes, but potentially more efficient.
+					let item;
+					let itemIndex = itemIds.findIndex((itemId) => { return newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD] == itemId; });
+					console.log("Item index is ", itemIndex, "for item ID", newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD]);
+
+					if (itemIndex > -1) { // If the item was found.
+						item = items[itemIndex];
+						newExchangeListingsToUpdate[i]._id = item._id; // The DB ID ties both items together, so we need to transfer it.
+
+						// Transfer the imageETag since we didn't grab it ourselves.
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_IMAGE_ETAG_FIELD] = item[ExchangeConstants.EXCHANGE_IMAGE_ETAG_FIELD];
+
+						// If these arrays exist, we grab them to add onto them. Otherwise, we create it from scratch.
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD] = item[ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD] || [];
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD] = item[ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD] || [];
+
+						// We have to add this here because we need the existing array of datetimes.
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD]); 
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_COST_CREDITS_FIELD]);
+
+						console.log("Last added datetime for ", item[ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD], " is ", item[ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD]);
+						console.log(newExchangeListingsToUpdate[i]);
+						item.childItemInfo = await updateBundleAndItemsCurrentlyAvailableStatus(newExchangeListingsToUpdate[i], true);
+
+						// We need to ensure that the name and cost are updated and passed to the Twitter and Push Notification functions.
+						item[ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD] = newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD];
+						item[ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD] = newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD];
+					}
+					else { // If we didn't find the item, we need to add it. This is a bit involved since we also have to add references for each of its multi-references.
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD] = [];
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD] = [];
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD]);
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_COST_CREDITS_FIELD]);
+						console.log(newExchangeListingsToUpdate[i]);
+
+						item = await addBundleToDb(newExchangeListingsToUpdate[i]); // We need to await this if we want to integrate with the Twitter API.
+
+						// Add this item to the list of exchange listings in the DB.
+						items.push(structuredClone(item)); // Clone the item so we don't overwrite it later.
+						itemIds.push(item[ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD]);
+					}
+
+					updateItemArray.push(item);
+				}
+				
+				console.log("Update item array:", updateItemArray);
+
+				generateSocialNotifications(updateItemArray);
+				generatePushNotifications(updateItemArray);
+			});
+	}
+}
