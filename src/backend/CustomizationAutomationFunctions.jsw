@@ -4125,6 +4125,13 @@ export async function importEmblemPalettes(headers, generalDictsAndArrays, doImp
 
 			if (results.items.length > 0) {
 				emblemPaletteFolderDict = results.items[0].value;
+				let timeOneHourAgo = Date.now();
+				timeOneHourAgo.setHours(timeOneHourAgo.getHours() - 1);
+				if (results.items[0]._updatedDate < timeOneHourAgo)
+				{
+					console.error("Emblem Palette Folder Dict has not been updated recently.");
+					throw "Emblem Palette folder dict is out-of-date and was last updated at " + results.items[0]._updateDate;
+				}
 			}
 			else {
 				throw "Could not retrieve emblem palette folder dict. Cannot get customization image urls.";
