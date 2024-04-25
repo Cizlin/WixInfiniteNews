@@ -1370,7 +1370,8 @@ export async function getEmblemPaletteImageUrl(folderDict, headers, paletteConfi
 					throw "Unable to retrieve ETag for the image at " + waypointPath;
 				}
 
-				if (eTag == newETag && "fileUrl" in fileData) { // If the ETag provided by the caller matches the one returned in the header of the image, then we just use what we have.
+				if ((!eTag || eTag == newETag) && "fileUrl" in fileData) { // If the ETag provided by the caller matches the one returned in the header of the image, then we just use what we have.
+					// Also, if the ETag provided by the caller is null, we should just trust that our file worked. We don't write it to the DB until much later.
 					return [fileData.fileUrl, newETag]; // The existing ETag is still valid, so we send it back.
 				}
 				else {
