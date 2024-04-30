@@ -22,7 +22,7 @@ export const CONSUMABLES_CHALLENGE_SWAP_PATH_CONTENTS = "rerollcurrency.json";
 export const CONSUMABLES_XP_BOOST_PATH_CONTENTS = "xpboost.json";
 export const CONSUMABLES_XP_GRANT_PATH_CONTENTS = "xpgrant.json";
 export const CONSUMABLES_CREDITS_PATH_CONTENTS = "cR.json";
-export const CONSUMABLES_SPARTAN_POINTS_PATH_CONTENTS = "spartanpoints.json"; //TODO: VALIDATE THIS!!!
+export const CONSUMABLES_SPARTAN_POINTS_PATH_CONTENTS = "softcurrency.json"; //TODO: VALIDATE THIS!!!
 
 export const CONSUMABLES_XP_BOOST_NAME = "XP Boost";
 export const CONSUMABLES_XP_GRANT_NAME = "XP Grant";
