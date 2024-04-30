@@ -4130,7 +4130,7 @@ export async function importEmblemPalettes(headers, generalDictsAndArrays, doImp
 				if (results.items[0]._updatedDate < timeOneHourAgo)
 				{
 					console.error("Emblem Palette Folder Dict has not been updated recently.");
-					throw "Emblem Palette folder dict is out-of-date and was last updated at " + results.items[0]._updateDate;
+					throw "Emblem Palette folder dict is out-of-date and was last updated at " + results.items[0]._updatedDate.toString();
 				}
 			}
 			else {
