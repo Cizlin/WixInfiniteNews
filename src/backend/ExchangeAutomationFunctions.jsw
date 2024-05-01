@@ -199,9 +199,10 @@ export async function getConvertedExchangeList(processCustomizationOptions = fal
 		throw "Could not retrieve folder dict. Cannot get customization image urls.";
 	}
 
-	console.log("Exchange-exclusive Folder dict retrieved!");
+	console.log("Exchange Folder dict retrieved!");
 
 	let qualityDict = {}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs. Let's us avoid querying the DB for every quality inquiry.
+	let foo = 3;
 
 	console.log("Querying for quality data");
 	let qualityResults = await wixData.query(CustomizationConstants.QUALITY_DB)
@@ -214,6 +215,8 @@ export async function getConvertedExchangeList(processCustomizationOptions = fal
 		});
 
 	console.log("Quality data returned");
+
+	console.log("Foo is " + foo);
 
 	if (qualityResults.items.length > 0) {
 		console.log("Quality values found", qualityResults);
