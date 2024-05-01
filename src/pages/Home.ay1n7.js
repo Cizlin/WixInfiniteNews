@@ -54,19 +54,19 @@ $w.onReady(async function () {
 				childItemCustomizationType = "Amount: ";
 				// The Consumable name already tells its type, so we can use this for the number of Consumables offered at each tier (just 1 for now, but could be more later).
 				if (childItem[CATEGORY_SPECIFIC_VARS.ConsumablesNameField] == ConsumablesConstants.CONSUMABLES_CHALLENGE_SWAP_NAME) {
-					childItemCustomizationType += childItem[PassConstants.PASS_RANK_NUMBER_OF_CHALLENGE_SWAPS_FIELD];
+					childItemCustomizationType += ultimateChallenge[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_CHALLENGE_SWAPS_FIELD];
 				}
 				else if (childItem[CATEGORY_SPECIFIC_VARS.ConsumablesNameField] == ConsumablesConstants.CONSUMABLES_XP_BOOST_NAME) {
-					childItemCustomizationType += childItem[PassConstants.PASS_RANK_NUMBER_OF_XP_BOOSTS_FIELD];
+					childItemCustomizationType += ultimateChallenge[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_XP_BOOSTS_FIELD];
 				}
 				else if (childItem[CATEGORY_SPECIFIC_VARS.ConsumablesNameField] == ConsumablesConstants.CONSUMABLES_XP_GRANT_NAME) {
-					childItemCustomizationType += childItem[PassConstants.PASS_RANK_NUMBER_OF_XP_GRANTS_FIELD];
+					childItemCustomizationType += ultimateChallenge[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_XP_GRANTS_FIELD];
 				}
 				else if (childItem[CATEGORY_SPECIFIC_VARS.ConsumablesNameField] == ConsumablesConstants.CONSUMABLES_CREDITS_NAME) {
-					childItemCustomizationType += childItem[PassConstants.PASS_RANK_NUMBER_OF_CREDITS_FIELD];
+					childItemCustomizationType += ultimateChallenge[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_CREDITS_FIELD];
 				}
 				else if (childItem[CATEGORY_SPECIFIC_VARS.ConsumablesNameField] == ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_NAME) {
-					childItemCustomizationType += childItem[PassConstants.PASS_RANK_NUMBER_OF_SPARTAN_POINTS_FIELD];
+					childItemCustomizationType += ultimateChallenge[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_SPARTAN_POINTS_FIELD];
 				}
 			}
 			else
@@ -82,8 +82,13 @@ $w.onReady(async function () {
 				childItemCustomizationType = customizationTypeResults.items[0][SOCKET_NAME_FIELD];
 			}
 
-			const CUSTOMIZATION_IMAGE_FIELD = CATEGORY_SPECIFIC_VARS.CustomizationImageField;
-			const CUSTOMIZATION_NAME_FIELD = CATEGORY_SPECIFIC_VARS.CustomizationNameField;
+			const CUSTOMIZATION_IMAGE_FIELD = (CUSTOMIZATION_CATEGORY === ConsumablesConstants.CONSUMABLES_KEY) 
+				? CATEGORY_SPECIFIC_VARS.ConsumablesNameField 
+				: CATEGORY_SPECIFIC_VARS.CustomizationImageField;
+
+			const CUSTOMIZATION_NAME_FIELD = (CUSTOMIZATION_CATEGORY === ConsumablesConstants.CONSUMABLES_KEY) 
+				? CATEGORY_SPECIFIC_VARS.ConsumablesImageField
+				: CATEGORY_SPECIFIC_VARS.CustomizationNameField;
 
 			//$w("#ultimateChallengeButton").link = childItem[CUSTOMIZATION_URL_FIELD];
 			$w("#ultimateChallengeImage").src = childItem[CUSTOMIZATION_IMAGE_FIELD];
