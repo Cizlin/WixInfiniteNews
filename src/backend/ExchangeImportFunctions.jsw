@@ -155,7 +155,7 @@ export async function getExchangeListFromWaypoint(headers) {
 		throw "No offerings returned for Exchange; aborting to avoid data poisoning.";
 	}
 
-	return waypointJson.Offerings;
+	return waypointJson.Offerings.slice();
 }
 
 // Gets the list of Exchange items from Waypoint, fetches the data for each item, and then returns a list of items that match the current DB items.
