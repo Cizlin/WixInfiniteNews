@@ -155,7 +155,7 @@ export async function getExchangeListFromWaypoint(headers) {
 		throw "No offerings returned for Exchange; aborting to avoid data poisoning.";
 	}
 
-	return waypointJson.Offerings.slice(0, 20);
+	return waypointJson.Offerings.slice(0, waypointJson.Offerings.length - 1);
 }
 
 // Gets the list of Exchange items from Waypoint, fetches the data for each item, and then returns a list of items that match the current DB items.
@@ -220,8 +220,6 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	}
 
 	console.log("Exchange Folder dict retrieved!");
-
-	throw "Stopping here for testing";
 
 	const maxRetries = 10;
 	console.log("Beginning to fill out exchange listings from API...");
