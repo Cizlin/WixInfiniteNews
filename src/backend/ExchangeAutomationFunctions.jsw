@@ -234,7 +234,7 @@ export async function getConvertedExchangeList(processCustomizationOptions = fal
 		let retry = true;
 		while (retry && retryCount < maxRetries) {
 			try {
-				if (mainShopWaypointArray[i].Prices[0].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_CREDITS_PATH_CONTENTS))
+				if (exchangeWaypointArray[i].Prices[0].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_CREDITS_PATH_CONTENTS))
 				{
 					continue;
 				}
