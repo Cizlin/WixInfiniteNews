@@ -200,6 +200,7 @@ export async function getConvertedExchangeList(processCustomizationOptions = fal
 	let results = await wixData.query(KeyConstants.KEY_VALUE_DB)
 		.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + CustomizationConstants.CUSTOMIZATION_CATEGORY_FOLDER_DICT[ExchangeConstants.EXCHANGE_KEY] + "/")
 		.find()
+		.then((results) => { return results; })
 		.catch((error) => {
 			console.error(error, "occurred while querying Key Value DB.");
 			return {
