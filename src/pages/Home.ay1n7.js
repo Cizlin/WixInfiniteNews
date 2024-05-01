@@ -83,11 +83,11 @@ $w.onReady(async function () {
 			}
 
 			const CUSTOMIZATION_IMAGE_FIELD = (CUSTOMIZATION_CATEGORY === ConsumablesConstants.CONSUMABLES_KEY) 
-				? CATEGORY_SPECIFIC_VARS.ConsumablesNameField 
+				? CATEGORY_SPECIFIC_VARS.ConsumablesImageField 
 				: CATEGORY_SPECIFIC_VARS.CustomizationImageField;
 
 			const CUSTOMIZATION_NAME_FIELD = (CUSTOMIZATION_CATEGORY === ConsumablesConstants.CONSUMABLES_KEY) 
-				? CATEGORY_SPECIFIC_VARS.ConsumablesImageField
+				? CATEGORY_SPECIFIC_VARS.ConsumablesNameField
 				: CATEGORY_SPECIFIC_VARS.CustomizationNameField;
 
 			//$w("#ultimateChallengeButton").link = childItem[CUSTOMIZATION_URL_FIELD];
