@@ -1178,7 +1178,7 @@ export async function updateExchangeListings() {
 
 						// We have to add this here because we need the existing array of datetimes.
 						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD]); 
-						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_COST_CREDITS_FIELD]);
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD]);
 
 						console.log("Last added datetime for ", item[ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD], " is ", item[ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD]);
 						console.log(newExchangeListingsToUpdate[i]);
@@ -1192,7 +1192,7 @@ export async function updateExchangeListings() {
 						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD] = [];
 						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD] = [];
 						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD]);
-						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_COST_CREDITS_FIELD]);
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD]);
 						console.log(newExchangeListingsToUpdate[i]);
 
 						item = await addBundleToDb(newExchangeListingsToUpdate[i]); // We need to await this if we want to integrate with the Twitter API.
