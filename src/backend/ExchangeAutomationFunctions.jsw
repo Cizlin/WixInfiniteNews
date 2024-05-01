@@ -180,6 +180,30 @@ export async function getConvertedExchangeList(processCustomizationOptions = fal
 
 	let exchangeSiteArray = [];
 
+	let qualityDict = {}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs. Let's us avoid querying the DB for every quality inquiry.
+
+	console.log("Querying for quality data");
+	let qualityResults = await wixData.query(CustomizationConstants.QUALITY_DB)
+		.find()
+		.catch((error) => {
+			console.error(error, "occurred while filling in quality dict");
+			return {
+				items: []
+			};
+		});
+
+	console.log("Quality data returned");
+
+	if (qualityResults.items.length > 0) {
+		console.log("Quality values found", qualityResults);
+		for (let i = 0; i < qualityResults.items.length; ++i) {
+			qualityDict[qualityResults.items[i].quality] = qualityResults.items[i]._id;
+		}
+	}
+	else {
+		throw "No quality values found in the DB! Major emergency!";
+	}
+
 	console.log("Retrieving Exchange-exclusive folderDict...");
 	let folderDict;
 	let results = await wixData.query(KeyConstants.KEY_VALUE_DB)
@@ -200,33 +224,6 @@ export async function getConvertedExchangeList(processCustomizationOptions = fal
 	}
 
 	console.log("Exchange Folder dict retrieved!");
-
-	let qualityDict = {}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs. Let's us avoid querying the DB for every quality inquiry.
-	let foo = 3;
-
-	console.log("Querying for quality data");
-	let qualityResults = await wixData.query(CustomizationConstants.QUALITY_DB)
-		.find()
-		.catch((error) => {
-			console.error(error, "occurred while filling in quality dict");
-			return {
-				items: []
-			};
-		});
-
-	console.log("Quality data returned");
-
-	console.log("Foo is " + foo);
-
-	if (qualityResults.items.length > 0) {
-		console.log("Quality values found", qualityResults);
-		for (let i = 0; i < qualityResults.items.length; ++i) {
-			qualityDict[qualityResults.items[i].quality] = qualityResults.items[i]._id;
-		}
-	}
-	else {
-		throw "No quality values found in the DB! Major emergency!";
-	}
 
 	const maxRetries = 10;
 	console.log("Beginning to fill out exchange listings from API...");
