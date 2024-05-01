@@ -1659,7 +1659,7 @@ export async function addItemIdArrayToCapstoneChallenge(challengeId, fieldName, 
 	let itemInfoArray = []; // We're going to add the item Info to this array and return it.
 
 	// We have three tasks for each item ID: update the source (if it is (Pending) or Pending), update the sourcetype reference, and mark it currently Available.
-	if (fieldName != CapstoneChallengeConstants.SCAPSTONE_CHALLENGE_CONSUMABLE_REFERENCE_FIELD) {
+	if (fieldName != CapstoneChallengeConstants.CAPSTONE_CHALLENGE_CONSUMABLE_REFERENCE_FIELD) {
 		const CUSTOMIZATION_DB = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationDb;
 		const SOURCE_TYPE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationSourceTypeField;
 		const CUSTOMIZATION_TYPE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationSocketReferenceField;
@@ -1800,19 +1800,19 @@ export async function addItemIdArrayToCapstoneChallenge(challengeId, fieldName, 
 					switch (consumables[i][ConsumablesConstants.CONSUMABLES_NAME_FIELD])
 					{
 						case ConsumablesConstants.CONSUMABLES_CHALLENGE_SWAP_NAME:
-							numConsumables = itemJson[numChallengeSwapsField];
+							numConsumables = itemJson[numChallengeSwapsField] || 0;
 							break;
 						case ConsumablesConstants.CONSUMABLES_XP_BOOST_NAME:
-							numConsumables = itemJson[numXpBoostsField];
+							numConsumables = itemJson[numXpBoostsField] || 0;
 							break;
 						case ConsumablesConstants.CONSUMABLES_XP_GRANT_NAME:
-							numConsumables = itemJson[numXpGrantsField];
+							numConsumables = itemJson[numXpGrantsField] || 0;
 							break;
 						case ConsumablesConstants.CONSUMABLES_CREDITS_NAME:
-							numConsumables = itemJson[numCreditsField];
+							numConsumables = itemJson[numCreditsField] || 0;
 							break;
 						case ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_NAME:
-							numConsumables = itemJson[numSpartanPointsField];
+							numConsumables = itemJson[numSpartanPointsField] || 0;
 							break;
 						default:
 							console.error("No match found for consumable with name " + consumables[i][ConsumablesConstants.CONSUMABLES_NAME_FIELD]);
