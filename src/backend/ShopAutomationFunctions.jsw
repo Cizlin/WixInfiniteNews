@@ -260,10 +260,10 @@ export async function getHcsShopListFromWaypoint(headers) {
 }
 
 // Gets list of Customization Offers Shop items from Waypoint.
-export async function getCustomizationOffersShopListFromWaypoint(headers) {
+export async function getCustomizationOffersShopListFromWaypoint(headers, key=KeyConstants.KEY_VALUE_CUSTOMIZATION_SHOP_OFFSET_KEY, limit=CUSTOMIZATION_SHOP_LIMIT) {
 	const XUID = await getSecret(ApiConstants.SECRETS_XUID_KEY);
 
-		let retry = true;
+	let retry = true;
 	let waypointJson = {};
 
 	let url = ApiConstants.WAYPOINT_URL_BASE_ECONOMY + ApiConstants.WAYPOINT_URL_XUID_PREFIX + XUID + ApiConstants.WAYPOINT_URL_XUID_SUFFIX +
@@ -304,7 +304,7 @@ export async function getCustomizationOffersShopListFromWaypoint(headers) {
 	}
 
 	let currentOffsetObject = await wixData.query(KeyConstants.KEY_VALUE_DB)
-		.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_SHOP_OFFSET_KEY)
+		.eq("key", key)
 		.find()
 		.then((results) => {
 			if (results.items.length == 0) {
@@ -319,9 +319,9 @@ export async function getCustomizationOffersShopListFromWaypoint(headers) {
 			throw "Dying because unable to retrieve offset from Key Value DB.";
 		});
 
-	resetOffset = waypointJson.Offerings.length <= currentOffsetObject.value.offset + CUSTOMIZATION_SHOP_LIMIT; // Check if we need to reset the offset at the end.
+	resetOffset = waypointJson.Offerings.length <= currentOffsetObject.value.offset + limit; // Check if we need to reset the offset at the end.
 
-	return waypointJson.Offerings.slice(currentOffsetObject.value.offset, currentOffsetObject.value.offset + CUSTOMIZATION_SHOP_LIMIT);
+	return waypointJson.Offerings.slice(currentOffsetObject.value.offset, currentOffsetObject.value.offset + limit);
 }
 
 // Retrieves an item ID based on the JSON returned from Waypoint and some other efficiency arguments.

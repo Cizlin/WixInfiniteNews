@@ -177,7 +177,9 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	let exchangeWaypointJson = {};
 
 	// TODO: Confirm that the Exchange Customization Menu shop comes from the same place as the normal shop.
-	exchangeWaypointJson = await getExchangeListFromWaypoint(headers);//(processCustomizationOptions) ? await ShopFunctions.getCustomizationOffersShopListFromWaypoint(headers) : await getExchangeListFromWaypoint(headers);
+	exchangeWaypointJson = (processCustomizationOptions) 
+		? await ShopFunctions.getCustomizationOffersShopListFromWaypoint(headers, KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY, CUSTOMIZATION_EXCHANGE_LIMIT) 
+		: await getExchangeListFromWaypoint(headers);
 	console.log("Exchange JSON", exchangeWaypointJson);
 
 	let exchangeSiteArray = [];
