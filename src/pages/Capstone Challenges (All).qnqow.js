@@ -3,6 +3,7 @@ import * as ItemListSetupFunctions from 'public/ItemListSetup.js';
 import * as GeneralFunctions from 'public/General.js';
 import * as CapstoneChallengeConstants from 'public/Constants/CapstoneChallengeConstants.js';
 import * as CustomizationConstants from 'public/Constants/CustomizationConstants.js';
+import * as ConsumablesConstants from 'public/Constants/ConsumablesConstants.js';
 
 let eightDayChallenges = ["Hello World"]; // A list of Challenge names that lasted for 8 days instead of 7 (currently just the S1 Week 1 Challenge).
 
@@ -45,39 +46,75 @@ $w.onReady(function () {
 				// If we have multiple categories or multiple items in a category.
 				challengeHasMultipleRewards = true;
 			}
-			
-			// We need to retrieve the customization type. Soon will do this for all items including attachments.
-			const SOCKET_DB = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].SocketDb;
-			const CUSTOMIZATION_TYPE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].CustomizationSocketReferenceField;
-			const SOCKET_NAME_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].SocketNameField;
 
-			let customizationTypeResults = await wixData.query(SOCKET_DB)
-				.eq("_id", childItem[CUSTOMIZATION_TYPE_REFERENCE_FIELD])
-				.find();
+			if (CUSTOMIZATION_CATEGORY !== ConsumablesConstants.CONSUMABLES_KEY)
+			{
+				// We need to retrieve the customization type. Soon will do this for all items including attachments.
+				const SOCKET_DB = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].SocketDb;
+				const CUSTOMIZATION_TYPE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].CustomizationSocketReferenceField;
+				const SOCKET_NAME_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].SocketNameField;
 
-			let childItemCustomizationType = customizationTypeResults.items[0][SOCKET_NAME_FIELD];
+				let customizationTypeResults = await wixData.query(SOCKET_DB)
+					.eq("_id", childItem[CUSTOMIZATION_TYPE_REFERENCE_FIELD])
+					.find();
 
-			const CUSTOMIZATION_URL_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].CustomizationUrlField;
-			const CUSTOMIZATION_IMAGE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].CustomizationImageField;
-			const CUSTOMIZATION_NAME_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].CustomizationNameField;
+				let childItemCustomizationType = customizationTypeResults.items[0][SOCKET_NAME_FIELD];
 
-			//$item("#ultimateChallengeButton").link = childItem[CUSTOMIZATION_URL_FIELD];
-			$item("#ultimateChallengeImage").src = childItem[CUSTOMIZATION_IMAGE_FIELD];
-			$item("#ultimateChallengeImage").fitMode = "fit";
-			$item("#ultimateChallengeRewardText").text = (challengeHasMultipleRewards) ? "Multiple rewards. Click here to see all." 
-				: (childItem[CUSTOMIZATION_NAME_FIELD] + " " + childItemCustomizationType);
+				const CUSTOMIZATION_IMAGE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].CustomizationImageField;
+				const CUSTOMIZATION_NAME_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].CustomizationNameField;
 
-			if ("CustomizationEffectVideoField" in CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY] &&
-				childItem[CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].CustomizationEffectVideoField]) {
+				//$item("#ultimateChallengeButton").link = childItem[CUSTOMIZATION_URL_FIELD];
+				$item("#ultimateChallengeImage").src = childItem[CUSTOMIZATION_IMAGE_FIELD];
+				$item("#ultimateChallengeImage").fitMode = "fit";
+				$item("#ultimateChallengeRewardText").text = (challengeHasMultipleRewards) ? "Multiple rewards. Click here to see all." 
+					: (childItem[CUSTOMIZATION_NAME_FIELD] + " " + childItemCustomizationType);
 
-				$item("#effectVideoPlayer").src = childItem[CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].CustomizationEffectVideoField];
+				if ("CustomizationEffectVideoField" in CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY] &&
+					childItem[CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].CustomizationEffectVideoField]) {
 
-				console.log("Showing video and hiding image.");
+					$item("#effectVideoPlayer").src = childItem[CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[CUSTOMIZATION_CATEGORY].CustomizationEffectVideoField];
 
-				$item("#ultimateChallengeImage").collapse();
-				$item("#ultimateChallengeImage").hide();
-				$item("#effectVideoPlayer").expand();
-				$item("#effectVideoPlayer").show();
+					console.log("Showing video and hiding image.");
+
+					$item("#ultimateChallengeImage").collapse();
+					$item("#ultimateChallengeImage").hide();
+					$item("#effectVideoPlayer").expand();
+					$item("#effectVideoPlayer").show();
+				}
+			}
+			else
+			{
+				const CONSUMABLE_IMAGE_FIELD = ConsumablesConstants.CONSUMABLES_IMAGE_FIELD;
+				const CONSUMABLE_NAME_FIELD = ConsumablesConstants.CONSUMABLES_NAME_FIELD;
+
+				let consumableCount = 0;
+
+				switch (childItem[CONSUMABLE_NAME_FIELD])
+				{
+					case ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_NAME:
+						consumableCount = itemData[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_SPARTAN_POINTS_FIELD];
+						break;
+					case ConsumablesConstants.CONSUMABLES_CHALLENGE_SWAP_NAME:
+						consumableCount = itemData[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_CHALLENGE_SWAPS_FIELD];
+						break;
+					case ConsumablesConstants.CONSUMABLES_CREDITS_NAME:
+						consumableCount = itemData[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_CREDITS_FIELD];
+						break;
+					case ConsumablesConstants.CONSUMABLES_XP_BOOST_NAME:
+						consumableCount = itemData[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_XP_BOOSTS_FIELD];
+						break;
+					case ConsumablesConstants.CONSUMABLES_XP_GRANT_NAME:
+						consumableCount = itemData[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_XP_GRANTS_FIELD];
+						break;
+					default:
+						consumableCount = 0;
+						break;
+				}
+				$item("#ultimateChallengeImage").src = childItem[CONSUMABLE_IMAGE_FIELD];
+				$item("#ultimateChallengeImage").fitMode = "fit";
+				$item("#ultimateChallengeRewardText").text = (challengeHasMultipleRewards) ? "Multiple rewards. Click here to see all." 
+					: (childItem[CONSUMABLE_NAME_FIELD] + " x" + consumableCount);
+
 			}
 
 			let lastAvailableDatetime;

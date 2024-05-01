@@ -1639,10 +1639,10 @@ export async function getPreviousAvailableCapstoneChallenge() {
 	return currentlyAvailableCapstoneChallenges;
 }
 
-export async function addItemIdArrayToCapstoneChallenge(challengeId, fieldName, itemIdArray, customizationCategory, challengeName) {
+export async function addItemIdArrayToCapstoneChallenge(challengeId, fieldName, itemIdArray, customizationCategory, challengeName, challengeJson) {
 
 	if (itemIdArray.length <= 0) {
-		//console.log("No processing necessary as itemIdArray is empty for " + customizationCategory + " and Capstone Challenge Name " + challengeName);
+		//console.log("No processing necessary as itemIdArray is empty for " + customizationCategory + " and Capstone Challenge " + challengeJson);
 		return [];
 	}
 
@@ -1692,7 +1692,9 @@ export async function addItemIdArrayToCapstoneChallenge(challengeId, fieldName, 
 
 							// We need to update the source
 							const SOURCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationSourceField;
-							let sourceText = "Complete all Weekly Challenges and then complete the <i>" + challengeName.trim() + "</i> Capstone Challenge during any week it is available.";
+							let sourceText = "Complete all Weekly Challenges and then complete the <i>" 
+								+ challengeName.trim() 
+								+ "</i> Capstone Challenge during any week it is available.";
 
 							if (item[SOURCE_FIELD].includes("Pending")) {
 								item[SOURCE_FIELD] = sourceText;
@@ -1803,19 +1805,19 @@ export async function addItemIdArrayToCapstoneChallenge(challengeId, fieldName, 
 					switch (consumables[i][ConsumablesConstants.CONSUMABLES_NAME_FIELD])
 					{
 						case ConsumablesConstants.CONSUMABLES_CHALLENGE_SWAP_NAME:
-							numConsumables = itemJson[numChallengeSwapsField] || 0;
+							numConsumables = challengeJson[numChallengeSwapsField] || 0;
 							break;
 						case ConsumablesConstants.CONSUMABLES_XP_BOOST_NAME:
-							numConsumables = itemJson[numXpBoostsField] || 0;
+							numConsumables = challengeJson[numXpBoostsField] || 0;
 							break;
 						case ConsumablesConstants.CONSUMABLES_XP_GRANT_NAME:
-							numConsumables = itemJson[numXpGrantsField] || 0;
+							numConsumables = challengeJson[numXpGrantsField] || 0;
 							break;
 						case ConsumablesConstants.CONSUMABLES_CREDITS_NAME:
-							numConsumables = itemJson[numCreditsField] || 0;
+							numConsumables = challengeJson[numCreditsField] || 0;
 							break;
 						case ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_NAME:
-							numConsumables = itemJson[numSpartanPointsField] || 0;
+							numConsumables = challengeJson[numSpartanPointsField] || 0;
 							break;
 						default:
 							console.error("No match found for consumable with name " + consumables[i][ConsumablesConstants.CONSUMABLES_NAME_FIELD]);
@@ -1865,7 +1867,8 @@ async function addCapstoneChallengeToDb(capstoneChallengeJson) {
 			FIELD,
 			capstoneChallengeJson[FIELD],
 			CustomizationConstants.CAPSTONE_CHALLENGE_ITEM_FIELD_TO_CUSTOMIZATION_CATEGORY_DICT[FIELD],
-			capstoneChallengeJson[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NAME_FIELD]
+			capstoneChallengeJson[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NAME_FIELD],
+			capstoneChallengeJson
 		));
 	}
 

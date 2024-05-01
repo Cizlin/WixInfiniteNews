@@ -1146,7 +1146,8 @@ export async function updateBundleAndItemsCurrentlyAvailableStatus(itemJson, cur
 							itemJsonCopy[ShopConstants.SHOP_ITEM_NAME_FIELD],
 							itemJsonCopy[ShopConstants.SHOP_COST_CREDITS_FIELD],
 							itemJsonCopy[ShopConstants.SHOP_IS_HCS_FIELD],
-							itemJsonCopy[ShopConstants.SHOP_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD]
+							itemJsonCopy[ShopConstants.SHOP_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD],
+							itemJson
 						);
 					}
 				}
@@ -1158,7 +1159,8 @@ export async function updateBundleAndItemsCurrentlyAvailableStatus(itemJson, cur
 							FIELD,
 							itemJsonCopy[FIELD],
 							referenceFieldToCategoryDict[FIELD],
-							itemJsonCopy[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NAME_FIELD]
+							itemJsonCopy[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NAME_FIELD],
+							itemJson
 						);
 					}
 				}
@@ -1171,7 +1173,8 @@ export async function updateBundleAndItemsCurrentlyAvailableStatus(itemJson, cur
 							referenceFieldToCategoryDict[FIELD],
 							itemJsonCopy[ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD],
 							itemJsonCopy[ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD],
-							itemJsonCopy[ExchangeConstants.EXCHANGE_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD]
+							itemJsonCopy[ExchangeConstants.EXCHANGE_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD],
+							itemJson
 						);
 					}
 				}
@@ -1187,7 +1190,7 @@ export async function updateBundleAndItemsCurrentlyAvailableStatus(itemJson, cur
 }
 
 // We store item IDs in an array, which lets us query for items matching those IDs and then update them.
-export async function addItemIdArrayToShopItem(bundleId, fieldName, itemIdArray, customizationCategory, bundleName, bundleCost, isHcs, isCustomizationBundle) {
+export async function addItemIdArrayToShopItem(bundleId, fieldName, itemIdArray, customizationCategory, bundleName, bundleCost, isHcs, isCustomizationBundle, bundleJson) {
 	const PENDING_SOURCE_ID = CustomizationConstants.SOURCE_TYPE_PENDING_ID;
 	const SHOP_SOURCE_ID = CustomizationConstants.SOURCE_TYPE_SHOP_ID;
 
@@ -1380,19 +1383,19 @@ export async function addItemIdArrayToShopItem(bundleId, fieldName, itemIdArray,
 					switch (consumables[i][ConsumablesConstants.CONSUMABLES_NAME_FIELD])
 					{
 						case ConsumablesConstants.CONSUMABLES_CHALLENGE_SWAP_NAME:
-							numConsumables = itemJson[numChallengeSwapsField];
+							numConsumables = bundleJson[numChallengeSwapsField];
 							break;
 						case ConsumablesConstants.CONSUMABLES_XP_BOOST_NAME:
-							numConsumables = itemJson[numXpBoostsField];
+							numConsumables = bundleJson[numXpBoostsField];
 							break;
 						case ConsumablesConstants.CONSUMABLES_XP_GRANT_NAME:
-							numConsumables = itemJson[numXpGrantsField];
+							numConsumables = bundleJson[numXpGrantsField];
 							break;
 						case ConsumablesConstants.CONSUMABLES_CREDITS_NAME:
-							numConsumables = itemJson[numCreditsField];
+							numConsumables = bundleJson[numCreditsField];
 							break;
 						case ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_NAME:
-							numConsumables = itemJson[numSpartanPointsField];
+							numConsumables = bundleJson[numSpartanPointsField];
 							break;
 						default:
 							console.error("No match found for consumable with name " + consumables[i][ConsumablesConstants.CONSUMABLES_NAME_FIELD]);
@@ -1455,7 +1458,8 @@ async function addBundleToDb(shopBundleJson) {
 			shopBundleJson[ShopConstants.SHOP_ITEM_NAME_FIELD],
 			shopBundleJson[ShopConstants.SHOP_COST_CREDITS_FIELD],
 			shopBundleJson[ShopConstants.SHOP_IS_HCS_FIELD],
-			shopBundleJson[ShopConstants.SHOP_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD]
+			shopBundleJson[ShopConstants.SHOP_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD],
+			shopBundleJson
 		);
 
 		if (childItemInfoArray) {
