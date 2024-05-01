@@ -1414,6 +1414,10 @@ export async function getCurrentCapstoneChallengeDbJson() {
 	challengeDbJson[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_COMPLETION_THRESHOLD_FIELD] = capstoneChallengeJson.ThresholdForSuccess;
 	challengeDbJson[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_XP_REWARD_FIELD] = capstoneChallengeJson.Reward.OperationExperience;
 	challengeDbJson[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_SPARTAN_POINTS_FIELD] = capstoneChallengeJson.Reward.SoftExperience;
+	challengeDbJson[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_CREDITS_FIELD] = 0;
+	challengeDbJson[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_XP_GRANTS_FIELD] = 0;
+	challengeDbJson[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_XP_BOOSTS_FIELD] = 0;
+	challengeDbJson[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_CHALLENGE_SWAPS_FIELD] = 0;
 
 	if (capstoneChallengeJson.Reward.SoftExperience > 0)
 	{
