@@ -159,7 +159,7 @@ export async function getExchangeListFromWaypoint(headers) {
 }
 
 // Gets the list of Exchange items from Waypoint, fetches the data for each item, and then returns a list of items that match the current DB items.
-export async function getConvertedExchangeList(processCustomizationOptions = false) {
+export async function getNewExchangeList(processCustomizationOptions = false) {
 	let headers = await ApiFunctions.makeWaypointHeaders();
 
 	let typeDict = await GeneralBackendFunctions.generateTypeDict();
@@ -1088,9 +1088,9 @@ export async function generatePushNotifications(updateItemArray) {
 }
 
 // This function will be called by the job scheduler.
-export async function refreshExchangeListings() {
+export async function updateExchangeListings() {
 	let currentlyAvailableExchangeListings = await getCurrentlyAvailableExchangeListings();
-	let newlyAvailableExchangeListings = await getConvertedExchangeList();
+	let newlyAvailableExchangeListings = await getNewExchangeList();
 
 	if (currentlyAvailableExchangeListings.length <= 0) {
 		throw "Error: No currently available Exchange Listings were returned. Exiting now to avoid data poisoning.";
@@ -1202,7 +1202,7 @@ export async function refreshExchangeListings() {
 export async function refreshCustomizationExchangeListings() {
 	let newCustomizationExchangeListings = [];
 	try {
-		newCustomizationExchangeListings = await getConvertedExchangeList(true);
+		newCustomizationExchangeListings = await getNewExchangeList(true);
 	}
 	catch (error) {
 		console.error("Error occurred while getting exchange list from API", error);
