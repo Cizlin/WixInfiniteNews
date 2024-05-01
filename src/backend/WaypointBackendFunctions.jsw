@@ -1419,6 +1419,14 @@ export async function getCurrentCapstoneChallengeDbJson() {
 	challengeDbJson[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_XP_BOOSTS_FIELD] = 0;
 	challengeDbJson[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_CHALLENGE_SWAPS_FIELD] = 0;
 
+	// Initialize the item arrays.
+	for (const FIELD in CustomizationConstants.CAPSTONE_CHALLENGE_ITEM_FIELD_TO_CUSTOMIZATION_CATEGORY_DICT) {
+		challengeDbJson[FIELD] = [];
+	}
+
+	// Initialize the field names with items arrays.
+	challengeDbJson[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_FIELDS_WITH_ITEMS_FIELD] = [];
+
 	if (capstoneChallengeJson.Reward.SoftExperience > 0)
 	{
 		let spartanPointsId = await wixData.query(ConsumablesConstants.CONSUMABLES_DB)
@@ -1440,15 +1448,6 @@ export async function getCurrentCapstoneChallengeDbJson() {
 	let includedItemsArray = capstoneChallengeJson.Reward.InventoryRewards;	
 
 	if (includedItemsArray) {
-
-		// Initialize the item arrays.
-		for (const FIELD in CustomizationConstants.CAPSTONE_CHALLENGE_ITEM_FIELD_TO_CUSTOMIZATION_CATEGORY_DICT) {
-			challengeDbJson[FIELD] = [];
-		}
-
-		// Initialize the field names with items arrays.
-		challengeDbJson[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_FIELDS_WITH_ITEMS_FIELD] = [];
-
 		for (let j = 0; j < includedItemsArray.length; j++) {
 			let foundType = false; // Should become true if the type is found.
 			for (let typeCategory in typeDict) {
