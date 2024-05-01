@@ -196,6 +196,9 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 		throw "No quality values found in the DB! Major emergency!";
 	}
 
+	console.log("Sleeping for 5s");
+	GeneralFunctions.sleep(5000);
+
 	console.log("Retrieving Exchange-exclusive folderDict...");
 	let folderDict;
 	let results = await wixData.query(KeyConstants.KEY_VALUE_DB)
