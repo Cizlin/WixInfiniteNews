@@ -36,7 +36,7 @@ import * as MediaManagerFunctions from 'backend/MediaManagerFunctions.jsw';
 import {sendTweet} from 'backend/TwitterApiFunctions.jsw';
 import {sendDiscordMessage} from 'backend/DiscordBotFunctions.jsw';
 import * as WaypointFunctions from 'backend/WaypointBackendFunctions.jsw';
-import * as ExchangeFunctions from 'backend/ExchangeAutomationFunctions.jsw';
+import * as ExchangeFunctions from 'backend/ExchangeImportFunctions.jsw';
 import * as GeneralFunctions from 'public/General.js';
 import * as GeneralBackendFunctions from 'backend/GeneralBackendFunctions.jsw';
 import * as NotificationFunctions from 'backend/NotificationFunctions.jsw';
