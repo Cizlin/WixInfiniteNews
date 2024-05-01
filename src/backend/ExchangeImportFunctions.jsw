@@ -1106,9 +1106,9 @@ export async function updateExchangeListings() {
 	let currentlyAvailableExchangeListings = await getCurrentlyAvailableExchangeListings();
 	let newlyAvailableExchangeListings = await getNewExchangeList();
 
-	if (currentlyAvailableExchangeListings.length <= 0) {
+	/*if (currentlyAvailableExchangeListings.length <= 0) {
 		throw "Error: No currently available Exchange Listings were returned. Exiting now to avoid data poisoning.";
-	}
+	}*/
 
 	if (newlyAvailableExchangeListings.length <= 0) {
 		throw "Error: No new Exchange Listings were returned. Exiting now to avoid notification spam.";
