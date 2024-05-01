@@ -1,11 +1,3 @@
-// These functions are used to retrieve the list of bundles currently sold in the Shop and add them to the Shop database.
-// Let's follow this process:
-// 1) Get a list of Shop items currently in the DB that are marked as Currently Available.
-// 2) Get the list of current HCS and Main Shop items from Waypoint and add any that are missing thus far.
-// 3) For any Shop items in our previous list that aren't in the new list, mark those as not Currently Available and do the same for their linked items.
-// 4) Link the bundles to their included customization items. Mark those items as Currently Available and update their Source listings if necessary (if Source.includes("Pending")).
-// 5) Create a Tweet indicating the Bundles that are newly available. If possible, create a thread with each successive Tweet containing a link to the Infinite News page for the Bundle.
-
 // Import Wix functions and tools.
 import wixData from 'wix-data';
 import wixFetch from 'wix-fetch';
@@ -20,7 +12,6 @@ import * as ExchangeConstants from 'public/Constants/ExchangeConstants.js';
 import * as ApiConstants from 'public/Constants/ApiConstants.js';
 import * as CustomizationConstants from 'public/Constants/CustomizationConstants.js';
 import * as ConsumablesConstants from 'public/Constants/ConsumablesConstants.js';
-import * as CapstoneChallengeConstants from 'public/Constants/CapstoneChallengeConstants.js';
 import * as GeneralConstants from 'public/Constants/GeneralConstants.js';
 
 import * as ArmorConstants from 'public/Constants/ArmorConstants.js';
@@ -1208,8 +1199,6 @@ export async function refreshExchangeListings() {
 }
 
 export async function refreshCustomizationExchangeListings() {
-	//currentlyAvailableIds = await getCurrentlyAvailableExchangeListings(true); // We need this array so that we can check each newly available listing and see if we already have it available.
-
 	let newCustomizationExchangeListings = [];
 	try {
 		newCustomizationExchangeListings = await getConvertedExchangeList(true);
