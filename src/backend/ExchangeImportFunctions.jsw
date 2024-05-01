@@ -155,7 +155,17 @@ export async function getExchangeListFromWaypoint(headers) {
 		throw "No offerings returned for Exchange; aborting to avoid data poisoning.";
 	}
 
-	return waypointJson.Offerings.slice(0, waypointJson.Offerings.length - 1);
+	let offeringsToReturn = [];
+
+	for (let i = 0; i < waypointJson.Offerings.length; ++i)
+	{
+		if (waypointJson.Offerings[i].Prices[0].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_PATH_CONTENTS))
+		{
+			offeringsToReturn.push(waypointJson.Offerings[i]);
+		}
+	}
+
+	return offeringsToReturn;
 }
 
 // Gets the list of Exchange items from Waypoint, fetches the data for each item, and then returns a list of items that match the current DB items.
@@ -167,7 +177,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	let exchangeWaypointJson = {};
 
 	// TODO: Confirm that the Exchange Customization Menu shop comes from the same place as the normal shop.
-	exchangeWaypointJson = (processCustomizationOptions) ? await ShopFunctions.getCustomizationOffersShopListFromWaypoint(headers) : await getExchangeListFromWaypoint(headers);
+	exchangeWaypointJson = await getExchangeListFromWaypoint(headers);//(processCustomizationOptions) ? await ShopFunctions.getCustomizationOffersShopListFromWaypoint(headers) : await getExchangeListFromWaypoint(headers);
 	console.log("Exchange JSON", exchangeWaypointJson);
 
 	let exchangeSiteArray = [];
