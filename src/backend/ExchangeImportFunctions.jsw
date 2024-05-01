@@ -155,7 +155,7 @@ export async function getExchangeListFromWaypoint(headers) {
 		throw "No offerings returned for Exchange; aborting to avoid data poisoning.";
 	}
 
-	return waypointJson;
+	return waypointJson.Offerings;
 }
 
 // Gets the list of Exchange items from Waypoint, fetches the data for each item, and then returns a list of items that match the current DB items.
@@ -223,7 +223,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 
 	const maxRetries = 10;
 	console.log("Beginning to fill out exchange listings from API...");
-	let exchangeWaypointArray = (processCustomizationOptions) ? exchangeWaypointJson : exchangeWaypointJson.Offerings;
+	let exchangeWaypointArray = exchangeWaypointJson;
 
 	for (let i = 0; i < exchangeWaypointArray.length; ++i) {
 		let retryCount = 0;
