@@ -1430,7 +1430,7 @@ export async function getCurrentCapstoneChallengeDbJson() {
 			});
 
 		challengeDbJson[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_CONSUMABLE_REFERENCE_FIELD] = [spartanPointsId];
-		challengeDbJson[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_FIELDS_WITH_ITEMS_FIELD].push(CapstoneChallengeConstants.CAPSTONE_CHALLENGE_CONSUMABLE_REFERENCE_FIELD);
+		challengeDbJson[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_FIELDS_WITH_ITEMS_FIELD] = [CapstoneChallengeConstants.CAPSTONE_CHALLENGE_CONSUMABLE_REFERENCE_FIELD];
 	}
 
 	let includedItemsArray = capstoneChallengeJson.Reward.InventoryRewards;	
