@@ -51,7 +51,7 @@ $w.onReady(async function () {
 			let childItemCustomizationType;
 			if (CUSTOMIZATION_CATEGORY === ConsumablesConstants.CONSUMABLES_KEY)
 			{
-				childItemCustomizationType = "Amount: ";
+				childItemCustomizationType = "x";
 				// The Consumable name already tells its type, so we can use this for the number of Consumables offered at each tier (just 1 for now, but could be more later).
 				if (childItem[CATEGORY_SPECIFIC_VARS.ConsumablesNameField] == ConsumablesConstants.CONSUMABLES_CHALLENGE_SWAP_NAME) {
 					childItemCustomizationType += ultimateChallenge[CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_CHALLENGE_SWAPS_FIELD];
