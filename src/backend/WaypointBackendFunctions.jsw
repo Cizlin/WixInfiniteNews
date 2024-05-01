@@ -1657,7 +1657,7 @@ export async function addItemIdArrayToCapstoneChallenge(challengeId, fieldName, 
 			//console.log("Added references for Capstone Challenge item ", challengeId, " and fieldName ", fieldName);
 		})
 		.catch((error) => {
-			console.error("Error", error, "occurred. Failed to add references for Shop item ", challengeId, " and fieldName ", fieldName);
+			console.error("Error", error, "occurred. Failed to add references for Capstone Challenge ", challengeId, " and fieldName ", fieldName);
 		});
 
 	let itemInfoArray = []; // We're going to add the item Info to this array and return it.
@@ -2196,7 +2196,13 @@ export async function updateCapstoneChallenge() {
 						newCapstoneChallengeToUpdate[i][CapstoneChallengeConstants.CAPSTONE_CHALLENGE_AVAILABLE_WEEK_ARRAY_FIELD].unshift(currentWeekNum);
 						// We have to add this here because we need the existing array of weeks
 
-						item = await addCapstoneChallengeToDb(newCapstoneChallengeToUpdate[i]); // We need to await this if we want to integrate with the Twitter API.
+						try {
+							item = await addCapstoneChallengeToDb(newCapstoneChallengeToUpdate[i]); // We need to await this if we want to integrate with the Twitter API.
+						}
+						catch (error)
+						{
+							console.error(error + " occurred while trying to save capstone challenge to DB");
+						}
 					}
 
 					updateItemArray.push(item);
