@@ -2,7 +2,7 @@ import wixFetch from 'wix-fetch';
 import wixSecretsBackend from 'wix-secrets-backend';
 import wixData from 'wix-data';
 import _ from 'lodash';
-import * as notifs from 'backend/InternalNotificationFunctions.jsw';
+//import * as notifs from 'backend/InternalNotificationFunctions.jsw';
 import * as twitter from 'backend/TwitterApiFunctions.jsw';
 import * as discord from 'backend/NotificationFunctions.jsw';
 
