@@ -2,7 +2,7 @@ import wixFetch from 'wix-fetch';
 import wixSecretsBackend from 'wix-secrets-backend';
 import wixData from 'wix-data';
 import _ from 'lodash';
-//import * as notifs from 'backend/InternalNotificationFunctions.jsw';
+import * as notifs from 'backend/InternalNotificationFunctions.jsw';
 import * as twitter from 'backend/TwitterApiFunctions.jsw';
 import * as discord from 'backend/NotificationFunctions.jsw';
 
@@ -457,7 +457,7 @@ export async function refreshAllTwitchDrops(useAutomation = true, dropJsonArray 
 
                     if (matchingRewards.length === 0) {
                         // If we still didn't find anything, fire a notification to the owner.
-                        //notifs.notifyOwner("Twitch Drop Reward Not Defined", "Add a definition to Twitch Drop Rewards for name: " + name + " and code: " + code);
+                        notifs.notifyOwner("Twitch Drop Reward Not Defined", "Add a definition to Twitch Drop Rewards for name: " + name + " and code: " + code);
                     }
                     else if (matchingRewards.length === 1) {
                         // There was exactly one return, which is desired.
@@ -468,7 +468,7 @@ export async function refreshAllTwitchDrops(useAutomation = true, dropJsonArray 
                         databaseTwitchDrops[i].rewardReferences.push(matchingRewards[0]);
                     }
                     else {
-                        //notifs.notifyOwner("Multiple Twitch Drop Rewards for Code/Name Combo", "Validate the name: " + name + " and code: " + code + " in the Twitch Drop Rewards collection.");
+                        notifs.notifyOwner("Multiple Twitch Drop Rewards for Code/Name Combo", "Validate the name: " + name + " and code: " + code + " in the Twitch Drop Rewards collection.");
                         // We need to resolve this manually, so let's leave it for now.
                     }
                 }
@@ -578,12 +578,12 @@ export async function refreshAllTwitchDrops(useAutomation = true, dropJsonArray 
 
     if (sendAlert) {
         console.log("Sending Twitch Drop alert to owner...");
-        //notifs.notifyOwner("New/Updated Twitch Drops", "Check the Twitch Drops database to note the latest changes for these drop IDs: " + commaSeparatedDropIds);
+        notifs.notifyOwner("New/Updated Twitch Drops", "Check the Twitch Drops database to note the latest changes for these drop IDs: " + commaSeparatedDropIds);
     }
 
     if (dropIsLive) {
         console.log("Sending ACTIVE Twitch Drop alert to owner...");
-        //notifs.notifyOwner("Twitch Drop Now ACTIVE", "Validate the active Twitch Drop(s) and update these drop IDs (includes all drops in API): " + commaSeparatedDropIds);
+        notifs.notifyOwner("Twitch Drop Now ACTIVE", "Validate the active Twitch Drop(s) and update these drop IDs (includes all drops in API): " + commaSeparatedDropIds);
     }
 }
 
@@ -618,7 +618,7 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
         }
         else {
             // This drop is upcoming. Notify owner since we have time to fix it.
-            //notifs.notifyOwner("No Notification Reward Setup for Upcoming Drop", "Check the Twitch Drops and Twitch Drops Rewards collections and validate this drop: " + drop.campaignName);
+            notifs.notifyOwner("No Notification Reward Setup for Upcoming Drop", "Check the Twitch Drops and Twitch Drops Rewards collections and validate this drop: " + drop.campaignName);
             throw "No notification reward setup defined for drop " + drop.campaignName;
         }
     }
@@ -641,7 +641,7 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
             }
             else {
                 // This drop is upcoming. Notify owner since we have time to fix it.
-                //notifs.notifyOwner("Improper Notification Reward Setup for Upcoming Drop", "Check the Twitch Drops and Twitch Drops Rewards collections and validate this drop: " + drop.campaignName);
+                notifs.notifyOwner("Improper Notification Reward Setup for Upcoming Drop", "Check the Twitch Drops and Twitch Drops Rewards collections and validate this drop: " + drop.campaignName);
                 throw "Improper notification reward setup defined for drop " + drop.campaignName;
             }
         }
@@ -974,7 +974,7 @@ async function sendDiscordAndPushNotification(drop, isUpcoming = true, isCorrect
         }
         else {
             // This drop is upcoming. Notify owner since we have time to fix it.
-            //notifs.notifyOwner("No Notification Reward Setup for Upcoming Drop", "Check the Twitch Drops and Twitch Drops Rewards collections and validate this drop: " + drop.campaignName);
+            notifs.notifyOwner("No Notification Reward Setup for Upcoming Drop", "Check the Twitch Drops and Twitch Drops Rewards collections and validate this drop: " + drop.campaignName);
             throw "No notification reward setup defined for drop " + drop.campaignName;
         }
     }
@@ -997,7 +997,7 @@ async function sendDiscordAndPushNotification(drop, isUpcoming = true, isCorrect
             }
             else {
                 // This drop is upcoming. Notify owner since we have time to fix it.
-                //notifs.notifyOwner("Improper Notification Reward Setup for Upcoming Drop", "Check the Twitch Drops and Twitch Drops Rewards collections and validate this drop: " + drop.campaignName);
+                notifs.notifyOwner("Improper Notification Reward Setup for Upcoming Drop", "Check the Twitch Drops and Twitch Drops Rewards collections and validate this drop: " + drop.campaignName);
                 throw "Improper notification reward setup defined for drop " + drop.campaignName;
             }
         }
