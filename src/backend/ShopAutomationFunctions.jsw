@@ -2236,6 +2236,12 @@ export async function deactivateUnavailableCustomizationShopListings() {
 		})
 }
 
+export function deactivateUnavailableCustomizationListings()
+{
+	deactivateUnavailableCustomizationShopListings();
+	ExchangeFunctions.deactivateUnavailableCustomizationExchangeListings();
+}
+
 
 export function regexTest(waypointPath) {
 	return waypointPath.match(GeneralConstants.REGEX_WAYPOINT_ID_FROM_PATH)[0];
