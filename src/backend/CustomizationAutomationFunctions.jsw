@@ -2933,6 +2933,8 @@ async function generateJsonsFromThemeList(
 						}
 
 						await generateJsonsFromItemAndAttachmentList(
+							-1,
+							0,
 							headers,
 							customizationCategory,
 							folderDict,
@@ -3087,7 +3089,7 @@ async function generateJsonsFromThemeList(
 					// Once we have that dictionary completed and all the attachment items added to their DB, we can proceed to work on the parent items.
 					// Limiting items with attachments is unfeasible at this time since all attachments must be added before any parent item can be.
 					let itemAndAttachmentsArray = themeWaypointJson[waypointTypeGroup]["Options"];
-					await generateJsonsFromItemAndAttachmentList(
+					if(await generateJsonsFromItemAndAttachmentList(
 						limit,
 						offset,
 						headers,
@@ -3105,7 +3107,9 @@ async function generateJsonsFromThemeList(
 							"defaultPath": defaultPath,
 							"itemPathToCoreDict": itemPathToCoreDict
 						}
-					);
+					)) {
+						itemsLeftToProcess = true;
+					}
 				}
 			}
 		}
