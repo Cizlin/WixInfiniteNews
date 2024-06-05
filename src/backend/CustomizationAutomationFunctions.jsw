@@ -4235,17 +4235,19 @@ export async function armorImportFull(headers = null, manufacturerImportComplete
 
 	// Add the cores first.
 	let customizationCategory = ArmorConstants.ARMOR_KEY;
-	let returnCode = await updateDbsFromApi(headers, customizationCategory, [CustomizationConstants.CORE_PROCESSING_KEY], generalDictsAndArrays, null)
+	/*let returnCode = await updateDbsFromApi(headers, customizationCategory, [CustomizationConstants.CORE_PROCESSING_KEY], generalDictsAndArrays, null)
 		.catch((error) => {
 			console.error("Error occurred while processing Cores for " + customizationCategory, error);
 			return -1;
-		});
+		});*/
+
+	let returnCode = 0;
 
 	_numCores = await WaypointFunctions.getNumCores(customizationCategory);
 	if (!returnCode) { // Return code 0 means success.
 		let categorySpecificDictsAndArrays = await getCategorySpecificDictsAndArraysFromDbs(customizationCategory);
 
-		// Add the Kits next.
+		/*// Add the Kits next.
 		if (!emblemPaletteImportCompleted) { // Need to process emblems before adding Kits.
 			await importEmblemPalettes(headers, generalDictsAndArrays);
 		}
@@ -4254,16 +4256,16 @@ export async function armorImportFull(headers = null, manufacturerImportComplete
 			.catch((error) => {
 				console.error("Error occurred while processing Kits for " + customizationCategory, error);
 				return -1;
-			});
+			});*/
 
 		if (!returnCode) {
 			let processingGroups = [
-				{ groups: ["Coatings"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_COATINGS_KEY },
-				{ groups: ["Emblems"], crossCore: true, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_EMBLEMS_KEY },
+				//{ groups: ["Coatings"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_COATINGS_KEY },
+				//{ groups: ["Emblems"], crossCore: true, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_EMBLEMS_KEY },
 				{ groups: ["Helmets"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_HELMETS_KEY }, // This is technically cross-core, but we have to pull the armor attachments from each core specifically.
-				{ groups: ["LeftShoulderPads", "Gloves", "ChestAttachments"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_LSHOULDER_CHEST_GLOVES_KEY },
-				{ groups: ["RightShoulderPads", "KneePads", "WristAttachments", "HipAttachments"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_RSHOULDER_KNEE_HIP_WRISTS_KEY },
-				{ groups: ["Visors", "ArmorFx", "MythicFx"], crossCore: true, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_VISOR_ARMORFX_MYTHICFX_KEY },
+				//{ groups: ["LeftShoulderPads", "Gloves", "ChestAttachments"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_LSHOULDER_CHEST_GLOVES_KEY },
+				//{ groups: ["RightShoulderPads", "KneePads", "WristAttachments", "HipAttachments"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_RSHOULDER_KNEE_HIP_WRISTS_KEY },
+				//{ groups: ["Visors", "ArmorFx", "MythicFx"], crossCore: true, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_VISOR_ARMORFX_MYTHICFX_KEY },
 			];
 
 			processingGroups.forEach(async (processingGroup) => {
