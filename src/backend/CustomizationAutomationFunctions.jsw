@@ -2738,7 +2738,7 @@ async function generateJsonsFromItemAndAttachmentList(
 
 	// Now that the attachments have been added, we need to go back through and add the parent items as expected.
 	for (let l = offset; l < itemAndAttachmentsArray.length; ++l) {
-		if (limit != -1 && k >= limit + offset) {
+		if (limit != -1 && l >= limit + offset) {
 			return true;
 		}
 		try {
