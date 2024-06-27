@@ -584,21 +584,6 @@ export async function getCustomizationItemToSave(folderDict, headers, customizat
 		return -1;
 	}
 
-	// Check to see if the ETag has changed, suggesting the item itself has changed.
-	// We're doing this earlier in the flow now. TODO: Evaluate removal.
-	/*const IS_KIT_ITEM_ONLY_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationIsKitItemOnlyField;
-	if (existingItem
-		&& existingItem.itemETag
-		&& existingItem.itemETag != ""
-		&& existingItem.itemETag == eTagDict[customizationDetails.WaypointPath.toLowerCase()]
-		&& !(!customizationDetails.IsKitItem && existingItem[IS_KIT_ITEM_ONLY_FIELD]) // We want to process items if we discover they aren't exclusively part of a kit.
-		&& !customizationDetails.DefaultOfCore // We want to process an item if it's the default of a core.
-		&& !forceCheck) {
-
-		// The ETag is identical. No need to process further.
-		return 1;
-	}*/
-
 	// We need to get the corresponding IDs for the reference fields. Let's begin with customizationTypeReference.
 
 	// We had our own customization type setup long before we knew theirs. Let's convert it using our array!
@@ -2227,8 +2212,7 @@ async function processItem(headers,
 
 	// We should also check to see if the etag is even updated, unless forceCheck is specified.
 	if (!("forceCheck" in options && options.forceCheck) // If we aren't forced to check this.
-		&& itemType !== CustomizationConstants.ITEM_TYPES.attachment // If we aren't working with an attachment (needs to report its waypoint ID if nothing else)
-		&& !("isKitItem" in options && options.isKitItem)) { // If we aren't working with a kit item (needs to report its waypoint ID if nothing else)
+		&& !("isKitItem" in options && options.isKitItem)) {
 		// We don't want to force check, so let's abandon early if we don't need to 
 		const CUSTOMIZATION_DB = (itemType === CustomizationConstants.ITEM_TYPES.core) 
 			? CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CoreDb 
@@ -2260,6 +2244,22 @@ async function processItem(headers,
 						etagFound = true;
 						if (results.items[0][ETAG_FIELD] === generalDictsAndArrays[4][ApiConstants.WAYPOINT_URL_MIDFIX_PROGRESSION + itemWaypointPath.toLowerCase()]) {
 							//console.log("Aborting processing for " + results.items[0][WAYPOINT_ID_FIELD] + " due to matching ETag. Item type is " + itemType);
+							if (itemType == CustomizationConstants.ITEM_TYPES.attachment) {
+								// Ensure necessary options are provided.
+								if (!("attachmentArray" in options)) {
+									console.error("The attachmentArray field was not found in options: ", options);
+									throw "Unable to run processItem() due to missing attachmentArray field in options.";
+								}
+						
+								if (!("attachmentPathToIdDict" in options)) {
+									console.error("The attachmentPathToIdDict field was not found in options: ", options);
+									throw "Unable to run processItem() due to missing attachmentPathToIdDict field in options.";
+								}
+						
+								options.attachmentArray.push(results.items[0][WAYPOINT_ID_FIELD]); // Add the ID to the array.
+								options.attachmentPathToIdDict[itemWaypointPath] = results.items[0][WAYPOINT_ID_FIELD]; // Add the ID to the dict as well.
+							}
+
 							if (CustomizationConstants.ITEM_TYPES.item === itemType && CustomizationConstants.HAS_CORE_ARRAY.includes(customizationCategory)) {
 								// Only items with core references have to worry about this.
 								const CORE_WAYPOINT_ID_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CoreWaypointIdField;
@@ -2330,6 +2330,22 @@ async function processItem(headers,
 						// If the ETags match, we need to abort.
 						if (((ApiConstants.WAYPOINT_URL_MIDFIX_PROGRESSION + itemWaypointPath.toLowerCase()) in generalDictsAndArrays[4])
 						&& results.items[0][ETAG_FIELD] === generalDictsAndArrays[4][ApiConstants.WAYPOINT_URL_MIDFIX_PROGRESSION + itemWaypointPath.toLowerCase()]) {
+							if (itemType == CustomizationConstants.ITEM_TYPES.attachment) {
+								// Ensure necessary options are provided.
+								if (!("attachmentArray" in options)) {
+									console.error("The attachmentArray field was not found in options: ", options);
+									throw "Unable to run processItem() due to missing attachmentArray field in options.";
+								}
+						
+								if (!("attachmentPathToIdDict" in options)) {
+									console.error("The attachmentPathToIdDict field was not found in options: ", options);
+									throw "Unable to run processItem() due to missing attachmentPathToIdDict field in options.";
+								}
+						
+								options.attachmentArray.push(itemWaypointJson.CommonData.Id); // Add the ID to the array.
+								options.attachmentPathToIdDict[itemWaypointPath] = itemWaypointJson.CommonData.Id; // Add the ID to the dict as well.
+							}
+
 							//console.log("Aborting processing for " + results.items[0][WAYPOINT_ID_FIELD] + " due to matching ETag. Item type is " + itemType);
 							// There is one more case where we might want to avoid aborting: when the list of cores is mismatched.
 							if (CustomizationConstants.ITEM_TYPES.item === itemType && CustomizationConstants.HAS_CORE_ARRAY.includes(customizationCategory)) {
