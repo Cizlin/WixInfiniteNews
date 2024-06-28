@@ -3414,7 +3414,7 @@ async function saveItemsToDbFromList(customizationCategory, customizationItemDbA
 // This function is going to basically run the getCustomizationItemToSave function repeatedly on each item JSON returned and then save those JSONs to the DB.
 // It uses the customizationCategory to get the list of items pertaining to that category.
 // The waypointGroupsToProcess limits what we process in this execution.
-async function updateDbsFromApi(headers, customizationCategory, waypointGroupsToProcess, generalDictsAndArrays, categorySpecificDictsAndArrays, groupsAreCrossCore = false, checkpointKey = null) {
+async function updateDbsFromApi(headers, customizationCategory, waypointGroupsToProcess, generalDictsAndArrays, categorySpecificDictsAndArrays, groupsAreCrossCore = false, checkpointKey = null, isHelmets = false) {
 	let folderDict; // This will be passed to our image grabbing function.
 	let results = await wixData.query(KeyConstants.KEY_VALUE_DB) // This might still be a bit inefficient. Consider moving query out and passing folderDict as arg.
 		.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + CustomizationConstants.CUSTOMIZATION_CATEGORY_FOLDER_DICT[customizationCategory] + "/")
@@ -3634,6 +3634,10 @@ async function updateDbsFromApi(headers, customizationCategory, waypointGroupsTo
 
 					await saveItemsToDbFromList(customizationCategory, customizationItemDbArray, waypointGroupsToProcess);
 					customizationItemDbArray = []; // Reset the items after each save.
+
+					if (isHelmets) {
+						break;
+					}
 
 					/*if (groupsAreCrossCore) {
 						console.log("Not processing further since these groups are Cross Core", waypointGroupsToProcess, "Core ID", coreWaypointId);
@@ -4274,16 +4278,16 @@ export async function armorImportFull(headers = null, manufacturerImportComplete
 
 		if (!returnCode) {
 			let processingGroups = [
-				//{ groups: ["Coatings"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_COATINGS_KEY },
-				//{ groups: ["Emblems"], crossCore: true, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_EMBLEMS_KEY },
-				{ groups: ["Helmets"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_HELMETS_KEY }, // This is technically cross-core, but we have to pull the armor attachments from each core specifically.
-				//{ groups: ["LeftShoulderPads", "Gloves", "ChestAttachments"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_LSHOULDER_CHEST_GLOVES_KEY },
-				//{ groups: ["RightShoulderPads", "KneePads", "WristAttachments", "HipAttachments"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_RSHOULDER_KNEE_HIP_WRISTS_KEY },
-				//{ groups: ["Visors", "ArmorFx", "MythicFx"], crossCore: true, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_VISOR_ARMORFX_MYTHICFX_KEY },
+				//{ groups: ["Coatings"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_COATINGS_KEY, isHelmets: false },
+				//{ groups: ["Emblems"], crossCore: true, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_EMBLEMS_KEY, isHelmets: false },
+				{ groups: ["Helmets"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_HELMETS_KEY , isHelmets: true }, // This is technically cross-core, but we have to pull the armor attachments from each core specifically.
+				//{ groups: ["LeftShoulderPads", "Gloves", "ChestAttachments"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_LSHOULDER_CHEST_GLOVES_KEY, isHelmets: false },
+				//{ groups: ["RightShoulderPads", "KneePads", "WristAttachments", "HipAttachments"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_RSHOULDER_KNEE_HIP_WRISTS_KEY, isHelmets: false },
+				//{ groups: ["Visors", "ArmorFx", "MythicFx"], crossCore: true, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_VISOR_ARMORFX_MYTHICFX_KEY, isHelmets: false },
 			];
 
 			processingGroups.forEach(async (processingGroup) => {
-				updateDbsFromApi(headers, customizationCategory, processingGroup.groups, generalDictsAndArrays, categorySpecificDictsAndArrays, processingGroup.crossCore, processingGroup.checkpointKey)
+				updateDbsFromApi(headers, customizationCategory, processingGroup.groups, generalDictsAndArrays, categorySpecificDictsAndArrays, processingGroup.crossCore, processingGroup.checkpointKey, processingGroup.isHelmets)
 					.then(() => console.info("Finished processing ", processingGroup.groups, " for " + customizationCategory))
 					.catch((error) => console.error("Error occurred while processing ", processingGroup.groups, " for " + customizationCategory, error));
 			});
