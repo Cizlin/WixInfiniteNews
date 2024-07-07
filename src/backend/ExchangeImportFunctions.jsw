@@ -32,7 +32,7 @@ import * as NotificationFunctions from 'backend/NotificationFunctions.jsw';
 import * as InternalNotifications from 'backend/InternalNotificationFunctions.jsw';
 import * as ShopFunctions from 'backend/ShopAutomationFunctions.jsw';
 
-const CUSTOMIZATION_EXCHANGE_LIMIT = 1;
+const CUSTOMIZATION_EXCHANGE_LIMIT = 40;
 let resetOffset = false;
 
 // Gets a list of all currently available exchange items, including the items contained within bundles.
@@ -176,12 +176,6 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 
 	let exchangeWaypointJson = {};
 
-	// TODO: Confirm that the Exchange Customization Menu shop comes from the same place as the normal shop.
-	exchangeWaypointJson = (processCustomizationOptions) 
-		? await ShopFunctions.getCustomizationOffersShopListFromWaypoint(headers, KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY, CUSTOMIZATION_EXCHANGE_LIMIT) 
-		: await getExchangeListFromWaypoint(headers);
-	console.log("Exchange JSON", exchangeWaypointJson);
-
 	let exchangeSiteArray = [];
 
 	let qualityDict = {}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs. Let's us avoid querying the DB for every quality inquiry.
@@ -232,6 +226,12 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	}
 
 	console.log("Exchange Folder dict retrieved!");
+
+	// TODO: Confirm that the Exchange Customization Menu shop comes from the same place as the normal shop.
+	exchangeWaypointJson = (processCustomizationOptions) 
+		? await ShopFunctions.getCustomizationOffersShopListFromWaypoint(headers, KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY, CUSTOMIZATION_EXCHANGE_LIMIT) 
+		: await getExchangeListFromWaypoint(headers);
+	console.log("Exchange JSON", exchangeWaypointJson);
 
 	const maxRetries = 10;
 	console.log("Beginning to fill out exchange listings from API...");
