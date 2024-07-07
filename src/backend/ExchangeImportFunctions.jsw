@@ -181,14 +181,16 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	let qualityDict = {}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs. Let's us avoid querying the DB for every quality inquiry.
 
 	console.log("Querying for quality data");
-	let qualityResults = await wixData.query(CustomizationConstants.QUALITY_DB)
+	/*let qualityResults = await wixData.query(CustomizationConstants.QUALITY_DB)
 		.find()
 		.catch((error) => {
 			console.error(error, "occurred while filling in quality dict");
 			return {
 				items: []
 			};
-		});
+		});*/
+
+	let qualityResults = {"items":[{"quality":"N/A","_id":"fd3ee200-acf6-41c9-8119-85a1e3a5a130","_owner":"ee59cff3-ece6-43df-8364-f1e15e800c56","_createdDate":"2021-08-28T20:13:37.379Z","_updatedDate":"2021-08-29T05:13:02.530Z","ordinal":5},{"quality":"(Pending)","_id":"8a744bb3-9564-4a24-bc44-2d0fea9c0982","_owner":"ee59cff3-ece6-43df-8364-f1e15e800c56","_createdDate":"2021-08-28T19:51:29.730Z","_updatedDate":"2021-08-29T05:13:05.940Z","ordinal":6},{"quality":"Any","_id":"79f8076c-959e-495b-9c92-9b3107708620","_owner":"ee59cff3-ece6-43df-8364-f1e15e800c56","_createdDate":"2021-08-28T19:51:12.533Z","_updatedDate":"2021-08-28T19:51:22.312Z","ordinal":0},{"quality":"Legendary","_id":"ccf7f72b-de88-468f-b1d0-1c28a14e2c06","_owner":"ee59cff3-ece6-43df-8364-f1e15e800c56","_createdDate":"2021-08-28T19:48:20.509Z","_updatedDate":"2021-08-28T19:49:18.480Z","ordinal":4},{"quality":"Epic","_id":"6c34a27f-7543-40aa-8870-60c61e51bd0d","_owner":"ee59cff3-ece6-43df-8364-f1e15e800c56","_createdDate":"2021-08-28T19:48:19.204Z","_updatedDate":"2021-08-28T19:49:17.124Z","ordinal":3},{"quality":"Rare","_id":"d0034c71-1f95-4fe4-8328-bc2afef82c4d","_owner":"ee59cff3-ece6-43df-8364-f1e15e800c56","_createdDate":"2021-08-28T19:48:17.353Z","_updatedDate":"2021-08-28T19:49:15.734Z","ordinal":2},{"quality":"Common","_id":"70d821cd-30ad-406a-9c30-155d46042b9e","_owner":"ee59cff3-ece6-43df-8364-f1e15e800c56","_createdDate":"2021-08-28T19:48:14.519Z","_updatedDate":"2021-08-28T19:49:11.908Z","ordinal":1}],"length":7,"partialIncludes":false,"query":{"invalidArguments":[],"filterTree":{},"encoder":{},"validateCollectionName":true,"provider":{"cloudDataUrl":"","gridAppId":"70c1fe2e-5cf6-4a6a-9d68-c4b76c3af0ef","environment":"LIVE","allowGetRequests":{}},"collectionName":"QualityRatings","skipNumber":0,"included":[],"projectedFields":[]},"totalCount":7,"totalPages":1}
 
 	console.log("Quality data returned");
 
