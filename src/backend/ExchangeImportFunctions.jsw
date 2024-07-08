@@ -178,7 +178,12 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 
 	let exchangeSiteArray = [];
 
-	let qualityDict = {}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs. Let's us avoid querying the DB for every quality inquiry.
+	exchangeWaypointJson = (processCustomizationOptions) 
+		? await ShopFunctions.getCustomizationOffersShopListFromWaypoint(headers, KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY, CUSTOMIZATION_EXCHANGE_LIMIT) 
+		: await getExchangeListFromWaypoint(headers);
+	console.log("Exchange JSON", exchangeWaypointJson);
+
+	let qualityDict = {}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs. Lets us avoid querying the DB for every quality inquiry.
 
 	console.log("Querying for quality data");
 	let qualityResults = await wixData.query(CustomizationConstants.QUALITY_DB)
@@ -226,11 +231,6 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	}
 
 	console.log("Exchange Folder dict retrieved!");
-
-	exchangeWaypointJson = (processCustomizationOptions) 
-		? await ShopFunctions.getCustomizationOffersShopListFromWaypoint(headers, KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY, CUSTOMIZATION_EXCHANGE_LIMIT) 
-		: await getExchangeListFromWaypoint(headers);
-	console.log("Exchange JSON", exchangeWaypointJson);
 
 	const maxRetries = 10;
 	console.log("Beginning to fill out exchange listings from API...");
