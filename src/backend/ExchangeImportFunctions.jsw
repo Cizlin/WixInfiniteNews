@@ -302,7 +302,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	let qualityDict = {
 		Legendary: 'ccf7f72b-de88-468f-b1d0-1c28a14e2c06',
 		Epic: '6c34a27f-7543-40aa-8870-60c61e51bd0d',
-		Rare: 'd0034c71-1f95-4fe4-8328-bc2afef82c4d'
+		Rare: 'd0034c71-1f95-4fe4-8328-bc2afef82c4d',
 		Common: '70d821cd-30ad-406a-9c30-155d46042b9e'
 	}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs. Lets us avoid querying the DB for every quality inquiry.
 
