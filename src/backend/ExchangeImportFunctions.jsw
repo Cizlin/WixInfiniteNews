@@ -234,7 +234,15 @@ export async function getCustomizationOffersExchangeListFromWaypoint(headers) {
 	waypointJson.Offerings.splice(0, currentOffsetObject.value.offset)
 	waypointJson.Offerings.splice(limit);
 
-	return waypointJson.Offerings;
+	let exchangeListings = [];
+
+	for (let i = 0; i < waypointJson.Offerings.length; ++i) {
+		if (waypointJson.Offerings[i].Prices[0].CurrencyPath.includes(ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_PATH_CONTENTS)) {
+			exchangeListings.push(waypointJson.Offerings[i]);
+		}
+	}
+
+	return exchangeListings;
 }
 
 // Gets the list of Exchange items from Waypoint, fetches the data for each item, and then returns a list of items that match the current DB items.
@@ -1342,10 +1350,6 @@ export async function refreshCustomizationExchangeListings() {
 		console.error("Error occurred while getting exchange list from API", error);
 	}
 
-	if (newCustomizationExchangeListings.length <= 0) {
-		throw "Error: No new Exchange Listings were returned. Exiting now.";
-	}
-
 	// We need a list of Waypoint IDs to query the database.
 	let newlyAvailableExchangeListingIds = []; 
 
@@ -1355,102 +1359,100 @@ export async function refreshCustomizationExchangeListings() {
 
 	let newExchangeListingsToUpdate = newCustomizationExchangeListings;
 
-	if (newlyAvailableExchangeListingIds.length > 0) {
-		// Now that we've got the old bundles being marked as no longer available, we need to mark the new bundles as currently available when they exist and add them when they don't.
-		wixData.query(ExchangeConstants.EXCHANGE_DB)
-			.hasSome(ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD, newlyAvailableExchangeListingIds)
-			.find()
-			.then(async (results) => {
-				let items = results.items;
-				console.log("Items returned: ", items);
-				let itemIds = [];
-				
-				for (let i = 0; i < items.length; i++) {
-					itemIds.push(items[i][ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD]);
-				}
+	// Now that we've got the old bundles being marked as no longer available, we need to mark the new bundles as currently available when they exist and add them when they don't.
+	wixData.query(ExchangeConstants.EXCHANGE_DB)
+		.hasSome(ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD, newlyAvailableExchangeListingIds)
+		.find()
+		.then(async (results) => {
+			let items = results.items;
+			console.log("Items returned: ", items);
+			let itemIds = [];
+			
+			for (let i = 0; i < items.length; i++) {
+				itemIds.push(items[i][ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD]);
+			}
 
-				console.log("Arrays to process:", itemIds, newExchangeListingsToUpdate);
+			console.log("Arrays to process:", itemIds, newExchangeListingsToUpdate);
 
-				for(let i = 0; i < newExchangeListingsToUpdate.length; ++i) { // We're assuming everything else has been marked correctly. Big assumption, yes, but potentially more efficient.
-					let item;
-					let itemIndex = itemIds.findIndex((itemId) => { return newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD] == itemId; });
-					console.log("Item index is ", itemIndex, "for item ID", newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD]);
+			for(let i = 0; i < newExchangeListingsToUpdate.length; ++i) { // We're assuming everything else has been marked correctly. Big assumption, yes, but potentially more efficient.
+				let item;
+				let itemIndex = itemIds.findIndex((itemId) => { return newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD] == itemId; });
+				console.log("Item index is ", itemIndex, "for item ID", newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD]);
 
-					if (itemIndex > -1) { // If the item was found.
-						item = items[itemIndex];
-						if (item[ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD]) {
-							console.log("Skipping this exchange bundle as it is already available in the Exchange right now.", newExchangeListingsToUpdate[i]);
-							continue; // We don't want to process listings that are actually in the Shop right now.
-						}
-
-						newExchangeListingsToUpdate[i]._id = item._id; // The DB ID ties both items together, so we need to transfer it.
-
-						// If these arrays exist, we grab them to add onto them. Otherwise, we create it from scratch.
-						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD] = item[ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD] || [];
-						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD] = item[ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD] || [];
-
-						// We have to add this here because we need the existing array of datetimes.
-						if (!item[ExchangeConstants.EXCHANGE_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD]) {
-							// We only want to add this if it isn't already marked as available through the customization menus.
-							newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD]); 
-							newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD]);
-						}
-						else if (newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD] != newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD][0]) {
-							// If the current cost doesn't match the last available cost, then we need to add a new record.
-							let currentDate = new Date();
-
-							newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD].unshift(currentDate);
-							newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD]);
-						}
-						else {
-							newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD] = item[ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD];
-							// This isn't newly available, and the price hasn't changed.
-						}
-
-						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD] = item[ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD]; // This listing may be available through the normal exchange, too.
-
-						console.log("Last added datetime for ", item[ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD], " is ", item[ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD]);
-						console.log(newExchangeListingsToUpdate[i]);
-						await ShopFunctions.updateBundleAndItemsCurrentlyAvailableStatus(newExchangeListingsToUpdate[i], true, ExchangeConstants.EXCHANGE_DB, true);
+				if (itemIndex > -1) { // If the item was found.
+					item = items[itemIndex];
+					if (item[ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD]) {
+						console.log("Skipping this exchange bundle as it is already available in the Exchange right now.", newExchangeListingsToUpdate[i]);
+						continue; // We don't want to process listings that are actually in the Shop right now.
 					}
-					else { // If we didn't find the item, we need to add it. This is a bit involved since we also have to add references for each of its multi-references.
-						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD] = [];
-						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD] = [];
-						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD]);
+
+					newExchangeListingsToUpdate[i]._id = item._id; // The DB ID ties both items together, so we need to transfer it.
+
+					// If these arrays exist, we grab them to add onto them. Otherwise, we create it from scratch.
+					newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD] = item[ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD] || [];
+					newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD] = item[ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD] || [];
+
+					// We have to add this here because we need the existing array of datetimes.
+					if (!item[ExchangeConstants.EXCHANGE_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD]) {
+						// We only want to add this if it isn't already marked as available through the customization menus.
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD]); 
 						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD]);
-						console.log(newExchangeListingsToUpdate[i]);
-
-						item = await addBundleToDb(newExchangeListingsToUpdate[i]); // We need to await this if we want to integrate with the Twitter API.
 					}
+					else if (newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD] != newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD][0]) {
+						// If the current cost doesn't match the last available cost, then we need to add a new record.
+						let currentDate = new Date();
+
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD].unshift(currentDate);
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD]);
+					}
+					else {
+						newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD] = item[ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD];
+						// This isn't newly available, and the price hasn't changed.
+					}
+
+					newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD] = item[ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD]; // This listing may be available through the normal exchange, too.
+
+					console.log("Last added datetime for ", item[ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD], " is ", item[ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD]);
+					console.log(newExchangeListingsToUpdate[i]);
+					await ShopFunctions.updateBundleAndItemsCurrentlyAvailableStatus(newExchangeListingsToUpdate[i], true, ExchangeConstants.EXCHANGE_DB, true);
 				}
+				else { // If we didn't find the item, we need to add it. This is a bit involved since we also have to add references for each of its multi-references.
+					newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD] = [];
+					newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD] = [];
+					newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_AVAILABLE_DATE_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_LAST_AVAILABLE_DATETIME_FIELD]);
+					newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_PRICE_HISTORY_ARRAY_FIELD].unshift(newExchangeListingsToUpdate[i][ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD]);
+					console.log(newExchangeListingsToUpdate[i]);
 
-				let currentOffsetObject = await wixData.query(KeyConstants.KEY_VALUE_DB)
-					.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY)
-					.find()
-					.then((results) => {
-						if (results.items.length == 0) {
-							throw "Offset not found in Key Value DB. Throwing error.";
-						}
-						else {
-							return results.items[0];
-						}
-					})
-					.catch((error) => {
-						console.error("Error occurred when determining offset. Throwing", error);
-						throw "Dying because unable to retrieve offset from Key Value DB.";
-					});
+					item = await addBundleToDb(newExchangeListingsToUpdate[i]); // We need to await this if we want to integrate with the Twitter API.
+				}
+			}
 
-				currentOffsetObject.value.offset = (resetOffset) ? 0 : currentOffsetObject.value.offset + CUSTOMIZATION_EXCHANGE_LIMIT;
+			let currentOffsetObject = await wixData.query(KeyConstants.KEY_VALUE_DB)
+				.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY)
+				.find()
+				.then((results) => {
+					if (results.items.length == 0) {
+						throw "Offset not found in Key Value DB. Throwing error.";
+					}
+					else {
+						return results.items[0];
+					}
+				})
+				.catch((error) => {
+					console.error("Error occurred when determining offset. Throwing", error);
+					throw "Dying because unable to retrieve offset from Key Value DB.";
+				});
 
-				wixData.update(KeyConstants.KEY_VALUE_DB, currentOffsetObject)
-					.catch((error) => {
-						console.error(error, "occurred when updating current offset value");
-						InternalNotifications.notifyOwner("Error when updating customization exchange offset.", "Resolve this issue promptly to ensure updates continue to occur.");
-					});
+			currentOffsetObject.value.offset = (resetOffset) ? 0 : currentOffsetObject.value.offset + CUSTOMIZATION_EXCHANGE_LIMIT;
 
-				console.log("Current offset updated to " + currentOffsetObject.value.offset);
-			});
-	}
+			wixData.update(KeyConstants.KEY_VALUE_DB, currentOffsetObject)
+				.catch((error) => {
+					console.error(error, "occurred when updating current offset value");
+					InternalNotifications.notifyOwner("Error when updating customization exchange offset.", "Resolve this issue promptly to ensure updates continue to occur.");
+				});
+
+			console.log("Current offset updated to " + currentOffsetObject.value.offset);
+		});
 }
 
 export async function deactivateUnavailableCustomizationExchangeListings() {
