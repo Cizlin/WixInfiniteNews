@@ -241,11 +241,11 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 
 	let typeDict = await GeneralBackendFunctions.generateTypeDict();
 
-	let exchangeWaypointJson = {};
+	let exchangeWaypointArray = [];
 
 	let exchangeSiteArray = [];
 
-	exchangeWaypointJson = (processCustomizationOptions) 
+	exchangeWaypointArray = (processCustomizationOptions) 
 		? await getCustomizationOffersExchangeListFromWaypoint(headers, KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY, CUSTOMIZATION_EXCHANGE_LIMIT) 
 		: await getExchangeListFromWaypoint(headers);
 	console.log("Exchange JSON", exchangeWaypointJson);
@@ -298,7 +298,6 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 
 	const maxRetries = 10;
 	console.log("Beginning to fill out exchange listings from API...");
-	let exchangeWaypointArray = exchangeWaypointJson;
 
 	for (let i = 0; i < exchangeWaypointArray.length; ++i) {
 		let retryCount = 0;
