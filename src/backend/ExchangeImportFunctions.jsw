@@ -168,6 +168,71 @@ export async function getExchangeListFromWaypoint(headers) {
 	return offeringsToReturn;
 }
 
+// Gets list of Customization Offers Shop items from Waypoint.
+export async function getCustomizationOffersExchangeListFromWaypoint(headers, key=KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY, limit=CUSTOMIZATION_EXCHANGE_LIMIT) {
+	const XUID = await getSecret(ApiConstants.SECRETS_XUID_KEY);
+
+	let retry = true;
+	let waypointJson = {};
+
+	let url = ApiConstants.WAYPOINT_URL_BASE_ECONOMY + ApiConstants.WAYPOINT_URL_XUID_PREFIX + XUID + ApiConstants.WAYPOINT_URL_XUID_SUFFIX +
+		ApiConstants.WAYPOINT_URL_SUFFIX_ECONOMY_STORE_CUSTOMIZATION_OFFERS;
+
+	while (retry) {
+		waypointJson = await wixFetch.fetch(url, {
+				"method": "get",
+				"headers": headers
+			})
+			.then( (httpResponse) => {
+				if (httpResponse.ok) {
+					retry = false;
+					return httpResponse.json();
+				} 
+				else { // We want to retry once with updated headers if we got an error.
+					console.warn("Headers did not work. Got HTTP response " + httpResponse.status + ": " + httpResponse.statusText + " when trying to retrieve from " + httpResponse.url);
+					return {};
+				}
+			} )
+			.then((json) => {
+				return json;
+			})
+			.catch(err => {
+				console.error(err);
+				return {};
+			});
+
+		if (retry) { // We need to remake the headers, but we do it by adjusting the actual contents of the JSON.
+			let spartanToken = await ApiFunctions.getSpartanToken();
+			let clearance = await ApiFunctions.getClearance();
+			
+			headers[ApiConstants.WAYPOINT_SPARTAN_TOKEN_HEADER] = spartanToken;
+			headers[ApiConstants.WAYPOINT_343_CLEARANCE_HEADER] = clearance;
+
+			retry = false; // For now, let's just do a single retry after fixing the headers.
+		}
+	}
+
+	let currentOffsetObject = await wixData.query(KeyConstants.KEY_VALUE_DB)
+		.eq("key", key)
+		.find()
+		.then((results) => {
+			if (results.items.length == 0) {
+				throw "Offset not found in Key Value DB. Throwing error.";
+			}
+			else {
+				return results.items[0];
+			}
+		})
+		.catch((error) => {
+			console.error("Error occurred when determining offset. Throwing", error);
+			throw "Dying because unable to retrieve offset from Key Value DB.";
+		});
+
+	resetOffset = waypointJson.Offerings.length <= currentOffsetObject.value.offset + limit; // Check if we need to reset the offset at the end.
+
+	return waypointJson.Offerings.slice(currentOffsetObject.value.offset, currentOffsetObject.value.offset + limit);
+}
+
 // Gets the list of Exchange items from Waypoint, fetches the data for each item, and then returns a list of items that match the current DB items.
 export async function getNewExchangeList(processCustomizationOptions = false) {
 	let headers = await ApiFunctions.makeWaypointHeaders();
@@ -179,7 +244,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	let exchangeSiteArray = [];
 
 	exchangeWaypointJson = (processCustomizationOptions) 
-		? await ShopFunctions.getCustomizationOffersShopListFromWaypoint(headers, KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY, CUSTOMIZATION_EXCHANGE_LIMIT) 
+		? await getCustomizationOffersExchangeListFromWaypoint(headers, KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY, CUSTOMIZATION_EXCHANGE_LIMIT) 
 		: await getExchangeListFromWaypoint(headers);
 	console.log("Exchange JSON", exchangeWaypointJson);
 
