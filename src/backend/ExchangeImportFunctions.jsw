@@ -229,7 +229,7 @@ export async function getCustomizationOffersExchangeListFromWaypoint(headers, ke
 		});
 
 	resetOffset = waypointJson.Offerings.length <= currentOffsetObject.value.offset + limit; // Check if we need to reset the offset at the end.
-	waypointJson.Offerings.splice(0, currentOffsetObject.value.offset)
+	waypointJson.Offerings.splice(0, 300)
 	waypointJson.Offerings.splice(limit);
 
 	return waypointJson.Offerings;
