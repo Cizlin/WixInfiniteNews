@@ -1277,10 +1277,10 @@ export async function updateExchangeListings() {
 	}
 }
 
-export async function derp() {
+export async function refreshCustomizationExchangeListings() {
 	let newCustomizationExchangeListings = [];
+	newCustomizationExchangeListings = await getNewExchangeList(true);
 	try {
-		newCustomizationExchangeListings = await getNewExchangeList(true);
 	}
 	catch (error) {
 		console.error("Error occurred while getting exchange list from API", error);
