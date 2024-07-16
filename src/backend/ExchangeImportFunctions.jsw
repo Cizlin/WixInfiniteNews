@@ -245,12 +245,12 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 
 	let exchangeSiteArray = [];
 
-	if (processCustomizationOptions) {
+	//if (processCustomizationOptions) {
 		exchangeWaypointArray = await getCustomizationOffersExchangeListFromWaypoint(headers, KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY, CUSTOMIZATION_EXCHANGE_LIMIT);
-	}
+	/*}
 	else {
 		exchangeWaypointArray = await getExchangeListFromWaypoint(headers);
-	}
+	}*/
 
 	let qualityDict = {}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs. Lets us avoid querying the DB for every quality inquiry.
 
