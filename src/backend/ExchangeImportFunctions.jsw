@@ -169,8 +169,10 @@ export async function getExchangeListFromWaypoint(headers) {
 }
 
 // Gets list of Customization Offers Shop items from Waypoint.
-export async function getCustomizationOffersExchangeListFromWaypoint(headers, key=KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY, limit=CUSTOMIZATION_EXCHANGE_LIMIT) {
+export async function getCustomizationOffersExchangeListFromWaypoint(headers) {
 	const XUID = await getSecret(ApiConstants.SECRETS_XUID_KEY);
+	const key = KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY;
+	const limit = CUSTOMIZATION_EXCHANGE_LIMIT;
 
 	let retry = true;
 	let waypointJson = {};
@@ -247,7 +249,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 
 	if (processCustomizationOptions) {
 		console.log(headers);
-		exchangeWaypointArray = await getCustomizationOffersExchangeListFromWaypoint(headers, KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY, CUSTOMIZATION_EXCHANGE_LIMIT);
+		exchangeWaypointArray = await getCustomizationOffersExchangeListFromWaypoint(headers);
 	}
 	else {
 		exchangeWaypointArray = await getExchangeListFromWaypoint(headers);
