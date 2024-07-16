@@ -244,69 +244,13 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	let exchangeSiteArray = [];
 
 	exchangeWaypointJson = (processCustomizationOptions) 
-		? [
-			{
-			  "OfferingId": "20210904-08",
-			  "OfferingDisplayPath": "StoreContent/Display/Offerings/20210904-08.json",
-			  "OfferingExpirationDate": null,
-			  "IncludedItems": [
-				{
-				  "Amount": 1,
-				  "ItemPath": "Inventory/Armor/Coatings/002-001-samurai-aa30213b.json",
-				  "ItemType": "ArmorCoating"
-				},
-				{
-				  "Amount": 1,
-				  "ItemPath": "Inventory/Spartan/ActionPoses/101-000-menu-stance-p-b94f3418.json",
-				  "ItemType": "SpartanActionPose"
-				},
-				{
-				  "Amount": 1,
-				  "ItemPath": "Inventory/Spartan/Emblems/104-001-samurai-warri-1512a1f7.json",
-				  "ItemType": "SpartanEmblem"
-				},
-				{
-				  "Amount": 1,
-				  "ItemPath": "Inventory/Vehicle/Emblems/405-305-1512a1f7.json",
-				  "ItemType": "VehicleEmblem"
-				},
-				{
-				  "Amount": 1,
-				  "ItemPath": "Inventory/Armor/Emblems/013-001-1512a1f7.json",
-				  "ItemType": "ArmorEmblem"
-				},
-				{
-				  "Amount": 1,
-				  "ItemPath": "Inventory/Weapon/Emblems/205-201-1512a1f7.json",
-				  "ItemType": "WeaponEmblem"
-				}
-			  ],
-			  "Prices": [
-				{
-				  "Cost": 1000,
-				  "CurrencyPath": "Currency/Currencies/cR.json"
-				}
-			  ],
-			  "IncludedCurrencies": [],
-			  "IncludedRewardTracks": [],
-			  "BoostPath": null,
-			  "OperationXp": 0,
-			  "EventXp": 0,
-			  "MatchBoosts": null,
-			  "RewardTrackAdjustments": []
-			}
-		  ]//await getCustomizationOffersExchangeListFromWaypoint(headers, KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY, CUSTOMIZATION_EXCHANGE_LIMIT) 
+		? await getCustomizationOffersExchangeListFromWaypoint(headers, KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY, CUSTOMIZATION_EXCHANGE_LIMIT) 
 		: await getExchangeListFromWaypoint(headers);
 	console.log("Exchange JSON", exchangeWaypointJson);
 
-	let qualityDict = {
-		Legendary: 'ccf7f72b-de88-468f-b1d0-1c28a14e2c06',
-		Epic: '6c34a27f-7543-40aa-8870-60c61e51bd0d',
-		Rare: 'd0034c71-1f95-4fe4-8328-bc2afef82c4d',
-		Common: '70d821cd-30ad-406a-9c30-155d46042b9e'
-	}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs. Lets us avoid querying the DB for every quality inquiry.
+	let qualityDict = {}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs. Lets us avoid querying the DB for every quality inquiry.
 
-	/*console.log("Querying for quality data");
+	console.log("Querying for quality data");
 	let qualityResults = await wixData.query(CustomizationConstants.QUALITY_DB)
 		.find()
 		.then()
@@ -327,11 +271,11 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	}
 	else {
 		throw "No quality values found in the DB! Major emergency!";
-	}*/
+	}
 
 	console.log("Retrieving Exchange-exclusive folderDict...");
-	let folderDict = {};
-	/*let results = await wixData.query(KeyConstants.KEY_VALUE_DB)
+	let folderDict;
+	let results = await wixData.query(KeyConstants.KEY_VALUE_DB)
 		.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + CustomizationConstants.CUSTOMIZATION_CATEGORY_FOLDER_DICT[ExchangeConstants.EXCHANGE_KEY] + "/")
 		.find()
 		.catch((error) => {
@@ -346,7 +290,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	}
 	else {
 		throw "Could not retrieve folder dict. Cannot get customization image urls.";
-	}*/
+	}
 
 	console.log("Exchange Folder dict retrieved!");
 
@@ -1333,7 +1277,7 @@ export async function updateExchangeListings() {
 	}
 }
 
-export async function refreshCustomizationExchangeListings() {
+export async function derp() {
 	let newCustomizationExchangeListings = [];
 	try {
 		newCustomizationExchangeListings = await getNewExchangeList(true);
