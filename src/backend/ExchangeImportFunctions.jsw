@@ -246,7 +246,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	let exchangeSiteArray = [];
 
 	//if (processCustomizationOptions) {
-		exchangeWaypointArray = await getCustomizationOffersExchangeListFromWaypoint(headers, KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY, CUSTOMIZATION_EXCHANGE_LIMIT);
+		exchangeWaypointArray = await getCustomizationOffersExchangeListFromWaypoint(headers);
 	/*}
 	else {
 		exchangeWaypointArray = await getExchangeListFromWaypoint(headers);
