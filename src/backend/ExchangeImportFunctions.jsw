@@ -32,7 +32,7 @@ import * as NotificationFunctions from 'backend/NotificationFunctions.jsw';
 import * as InternalNotifications from 'backend/InternalNotificationFunctions.jsw';
 import * as ShopFunctions from 'backend/ShopAutomationFunctions.jsw';
 
-const CUSTOMIZATION_EXCHANGE_LIMIT = 0;
+const CUSTOMIZATION_EXCHANGE_LIMIT = 1;
 let resetOffset = false;
 
 // Gets a list of all currently available exchange items, including the items contained within bundles.
@@ -229,8 +229,10 @@ export async function getCustomizationOffersExchangeListFromWaypoint(headers, ke
 		});
 
 	resetOffset = waypointJson.Offerings.length <= currentOffsetObject.value.offset + limit; // Check if we need to reset the offset at the end.
+	waypointJson.Offerings.splice(0, currentOffsetObject.value.offset)
+	waypointJson.Offerings.splice(currentOffsetObject.value.offset + limit);
 
-	return waypointJson.Offerings.slice(currentOffsetObject.value.offset, currentOffsetObject.value.offset + limit);
+	return waypointJson.Offerings;
 }
 
 // Gets the list of Exchange items from Waypoint, fetches the data for each item, and then returns a list of items that match the current DB items.
