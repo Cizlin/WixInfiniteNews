@@ -417,8 +417,8 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 					let imageResults = await MediaManagerFunctions.getCustomizationImageUrl(
 						folderDict,
 						headers,
-						exchangeWaypointJson.Title,
-						exchangeWaypointJson.ObjectImagePath,
+						exchangeItemWaypointJson.Title,
+						exchangeItemWaypointJson.ObjectImagePath,
 						"image/png",
 						ExchangeConstants.EXCHANGE_KEY,
 						ExchangeConstants.EXCHANGE_CUSTOMIZATION_MENU,
