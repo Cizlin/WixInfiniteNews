@@ -429,8 +429,8 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 						true
 					);
 
-					exchangeItemSiteJson[ShopConstants.SHOP_BUNDLE_IMAGE_FIELD] = imageResults[0]; // The image URL is here.
-					exchangeItemSiteJson[ShopConstants.SHOP_IMAGE_ETAG_FIELD] = imageResults[1]; // The image ETag is here.
+					exchangeItemSiteJson[ExchangeConstants.EXCHANGE_BUNDLE_IMAGE_FIELD] = imageResults[0]; // The image URL is here.
+					exchangeItemSiteJson[ExchangeConstants.EXCHANGE_IMAGE_ETAG_FIELD] = imageResults[1]; // The image ETag is here.
 				}
 				else
 				{
