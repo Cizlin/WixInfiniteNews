@@ -236,7 +236,7 @@ export async function getCustomizationOffersExchangeListFromWaypoint(headers, ke
 }
 
 // Gets the list of Exchange items from Waypoint, fetches the data for each item, and then returns a list of items that match the current DB items.
-export async function getNewExchangeList(processCustomizationOptions = false) {
+export async function getNewExchangeList(processCustomizationOptions = true) {
 	let headers = await ApiFunctions.makeWaypointHeaders();
 
 	let typeDict = await GeneralBackendFunctions.generateTypeDict();
@@ -245,7 +245,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 
 	let exchangeSiteArray = [];
 
-	exchangeWaypointArray = (processCustomizationOptions) 
+	exchangeWaypointArray = (!processCustomizationOptions) 
 		? await getCustomizationOffersExchangeListFromWaypoint(headers) 
 		: await getExchangeListFromWaypoint(headers);
 	console.log("Exchange JSON", exchangeWaypointArray);
