@@ -299,10 +299,15 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 		: await getExchangeListFromWaypoint(headers);
 	console.log("Exchange JSON", exchangeWaypointJson);
 
-	let qualityDict = {}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs. Lets us avoid querying the DB for every quality inquiry.
+	let qualityDict = {
+		Legendary: 'ccf7f72b-de88-468f-b1d0-1c28a14e2c06',
+		Epic: '6c34a27f-7543-40aa-8870-60c61e51bd0d',
+		Rare: 'd0034c71-1f95-4fe4-8328-bc2afef82c4d'
+		Common: '70d821cd-30ad-406a-9c30-155d46042b9e'
+	}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs. Lets us avoid querying the DB for every quality inquiry.
 
-	console.log("Querying for quality data");
-	let qualityResults = {items: []}/*await wixData.query(CustomizationConstants.QUALITY_DB)
+	/*console.log("Querying for quality data");
+	let qualityResults = await wixData.query(CustomizationConstants.QUALITY_DB)
 		.find()
 		.then()
 		.catch((error) => {
@@ -310,7 +315,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 			return {
 				items: []
 			};
-		});*/
+		});
 
 	console.log("Quality data returned");
 
@@ -322,7 +327,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	}
 	else {
 		throw "No quality values found in the DB! Major emergency!";
-	}
+	}*/
 
 	console.log("Retrieving Exchange-exclusive folderDict...");
 	let folderDict;
