@@ -244,7 +244,58 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	let exchangeSiteArray = [];
 
 	exchangeWaypointJson = (processCustomizationOptions) 
-		? await getCustomizationOffersExchangeListFromWaypoint(headers, KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY, CUSTOMIZATION_EXCHANGE_LIMIT) 
+		? [
+			{
+			  "OfferingId": "20210904-08",
+			  "OfferingDisplayPath": "StoreContent/Display/Offerings/20210904-08.json",
+			  "OfferingExpirationDate": null,
+			  "IncludedItems": [
+				{
+				  "Amount": 1,
+				  "ItemPath": "Inventory/Armor/Coatings/002-001-samurai-aa30213b.json",
+				  "ItemType": "ArmorCoating"
+				},
+				{
+				  "Amount": 1,
+				  "ItemPath": "Inventory/Spartan/ActionPoses/101-000-menu-stance-p-b94f3418.json",
+				  "ItemType": "SpartanActionPose"
+				},
+				{
+				  "Amount": 1,
+				  "ItemPath": "Inventory/Spartan/Emblems/104-001-samurai-warri-1512a1f7.json",
+				  "ItemType": "SpartanEmblem"
+				},
+				{
+				  "Amount": 1,
+				  "ItemPath": "Inventory/Vehicle/Emblems/405-305-1512a1f7.json",
+				  "ItemType": "VehicleEmblem"
+				},
+				{
+				  "Amount": 1,
+				  "ItemPath": "Inventory/Armor/Emblems/013-001-1512a1f7.json",
+				  "ItemType": "ArmorEmblem"
+				},
+				{
+				  "Amount": 1,
+				  "ItemPath": "Inventory/Weapon/Emblems/205-201-1512a1f7.json",
+				  "ItemType": "WeaponEmblem"
+				}
+			  ],
+			  "Prices": [
+				{
+				  "Cost": 1000,
+				  "CurrencyPath": "Currency/Currencies/cR.json"
+				}
+			  ],
+			  "IncludedCurrencies": [],
+			  "IncludedRewardTracks": [],
+			  "BoostPath": null,
+			  "OperationXp": 0,
+			  "EventXp": 0,
+			  "MatchBoosts": null,
+			  "RewardTrackAdjustments": []
+			}
+		  ]//await getCustomizationOffersExchangeListFromWaypoint(headers, KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY, CUSTOMIZATION_EXCHANGE_LIMIT) 
 		: await getExchangeListFromWaypoint(headers);
 	console.log("Exchange JSON", exchangeWaypointJson);
 
