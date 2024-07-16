@@ -32,7 +32,7 @@ import * as NotificationFunctions from 'backend/NotificationFunctions.jsw';
 import * as InternalNotifications from 'backend/InternalNotificationFunctions.jsw';
 import * as ShopFunctions from 'backend/ShopAutomationFunctions.jsw';
 
-const CUSTOMIZATION_EXCHANGE_LIMIT = 40;
+const CUSTOMIZATION_EXCHANGE_LIMIT = 0;
 let resetOffset = false;
 
 // Gets a list of all currently available exchange items, including the items contained within bundles.
@@ -184,51 +184,50 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	console.log("Exchange JSON", exchangeWaypointJson);
 
 	let qualityDict = {}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs. Lets us avoid querying the DB for every quality inquiry.
-	
-	let folderDict;
 
 	console.log("Querying for quality data");
-	await wixData.query(CustomizationConstants.QUALITY_DB)
+	let qualityResults = await wixData.query(CustomizationConstants.QUALITY_DB)
 		.find()
-		.then(async (qualityResults) => {
-			console.log("Quality data returned");
-
-			if (qualityResults.items.length > 0) {
-				console.log("Quality values found", qualityResults);
-				for (let i = 0; i < qualityResults.items.length; ++i) {
-					qualityDict[qualityResults.items[i].quality] = qualityResults.items[i]._id;
-				}
-			}
-			else {
-				throw "No quality values found in the DB! Major emergency!";
-			}
-
-			console.log("Retrieving Exchange-exclusive folderDict...");
-			/*let results = await wixData.query(KeyConstants.KEY_VALUE_DB)
-				.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + CustomizationConstants.CUSTOMIZATION_CATEGORY_FOLDER_DICT[ExchangeConstants.EXCHANGE_KEY] + "/")
-				.find()
-				.catch((error) => {
-					console.error(error, "occurred while querying Key Value DB.");
-					return {
-						items: []
-					};
-				});*/
-
-			if (results.items.length > 0) {
-				folderDict = {}//results.items[0].value;
-			}
-			else {
-				throw "Could not retrieve folder dict. Cannot get customization image urls.";
-			}
-
-			console.log("Exchange Folder dict retrieved!");
-		})
+		.then()
 		.catch((error) => {
 			console.error(error, "occurred while filling in quality dict");
 			return {
 				items: []
 			};
 		});
+
+	console.log("Quality data returned");
+
+	if (qualityResults.items.length > 0) {
+		console.log("Quality values found", qualityResults);
+		for (let i = 0; i < qualityResults.items.length; ++i) {
+			qualityDict[qualityResults.items[i].quality] = qualityResults.items[i]._id;
+		}
+	}
+	else {
+		throw "No quality values found in the DB! Major emergency!";
+	}
+
+	console.log("Retrieving Exchange-exclusive folderDict...");
+	let folderDict;
+	let results = await wixData.query(KeyConstants.KEY_VALUE_DB)
+		.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + CustomizationConstants.CUSTOMIZATION_CATEGORY_FOLDER_DICT[ExchangeConstants.EXCHANGE_KEY] + "/")
+		.find()
+		.catch((error) => {
+			console.error(error, "occurred while querying Key Value DB.");
+			return {
+				items: []
+			};
+		});
+
+	if (results.items.length > 0) {
+		folderDict = results.items[0].value;
+	}
+	else {
+		throw "Could not retrieve folder dict. Cannot get customization image urls.";
+	}
+
+	console.log("Exchange Folder dict retrieved!");
 
 	const maxRetries = 10;
 	console.log("Beginning to fill out exchange listings from API...");
