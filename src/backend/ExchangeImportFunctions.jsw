@@ -186,7 +186,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	let qualityDict = {}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs. Lets us avoid querying the DB for every quality inquiry.
 	
 	let folderDict;
-	
+
 	console.log("Querying for quality data");
 	await wixData.query(CustomizationConstants.QUALITY_DB)
 		.find()
@@ -204,19 +204,18 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 			}
 
 			console.log("Retrieving Exchange-exclusive folderDict...");
-			let results = await wixData.query(KeyConstants.KEY_VALUE_DB)
+			/*let results = await wixData.query(KeyConstants.KEY_VALUE_DB)
 				.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + CustomizationConstants.CUSTOMIZATION_CATEGORY_FOLDER_DICT[ExchangeConstants.EXCHANGE_KEY] + "/")
 				.find()
-				.then((results) => { return results; })
 				.catch((error) => {
 					console.error(error, "occurred while querying Key Value DB.");
 					return {
 						items: []
 					};
-				});
+				});*/
 
 			if (results.items.length > 0) {
-				folderDict = results.items[0].value;
+				folderDict = {}//results.items[0].value;
 			}
 			else {
 				throw "Could not retrieve folder dict. Cannot get customization image urls.";
