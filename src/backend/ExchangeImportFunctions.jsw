@@ -229,7 +229,7 @@ export async function getCustomizationOffersExchangeListFromWaypoint(headers, ke
 		});
 
 	resetOffset = waypointJson.Offerings.length <= currentOffsetObject.value.offset + limit; // Check if we need to reset the offset at the end.
-	waypointJson.Offerings.splice(0, 300)
+	waypointJson.Offerings.splice(0, currentOffsetObject.value.offset)
 	waypointJson.Offerings.splice(limit);
 
 	return waypointJson.Offerings;
@@ -253,14 +253,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	let qualityDict = {}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs. Lets us avoid querying the DB for every quality inquiry.
 
 	let qualityResults = await wixData.query(CustomizationConstants.QUALITY_DB)
-		.find()
-		.then()
-		.catch((error) => {
-			console.error(error, "occurred while filling in quality dict");
-			return {
-				items: []
-			};
-		});
+		.find();
 
 	if (qualityResults.items.length > 0) {
 		for (let i = 0; i < qualityResults.items.length; ++i) {
@@ -275,13 +268,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	let folderDict;
 	let results = await wixData.query(KeyConstants.KEY_VALUE_DB)
 		.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + CustomizationConstants.CUSTOMIZATION_CATEGORY_FOLDER_DICT[ExchangeConstants.EXCHANGE_KEY] + "/")
-		.find()
-		.catch((error) => {
-			console.error(error, "occurred while querying Key Value DB.");
-			return {
-				items: []
-			};
-		});
+		.find();
 
 	if (results.items.length > 0) {
 		folderDict = results.items[0].value;
