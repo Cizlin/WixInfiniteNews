@@ -302,7 +302,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	let qualityDict = {}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs. Lets us avoid querying the DB for every quality inquiry.
 
 	console.log("Querying for quality data");
-	let qualityResults = await wixData.query(CustomizationConstants.QUALITY_DB)
+	let qualityResults = {items: []}/*await wixData.query(CustomizationConstants.QUALITY_DB)
 		.find()
 		.then()
 		.catch((error) => {
@@ -310,7 +310,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 			return {
 				items: []
 			};
-		});
+		});*/
 
 	console.log("Quality data returned");
 
