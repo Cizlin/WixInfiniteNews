@@ -246,7 +246,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	let exchangeSiteArray = [];
 
 	exchangeWaypointArray = (processCustomizationOptions) 
-		? await getCustomizationOffersExchangeListFromWaypoint(headers, KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY, CUSTOMIZATION_EXCHANGE_LIMIT) 
+		? await getCustomizationOffersExchangeListFromWaypoint(headers) 
 		: await getExchangeListFromWaypoint(headers);
 	console.log("Exchange JSON", exchangeWaypointArray);
 
