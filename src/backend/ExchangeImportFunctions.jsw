@@ -32,7 +32,7 @@ import * as NotificationFunctions from 'backend/NotificationFunctions.jsw';
 import * as InternalNotifications from 'backend/InternalNotificationFunctions.jsw';
 import * as ShopFunctions from 'backend/ShopAutomationFunctions.jsw';
 
-const CUSTOMIZATION_EXCHANGE_LIMIT = 0;
+const CUSTOMIZATION_EXCHANGE_LIMIT = 1;
 let resetOffset = false;
 
 // Gets a list of all currently available exchange items, including the items contained within bundles.
