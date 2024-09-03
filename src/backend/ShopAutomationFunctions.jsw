@@ -500,6 +500,9 @@ export async function getConvertedShopList(processCustomizationOptions = false) 
 
 					// Weekly bundles have excluded the Flair Text since Season 2. Let's parse empty Flair Text values as "Weekly".
 					if (!processCustomizationOptions) {
+						if (!shopWaypointJson.FlairText) {
+							shopWaypointJson.FlairText = "";
+						}
 						switch (shopWaypointJson.FlairText.toLowerCase().trim()) {
 							case "weekly":
 							case "":
