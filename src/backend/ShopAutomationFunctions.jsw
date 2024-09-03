@@ -517,7 +517,8 @@ export async function getConvertedShopList(processCustomizationOptions = false) 
 								}
 								else if (mainShopWaypointArray.length > i + 1) { // Check the next item to see if this should be semi-weekly.
 									let tempShopWaypointJson = await ApiFunctions.getCustomizationItem(headers, mainShopWaypointArray[i + 1].OfferingDisplayPath);
-									if (tempShopWaypointJson.FlairText.toLowerCase() === "daily") { // If the next item is daily, this is a semi-weekly listing most likely.
+									if (tempShopWaypointJson.FlairText
+										&& tempShopWaypointJson.FlairText.toLowerCase() === "daily") { // If the next item is daily, this is a semi-weekly listing most likely.
 										mainShopSiteJson[ShopConstants.SHOP_TIME_TYPE_FIELD] = [ShopConstants.SHOP_SEMI_WEEKLY];
 									}
 									else {
