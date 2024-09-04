@@ -102,6 +102,9 @@ export async function nameSearch(nameSearchValue, categoriesToQuery, searchStatu
                                 // If the item has a parent core and is neither fully nor partially cross-core.
                                 let coreInfo = item[CORE_FIELD];
                                 searchResultTitle = item[NAME_FIELD] + " " + item[TYPE_FIELD][TYPE_NAME_FIELD] + "\n" + coreInfo[0][CORE_NAME_FIELD];
+                                for (let i = 1; i < coreInfo.length; ++i) {
+                                    searchResultTitle += ", " + coreInfo[i][CORE_NAME_FIELD];
+                                } 
                             }
                             else {
                                 searchResultTitle = item[NAME_FIELD] + " " + item[TYPE_FIELD][TYPE_NAME_FIELD];
