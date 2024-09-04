@@ -2100,10 +2100,6 @@ export async function refreshCustomizationShopListings() {
 		console.error("Error occurred while getting shop list from API", error);
 	}
 
-	if (newCustomizationShopListings.length <= 0) {
-		throw "Error: No new Shop Listings were returned. Exiting now.";
-	}
-
 	// We need a list of Waypoint IDs to query the database.
 	let newlyAvailableShopListingIds = []; 
 
@@ -2113,102 +2109,101 @@ export async function refreshCustomizationShopListings() {
 
 	let newShopListingsToUpdate = newCustomizationShopListings;
 
-	if (newlyAvailableShopListingIds.length > 0) {
-		// Now that we've got the old bundles being marked as no longer available, we need to mark the new bundles as currently available when they exist and add them when they don't.
-		wixData.query(ShopConstants.SHOP_DB)
-			.hasSome(ShopConstants.SHOP_WAYPOINT_ID_FIELD, newlyAvailableShopListingIds)
-			.find()
-			.then(async (results) => {
-				let items = results.items;
-				console.log("Items returned: ", items);
-				let itemIds = [];
-				
-				for (let i = 0; i < items.length; i++) {
-					itemIds.push(items[i][ShopConstants.SHOP_WAYPOINT_ID_FIELD]);
-				}
+	wixData.query(ShopConstants.SHOP_DB)
+		.hasSome(ShopConstants.SHOP_WAYPOINT_ID_FIELD, newlyAvailableShopListingIds)
+		.find()
+		.then(async (results) => {
+			let items = results.items;
+			console.log("Items returned: ", items);
+			let itemIds = [];
+			
+			for (let i = 0; i < items.length; i++) {
+				itemIds.push(items[i][ShopConstants.SHOP_WAYPOINT_ID_FIELD]);
+			}
 
-				console.log("Arrays to process:", itemIds, newShopListingsToUpdate);
+			console.log("Arrays to process:", itemIds, newShopListingsToUpdate);
 
-				for(let i = 0; i < newShopListingsToUpdate.length; ++i) { // We're assuming everything else has been marked correctly. Big assumption, yes, but potentially more efficient.
-					let item;
-					let itemIndex = itemIds.findIndex((itemId) => { return newShopListingsToUpdate[i][ShopConstants.SHOP_WAYPOINT_ID_FIELD] == itemId; });
-					console.log("Item index is ", itemIndex, "for item ID", newShopListingsToUpdate[i][ShopConstants.SHOP_WAYPOINT_ID_FIELD]);
+			for(let i = 0; i < newShopListingsToUpdate.length; ++i) { // We're assuming everything else has been marked correctly. Big assumption, yes, but potentially more efficient.
+				let item;
+				let itemIndex = itemIds.findIndex((itemId) => { return newShopListingsToUpdate[i][ShopConstants.SHOP_WAYPOINT_ID_FIELD] == itemId; });
+				console.log("Item index is ", itemIndex, "for item ID", newShopListingsToUpdate[i][ShopConstants.SHOP_WAYPOINT_ID_FIELD]);
 
-					if (itemIndex > -1) { // If the item was found.
-						item = items[itemIndex];
-						if (item[ShopConstants.SHOP_CURRENTLY_AVAILABLE_FIELD]) {
-							console.log("Skipping this shop bundle as it is already available in the Shop right now.", newShopListingsToUpdate[i]);
-							continue; // We don't want to process listings that are actually in the Shop right now.
-						}
-
-						newShopListingsToUpdate[i]._id = item._id; // The DB ID ties both items together, so we need to transfer it.
-
-						// If these arrays exist, we grab them to add onto them. Otherwise, we create it from scratch.
-						newShopListingsToUpdate[i][ShopConstants.SHOP_AVAILABLE_DATE_ARRAY_FIELD] = item[ShopConstants.SHOP_AVAILABLE_DATE_ARRAY_FIELD] || [];
-						newShopListingsToUpdate[i][ShopConstants.SHOP_PRICE_HISTORY_ARRAY_FIELD] = item[ShopConstants.SHOP_PRICE_HISTORY_ARRAY_FIELD] || [];
-
-						// We have to add this here because we need the existing array of datetimes.
-						if (!item[ShopConstants.SHOP_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD]) {
-							// We only want to add this if it isn't already marked as available through the customization menus.
-							newShopListingsToUpdate[i][ShopConstants.SHOP_AVAILABLE_DATE_ARRAY_FIELD].unshift(newShopListingsToUpdate[i][ShopConstants.SHOP_LAST_AVAILABLE_DATETIME_FIELD]); 
-							newShopListingsToUpdate[i][ShopConstants.SHOP_PRICE_HISTORY_ARRAY_FIELD].unshift(newShopListingsToUpdate[i][ShopConstants.SHOP_COST_CREDITS_FIELD]);
-						}
-						else if (newShopListingsToUpdate[i][ShopConstants.SHOP_COST_CREDITS_FIELD] != newShopListingsToUpdate[i][ShopConstants.SHOP_PRICE_HISTORY_ARRAY_FIELD][0]) {
-							// If the current cost doesn't match the last available cost, then we need to add a new record.
-							let currentDate = new Date();
-
-							newShopListingsToUpdate[i][ShopConstants.SHOP_AVAILABLE_DATE_ARRAY_FIELD].unshift(currentDate);
-							newShopListingsToUpdate[i][ShopConstants.SHOP_PRICE_HISTORY_ARRAY_FIELD].unshift(newShopListingsToUpdate[i][ShopConstants.SHOP_COST_CREDITS_FIELD]);
-						}
-						else {
-							newShopListingsToUpdate[i][ShopConstants.SHOP_LAST_AVAILABLE_DATETIME_FIELD] = item[ShopConstants.SHOP_LAST_AVAILABLE_DATETIME_FIELD];
-							// This isn't newly available, and the price hasn't changed.
-						}
-
-						newShopListingsToUpdate[i][ShopConstants.SHOP_CURRENTLY_AVAILABLE_FIELD] = item[ShopConstants.SHOP_CURRENTLY_AVAILABLE_FIELD]; // This listing may be available through the normal shop, too.
-
-						console.log("Last added datetime for ", item[ShopConstants.SHOP_WAYPOINT_ID_FIELD], " is ", item[ShopConstants.SHOP_LAST_AVAILABLE_DATETIME_FIELD]);
-						console.log(newShopListingsToUpdate[i]);
-						await updateBundleAndItemsCurrentlyAvailableStatus(newShopListingsToUpdate[i], true, ShopConstants.SHOP_DB, true);
+				if (itemIndex > -1) { // If the item was found.
+					item = items[itemIndex];
+					if (item[ShopConstants.SHOP_CURRENTLY_AVAILABLE_FIELD]) {
+						console.log("Skipping this shop bundle as it is already available in the Shop right now.", newShopListingsToUpdate[i]);
+						continue; // We don't want to process listings that are actually in the Shop right now.
 					}
-					else { // If we didn't find the item, we need to add it. This is a bit involved since we also have to add references for each of its multi-references.
-						newShopListingsToUpdate[i][ShopConstants.SHOP_AVAILABLE_DATE_ARRAY_FIELD] = [];
-						newShopListingsToUpdate[i][ShopConstants.SHOP_PRICE_HISTORY_ARRAY_FIELD] = [];
-						newShopListingsToUpdate[i][ShopConstants.SHOP_AVAILABLE_DATE_ARRAY_FIELD].unshift(newShopListingsToUpdate[i][ShopConstants.SHOP_LAST_AVAILABLE_DATETIME_FIELD]);
+
+					newShopListingsToUpdate[i]._id = item._id; // The DB ID ties both items together, so we need to transfer it.
+
+					// If these arrays exist, we grab them to add onto them. Otherwise, we create it from scratch.
+					newShopListingsToUpdate[i][ShopConstants.SHOP_AVAILABLE_DATE_ARRAY_FIELD] = item[ShopConstants.SHOP_AVAILABLE_DATE_ARRAY_FIELD] || [];
+					newShopListingsToUpdate[i][ShopConstants.SHOP_PRICE_HISTORY_ARRAY_FIELD] = item[ShopConstants.SHOP_PRICE_HISTORY_ARRAY_FIELD] || [];
+
+					// We have to add this here because we need the existing array of datetimes.
+					if (!item[ShopConstants.SHOP_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD]) {
+						// We only want to add this if it isn't already marked as available through the customization menus.
+						newShopListingsToUpdate[i][ShopConstants.SHOP_AVAILABLE_DATE_ARRAY_FIELD].unshift(newShopListingsToUpdate[i][ShopConstants.SHOP_LAST_AVAILABLE_DATETIME_FIELD]); 
 						newShopListingsToUpdate[i][ShopConstants.SHOP_PRICE_HISTORY_ARRAY_FIELD].unshift(newShopListingsToUpdate[i][ShopConstants.SHOP_COST_CREDITS_FIELD]);
-						console.log(newShopListingsToUpdate[i]);
-
-						item = await addBundleToDb(newShopListingsToUpdate[i]); // We need to await this if we want to integrate with the Twitter API.
 					}
+					else if (newShopListingsToUpdate[i][ShopConstants.SHOP_COST_CREDITS_FIELD] != newShopListingsToUpdate[i][ShopConstants.SHOP_PRICE_HISTORY_ARRAY_FIELD][0]) {
+						// If the current cost doesn't match the last available cost, then we need to add a new record.
+						let currentDate = new Date();
+
+						newShopListingsToUpdate[i][ShopConstants.SHOP_AVAILABLE_DATE_ARRAY_FIELD].unshift(currentDate);
+						newShopListingsToUpdate[i][ShopConstants.SHOP_PRICE_HISTORY_ARRAY_FIELD].unshift(newShopListingsToUpdate[i][ShopConstants.SHOP_COST_CREDITS_FIELD]);
+					}
+					else {
+						newShopListingsToUpdate[i][ShopConstants.SHOP_LAST_AVAILABLE_DATETIME_FIELD] = item[ShopConstants.SHOP_LAST_AVAILABLE_DATETIME_FIELD];
+						// This isn't newly available, and the price hasn't changed.
+					}
+
+					newShopListingsToUpdate[i][ShopConstants.SHOP_CURRENTLY_AVAILABLE_FIELD] = item[ShopConstants.SHOP_CURRENTLY_AVAILABLE_FIELD]; // This listing may be available through the normal shop, too.
+
+					console.log("Last added datetime for ", item[ShopConstants.SHOP_WAYPOINT_ID_FIELD], " is ", item[ShopConstants.SHOP_LAST_AVAILABLE_DATETIME_FIELD]);
+					console.log(newShopListingsToUpdate[i]);
+					await updateBundleAndItemsCurrentlyAvailableStatus(newShopListingsToUpdate[i], true, ShopConstants.SHOP_DB, true);
 				}
+				else { // If we didn't find the item, we need to add it. This is a bit involved since we also have to add references for each of its multi-references.
+					newShopListingsToUpdate[i][ShopConstants.SHOP_AVAILABLE_DATE_ARRAY_FIELD] = [];
+					newShopListingsToUpdate[i][ShopConstants.SHOP_PRICE_HISTORY_ARRAY_FIELD] = [];
+					newShopListingsToUpdate[i][ShopConstants.SHOP_AVAILABLE_DATE_ARRAY_FIELD].unshift(newShopListingsToUpdate[i][ShopConstants.SHOP_LAST_AVAILABLE_DATETIME_FIELD]);
+					newShopListingsToUpdate[i][ShopConstants.SHOP_PRICE_HISTORY_ARRAY_FIELD].unshift(newShopListingsToUpdate[i][ShopConstants.SHOP_COST_CREDITS_FIELD]);
+					console.log(newShopListingsToUpdate[i]);
 
-				let currentOffsetObject = await wixData.query(KeyConstants.KEY_VALUE_DB)
-					.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_SHOP_OFFSET_KEY)
-					.find()
-					.then((results) => {
-						if (results.items.length == 0) {
-							throw "Offset not found in Key Value DB. Throwing error.";
-						}
-						else {
-							return results.items[0];
-						}
-					})
-					.catch((error) => {
-						console.error("Error occurred when determining offset. Throwing", error);
-						throw "Dying because unable to retrieve offset from Key Value DB.";
-					});
+					item = await addBundleToDb(newShopListingsToUpdate[i]); // We need to await this if we want to integrate with the Twitter API.
+				}
+			}
 
-				currentOffsetObject.value.offset = (resetOffset) ? 0 : currentOffsetObject.value.offset + CUSTOMIZATION_SHOP_LIMIT;
+			let currentOffsetObject = await wixData.query(KeyConstants.KEY_VALUE_DB)
+				.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_SHOP_OFFSET_KEY)
+				.find()
+				.then((results) => {
+					if (results.items.length == 0) {
+						throw "Offset not found in Key Value DB. Throwing error.";
+					}
+					else {
+						return results.items[0];
+					}
+				})
+				.catch((error) => {
+					console.error("Error occurred when determining offset. Throwing", error);
+					throw "Dying because unable to retrieve offset from Key Value DB.";
+				});
 
-				wixData.update(KeyConstants.KEY_VALUE_DB, currentOffsetObject)
-					.catch((error) => {
-						console.error(error, "occurred when updating current offset value");
-						InternalNotifications.notifyOwner("Error when updating customization shop offset.", "Resolve this issue promptly to ensure updates continue to occur.");
-					});
+			currentOffsetObject.value.offset = (resetOffset) ? 0 : currentOffsetObject.value.offset + CUSTOMIZATION_SHOP_LIMIT;
 
-				console.log("Current offset updated to " + currentOffsetObject.value.offset);
-			});
-	}
+			wixData.update(KeyConstants.KEY_VALUE_DB, currentOffsetObject)
+				.catch((error) => {
+					console.error(error, "occurred when updating current offset value");
+					InternalNotifications.notifyOwner("Error when updating customization shop offset.", "Resolve this issue promptly to ensure updates continue to occur.");
+				});
+
+			console.log("Current offset updated to " + currentOffsetObject.value.offset);
+		});
+
+	
 }
 
 export async function deactivateUnavailableCustomizationShopListings() {
