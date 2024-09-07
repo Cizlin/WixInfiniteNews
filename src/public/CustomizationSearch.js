@@ -8,6 +8,7 @@ import * as ConsumablesConstants from 'public/Constants/ConsumablesConstants.js'
 import * as CapstoneChallengeConstants from 'public/Constants/CapstoneChallengeConstants.js';
 import * as PassConstants from 'public/Constants/PassConstants.js';
 import * as ShopConstants from 'public/Constants/ShopConstants.js';
+import * as ExchangeConstants from 'public/Constants/ExchangeConstants.js';
 
 import * as GeneralFunctions from 'public/General.js';
 
@@ -474,6 +475,67 @@ export async function nameSearch(nameSearchValue, categoriesToQuery, searchStatu
                 console.error(error + " occurred while fetching results from the " + ShopConstants.SHOP_DB + " database.");
                 searchStatus[0] = 1;
                 databaseQueryComplete[ShopConstants.SHOP_DB] = true; // For now, we want to set this to true so that it doesn't prevent the rest of the search from happening.
+            });
+    }
+
+    // Query the Exchange DB
+    if (categoriesToQuery.includes("Exchange Listings") || categoriesToQuery.includes("All")) {
+        databaseQueryComplete[ExchangeConstants.EXCHANGE_DB] = false;
+        searchResultsByDatabase[ExchangeConstants.EXCHANGE_DB] = [];
+
+        let query = wixData.query(ExchangeConstants.EXCHANGE_DB)
+            .limit((quickSearch) ? quickSearchLimit : QUERY_LIMIT)
+            .ascending(ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD);
+
+        if (!quickSearch) {
+            query = query.contains(ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD, nameSearchValue);
+        }
+        else {
+            query = query.startsWith(ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD, nameSearchValue);
+        }
+            
+        query.find()
+            .then(async (results) => {
+                for (; results.currentPage < results.totalPages; results = await results.next()) { // Iterate over each page of results.
+                    for (let item of results.items) {
+                        if (!quickSearch) {
+                            let searchItem = new SearchResult(
+                                item._id,
+                                item[ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD] + " Exchange Listing",
+                                item[ExchangeConstants.EXCHANGE_DESCRIPTION_FIELD],
+                                item[ExchangeConstants.EXCHANGE_URL_FIELD],
+                                item[ExchangeConstants.EXCHANGE_BUNDLE_IMAGE_FIELD]);
+                            searchResultsByDatabase[ExchangeConstants.EXCHANGE_DB].push(searchItem);
+                        }
+                        else {
+                            // This is a quick search. We only need the name.
+                            let searchItem = new SearchResult(
+                                item._id,
+                                item[ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD],
+                                null,
+                                null,
+                                null,
+                                null);
+                            searchResultsByDatabase[ExchangeConstants.EXCHANGE_DB].push(searchItem);
+                        }
+                    }                
+
+                    if (quickSearch) { // We don't need to spend a lot of time querying if it's a quick search.
+                        break;
+                    }
+
+                    if (!results.hasNext()) {
+                        break;
+                    }
+                }
+                
+                // Data is now available to be displayed.
+                databaseQueryComplete[ExchangeConstants.EXCHANGE_DB] = true;
+            })
+            .catch(error => {
+                console.error(error + " occurred while fetching results from the " + ExchangeConstants.EXCHANGE_DB + " database.");
+                searchStatus[0] = 1;
+                databaseQueryComplete[ExchangeConstants.EXCHANGE_DB] = true; // For now, we want to set this to true so that it doesn't prevent the rest of the search from happening.
             });
     }
 
