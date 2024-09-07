@@ -742,11 +742,11 @@ function updateExchangeSort() {
 
 		// Sort by cost, then by name.
 		if (sortOrder == "Ascending") {
-			sort = sort.ascending(ExchangeConstants.EXCHANGE_COST_CREDITS_FIELD);
+			sort = sort.ascending(ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD);
 			sort = sort.ascending(ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD);
 		}
 		else if (sortOrder == "Descending") {
-			sort = sort.descending(ExchangeConstants.EXCHANGE_COST_CREDITS_FIELD);
+			sort = sort.descending(ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD);
 			sort = sort.descending(ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD);
 		}
 	}
@@ -762,7 +762,7 @@ function updateExchangeSort() {
 		// Name: Ascending
 		sort = sort
 			.descending(ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD)
-			.descending(ExchangeConstants.EXCHANGE_COST_CREDITS_FIELD)
+			.descending(ExchangeConstants.EXCHANGE_COST_SPARTAN_POINTS_FIELD)
 			.ascending(ExchangeConstants.EXCHANGE_ITEM_NAME_FIELD);
 	}
 
