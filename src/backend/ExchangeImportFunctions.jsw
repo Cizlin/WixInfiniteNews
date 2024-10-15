@@ -1225,6 +1225,7 @@ export async function updateExchangeListings() {
 		// Now that we've got the old bundles being marked as no longer available, we need to mark the new bundles as currently available when they exist and add them when they don't.
 		wixData.query(ExchangeConstants.EXCHANGE_DB)
 			.hasSome(ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD, newlyAvailableExchangeListingIds)
+			.limit(100)
 			.find()
 			.then(async (results) => {
 				let items = results.items;
@@ -1314,6 +1315,7 @@ export async function refreshCustomizationExchangeListings() {
 	// Now that we've got the old bundles being marked as no longer available, we need to mark the new bundles as currently available when they exist and add them when they don't.
 	wixData.query(ExchangeConstants.EXCHANGE_DB)
 		.hasSome(ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD, newlyAvailableExchangeListingIds)
+		.limit(100)
 		.find()
 		.then(async (results) => {
 			let items = results.items;
