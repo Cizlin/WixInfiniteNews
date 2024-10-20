@@ -1,4 +1,5 @@
-const Twitter = require('twitter');
+//const Twitter = require('twitter');
+import * as Twitter from 'twitter';
 const { TwitterApi } = require('twitter-api-v2');
 import {getSecret} from 'wix-secrets-backend';
 import wixMediaBackend from 'wix-media-backend';
