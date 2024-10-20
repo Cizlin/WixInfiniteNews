@@ -1,5 +1,5 @@
 //const Twitter = require('twitter');
-import * as Twitter from 'twitter';
+//import * as Twitter from 'twitter';
 const { TwitterApi } = require('twitter-api-v2');
 import {getSecret} from 'wix-secrets-backend';
 import wixMediaBackend from 'wix-media-backend';
@@ -106,7 +106,7 @@ export async function uploadTwitterImage(wixImageUrl) {
 
 	console.log("Creating Twitter client.");
 
-	const CLIENT = new Twitter({
+	const CLIENT = new TwitterApi({
 		consumer_key: await getSecret("TwitterApiKey"),
 		consumer_secret: await getSecret("TwitterApiKeySecret"),
 		access_token_key: await getSecret("TwitterAccessToken"),
