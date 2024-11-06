@@ -42,7 +42,7 @@ import * as GeneralBackendFunctions from 'backend/GeneralBackendFunctions.jsw';
 import * as NotificationFunctions from 'backend/NotificationFunctions.jsw';
 import * as InternalNotifications from 'backend/InternalNotificationFunctions.jsw';
 
-const CUSTOMIZATION_SHOP_LIMIT = 40;
+const CUSTOMIZATION_SHOP_LIMIT = 30;
 let resetOffset = false;
 
 // Gets a list of all currently available shop items, including the items contained within bundles.
