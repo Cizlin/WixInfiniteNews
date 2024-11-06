@@ -3440,7 +3440,7 @@ async function updateDbsFromApi(headers, customizationCategory, waypointGroupsTo
 
 	// These variables allow us to process and update a chunk of items at a time.
 	let itemsRemainingToProcess = true;
-	const itemCountLimit = 30;
+	const itemCountLimit = 10;
 	let itemCountOffset = 0;
 
 	if (checkpointKey) {
