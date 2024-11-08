@@ -4543,3 +4543,9 @@ export async function printOutdatedCustomizationEntries(customizationCategory) {
 	}
 
 }
+
+export async function getItemById(customizationCategory, waypointId) {
+	return await wixData.query(CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CUSTOMIZATION_DB)
+		.eq(CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CUSTOMIZATION_WAYPOINT_ID_FIELD, waypointId)
+		.find();
+}
