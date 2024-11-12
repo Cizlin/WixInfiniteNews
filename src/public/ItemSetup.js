@@ -41,20 +41,25 @@ export function initialItemSetup(customizationCategory, isCore = false) {
         //#region Updating source text color to white and setting font size to 18 px.
         // Update the Rich Text color to white at runtime and set font-size to 18 px.
 		if (CustomizationConstants.IS_CUSTOMIZATION_OR_CONSUMABLE_ARRAY.includes(customizationCategory)) {
-			if (!$w("#sourceText").html.includes("<p>"))
+			if (!$w("#sourceText").html.includes("<p"))
 			{
 				$w("#sourceText").html = "<p style=\"color:white;font-size:18px\">" + $w("#sourceText").html + "</p>";
 			}
-			else if (!$w("#sourceText").html.startsWith("<p>"))
+			else if (!$w("#sourceText").html.startsWith("<p"))
 			{
 				$w("#sourceText").html = "<p style=\"color:white;font-size:18px\">" + $w("#sourceText").html;
 
-				let indexToInsert = $w("#sourceText").html.indexOf("<p>");
+				let indexToInsert = $w("#sourceText").html.indexOf("<p", 3);
 				$w("#sourceText").html = $w("#sourceText").html.substring(0, indexToInsert) + "</p>" + $w("#sourceText").html.substring(indexToInsert);
 			}
 			while ($w("#sourceText").html.includes("<p>"))
 			{
 				$w("#sourceText").html = $w("#sourceText").html.replace("<p>", "<p style=\"color:white;font-size:18px\">");
+			}
+
+			while ($w("#sourceText").html.includes("<p class"))
+			{
+				$w("#sourceText").html = $w("#sourceText").html.replace("<p class", "<p style=\"color:white;font-size:18px\" class");
 			}
 			console.log($w("#sourceText").html);
 		}
