@@ -41,9 +41,11 @@ export function initialItemSetup(customizationCategory, isCore = false) {
         //#region Updating source text color to white and setting font size to 18 px.
         // Update the Rich Text color to white at runtime and set font-size to 18 px.
 		if (CustomizationConstants.IS_CUSTOMIZATION_OR_CONSUMABLE_ARRAY.includes(customizationCategory)) {
+			console.log("Before: " + $w("#sourceText").html);
 			if (!$w("#sourceText").html.includes("<p"))
 			{
 				$w("#sourceText").html = "<p style=\"color:white;font-size:18px\">" + $w("#sourceText").html + "</p>";
+				console.log("Step 1 done: " + $w("#sourceText").html);
 			}
 			else if (!$w("#sourceText").html.startsWith("<p"))
 			{
@@ -52,16 +54,19 @@ export function initialItemSetup(customizationCategory, isCore = false) {
 				let indexToInsert = $w("#sourceText").html.indexOf("<p", 3);
 				$w("#sourceText").html = $w("#sourceText").html.substring(0, indexToInsert) + "</p>" + $w("#sourceText").html.substring(indexToInsert);
 			}
+			console.log("Step 2 done: " + $w("#sourceText").html);
+
 			while ($w("#sourceText").html.includes("<p>"))
 			{
 				$w("#sourceText").html = $w("#sourceText").html.replace("<p>", "<p style=\"color:white;font-size:18px\">");
 			}
+			console.log("Step 3 done: " + $w("#sourceText").html);
 
 			while ($w("#sourceText").html.includes("<p class"))
 			{
 				$w("#sourceText").html = $w("#sourceText").html.replace("<p class", "<p style=\"color:white;font-size:18px\" class");
 			}
-			console.log($w("#sourceText").html);
+			console.log("Step 4 done: " + $w("#sourceText").html);
 		}
         //#endregion
 		
