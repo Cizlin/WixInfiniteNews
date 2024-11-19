@@ -29,6 +29,7 @@ import * as GeneralBackendFunctions from 'backend/GeneralBackendFunctions.jsw';
 import * as ShopFunctions from 'backend/ShopAutomationFunctions.jsw';
 import * as DiscordFunctions from 'backend/DiscordBotFunctions.jsw';
 import * as TwitterFunctions from 'backend/TwitterApiFunctions.jsw';
+import * as BlueskyFunctions from 'backend/BlueskyApiFunctions.jsw';
 import * as GeneralFunctions from 'public/General.js';
 import * as ApiFunctions from 'backend/ApiFunctions.jsw';
 import * as MediaManagerFunctions from 'backend/MediaManagerFunctions.jsw';
@@ -995,6 +996,7 @@ export async function generatePassSocialNotifications(newlyAvailablePasses) {
 
 		console.log(mainTweetText);
 		TwitterFunctions.sendTweet(mainTweetText);
+		BlueskyFunctions.sendPost(mainTweetText);
 		await DiscordFunctions.sendDiscordMessage("weekly-reset", mainTweetText, true);
 	}
 }
@@ -1905,6 +1907,8 @@ export async function generateCapstoneSocialNotifications(updateItemArray) {
 
 		console.log(mainTweetText);
 		let parentId = await TwitterFunctions.sendTweet(mainTweetText);
+		let rootInfo, parentInfo;
+		rootInfo = parentInfo = await BlueskyFunctions.sendPost(mainTweetText);
 		await DiscordFunctions.sendDiscordMessage("weekly-reset", mainTweetText, true);
 
 		console.log(updateItemArray[i].childItemInfo);
@@ -1973,6 +1977,7 @@ export async function generateCapstoneSocialNotifications(updateItemArray) {
 			
 			console.log(childItemText);
 			parentId = await TwitterFunctions.sendTweet(childItemText, parentId);
+			parentInfo = await BlueskyFunctions.sendPost(childItemText, parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri);
 			await DiscordFunctions.sendDiscordMessage("weekly-reset", childItemText);
 		}
 	}

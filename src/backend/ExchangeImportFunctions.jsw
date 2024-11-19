@@ -23,6 +23,7 @@ import * as SpartanIdConstants from 'public/Constants/SpartanIdConstants.js';
 import * as ApiFunctions from 'backend/ApiFunctions.jsw';
 import * as MediaManagerFunctions from 'backend/MediaManagerFunctions.jsw';
 
+import {sendPost} from 'backend/BlueskyApiFunctions.jsw';
 import {sendTweet} from 'backend/TwitterApiFunctions.jsw';
 import {sendDiscordMessage} from 'backend/DiscordBotFunctions.jsw';
 import * as WaypointFunctions from 'backend/WaypointBackendFunctions.jsw';
@@ -1043,9 +1044,12 @@ export async function generateSocialNotifications(updateItemArray) {
 	if (mainItemListingArray.length > 0) {
 		console.log(tweetTextArray[0]);
 		let parentId = await sendTweet(tweetTextArray[0]);
+		let rootInfo, parentInfo;
+		rootInfo = parentInfo = await sendPost(tweetTextArray[0]);
 		for (let i = 1; i < tweetTextArray.length; ++i) {
 			console.log(tweetTextArray[i]);
 			parentId = await sendTweet(tweetTextArray[i], parentId);
+			parentInfo = await sendPost(tweetTextArray[i], parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri);
 		}
 
 		let discordMessageText = "";
@@ -1140,6 +1144,7 @@ export async function generateSocialNotifications(updateItemArray) {
 			for (let i = 0; i < subTweetTextArray.length; ++i) {
 				console.log(subTweetTextArray[i]);
 				parentId = await sendTweet(subTweetTextArray[i], parentId);
+				parentInfo = await sendPost(subTweetTextArray[i], parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri);
 			}
 
 			let discordMessageSubText = "";

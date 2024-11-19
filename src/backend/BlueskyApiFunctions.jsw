@@ -112,7 +112,7 @@ export async function uploadBlueskyImage(wixImageUrl) {
 
 	console.log("Performing image upload to Bluesky");
 
-	let media_id_string = await agent.uploadBlob(media)
+	let media_id = await agent.uploadBlob(media)
 		.then(({ data }) => {
 			console.log(data);
 			return data.blob;
@@ -123,9 +123,9 @@ export async function uploadBlueskyImage(wixImageUrl) {
 			return "erroneous";
 		});
 
-	if (media_id_string != "erroneous") {
-		console.log(media_id_string);
-		return media_id_string;
+	if (media_id != "erroneous") {
+		console.log(media_id);
+		return media_id;
 	}
 	else {
 

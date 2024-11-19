@@ -4,6 +4,7 @@ import wixData from 'wix-data';
 import _ from 'lodash';
 import * as notifs from 'backend/InternalNotificationFunctions.jsw';
 import * as twitter from 'backend/TwitterApiFunctions.jsw';
+import * as bluesky from 'backend/BlueskyApiFunctions.jsw';
 import * as discord from 'backend/NotificationFunctions.jsw';
 
 const gameIdToGameName = {
@@ -655,6 +656,7 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
         console.log(tweetText);
 
         await twitter.sendTweet(tweetText, null);
+        await bluesky.sendPost(tweetText);
 
         return true;
     }
@@ -705,7 +707,14 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
 
             for (let j = 0; j < rewardArray.length; ++j) {
                 nameArray.push(rewardArray[j].notificationText);
-                imageArray = imageArray.concat(rewardArray[j].imageSet);
+
+                for (let k = 0; k < rewardArray[j].imageSet; ++k)
+                {
+                    imageArray.push({
+                        image: rewardArray[j].imageSet[k],
+                        name: rewardArray[j].notificationText
+                    })
+                }
 
                 if (rewardArray[j].rewardIsNew) {
                     containsNew = true;
@@ -910,6 +919,7 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
         // Determine how many images we need to upload. Note that we can only send 4 in one Tweet, so we may need multiple Tweets.
 
         let mediaIdArray = [];
+        let blueskyMediaArray = [];
 
         // We can't add images if we don't have any.
         if (!useApiNames) {
@@ -925,18 +935,27 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
                 additionalTweetIndex++;
             }
             for (let j = 0; j < imageArray.length; ++j) {
-                let mediaId = await twitter.uploadTwitterImage(imageArray[j]);
+                let mediaId = await twitter.uploadTwitterImage(imageArray[j].image);
+                let blueskyMediaInfo = await bluesky.uploadBlueskyImage(imageArray[j].image);
                 mediaIdArray.push(mediaId);
+                blueskyMediaArray.push({
+                    image: blueskyMediaInfo,
+                    alt: imageArray[j].name
+                })
             }
         }
         //#endregion
+
+        let rootInfo = null, parentInfo = null;
 
         // We now have the necessary arrays of tweets and images to send to Twitter. So we shall.
         for (let j = 0; j < tweetArray.length; ++j) {
             // Get the media to add to this Tweet.
             let mediaIdSubArray = [];
+            let blueskyMediaSubArray = [];
             for (let k = 4 * j; k < mediaIdArray.length; ++k) {
                 mediaIdSubArray.push(mediaIdArray[k]);
+                blueskyMediaSubArray.push(blueskyMediaArray[k]);
                 if (mediaIdSubArray.length >= 4) { // Can't add more than four media IDs to a single tweet.
                     break;
                 }
@@ -945,6 +964,14 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
             console.log("Tweet: ", tweetArray[j], "Media: ", mediaIdSubArray);
 
             parentId = await twitter.sendTweet(tweetArray[j], parentId, mediaIdSubArray);
+
+            if (!parentInfo) {
+                rootInfo = parentInfo = await bluesky.sendPost(tweetArray[j], null, null, null, null, blueskyMediaSubArray);
+            }
+            else {
+                parentInfo = await bluesky.sendPost(tweetArray[j], parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri, blueskyMediaSubArray);
+            }
+
         }
 
         dropRewards[i].activeTwitterNotifsSent = (drop.status === "ACTIVE"); // This should be true if the drop is active and false otherwise.
