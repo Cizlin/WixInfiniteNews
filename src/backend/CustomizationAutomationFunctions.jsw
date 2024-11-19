@@ -290,7 +290,7 @@ function markItemAsChanged(itemJson, originalJson, fieldChanged, customizationCa
 export async function getGeneralDictsAndArraysFromDbs(headers) {
 	let qualityDict = {}; // The keys will be quality values (e.g. "Epic" or "Legendary"), and the values will be quality IDs.
 	await wixData.query(CustomizationConstants.QUALITY_DB)
-		.find()
+		.find({ suppressAuth: true })
 		.then((results) => {
 			if (results.items.length > 0) {
 				for (let i = 0; i < results.items.length; ++i) {
@@ -305,7 +305,7 @@ export async function getGeneralDictsAndArraysFromDbs(headers) {
 	// Next, we do the release.
 	let releaseDict = {}; // The keys will be season numbers (e.g. 1, 2, etc.), and the values are the associated IDs.
 	await wixData.query(CustomizationConstants.RELEASE_DB)
-		.find()
+		.find({ suppressAuth: true })
 		.then((results) => {
 			if (results.items.length > 0) {
 				for (let i = 0; i < results.items.length; ++i) {
@@ -323,7 +323,7 @@ export async function getGeneralDictsAndArraysFromDbs(headers) {
 		.ascending(CustomizationConstants.MANUFACTURER_ORDINAL_FIELD) // Sort by ordinal.
 		.ne(CustomizationConstants.MANUFACTURER_FIELD, "(Pending)") // These two manufacturers were added manually and should not be included.
 		.ne(CustomizationConstants.MANUFACTURER_FIELD, "N/A")
-		.find()
+		.find({ suppressAuth: true })
 		.then((results) => {
 			if (results.items.length > 0) {
 				//console.info(results.items);
@@ -339,7 +339,7 @@ export async function getGeneralDictsAndArraysFromDbs(headers) {
 	// We're adding another query for the source types.
 	let sourceTypeDict = {}; // The keys will be source type names and the values are the associated IDs.
 	await wixData.query(CustomizationConstants.SOURCE_TYPE_DB)
-		.find()
+		.find({ suppressAuth: true })
 		.then((results) => {
 			if (results.items.length > 0) {
 				for (let i = 0; i < results.items.length; ++i) {
@@ -424,7 +424,7 @@ export async function getCategorySpecificDictsAndArraysFromDbs(customizationCate
 		const PARENT_TYPE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].SocketParentTypeReferenceField;
 		socketQuery = socketQuery.include(PARENT_TYPE_REFERENCE_FIELD);
 	}
-	await socketQuery.find()
+	await socketQuery.find({ suppressAuth: true })
 		.then((results) => {
 			if (results.items.length > 0) {
 				customizationTypeArray = results.items;
@@ -441,7 +441,7 @@ export async function getCategorySpecificDictsAndArraysFromDbs(customizationCate
 	if (CustomizationConstants.HAS_CORE_ARRAY.includes(customizationCategory) && customizationCategory != ArmorConstants.ARMOR_ATTACHMENT_KEY) {
 		const CORE_DB = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CoreDb;
 		await wixData.query(CORE_DB)
-			.find()
+			.find({ suppressAuth: true })
 			.then((results) => {
 				if (results.items.length > 0) {
 					const CORE_WAYPOINT_ID_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CoreWaypointIdField;
@@ -559,7 +559,7 @@ export async function getCustomizationItemToSave(folderDict, headers, customizat
 
 	while (retry && retryCount < maxRetries) {
 		const WAYPOINT_ID_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationWaypointIdField;
-		await matchingItemQuery.find()
+		await matchingItemQuery.find({ suppressAuth: true })
 			.then((results) => {
 				retry = false;
 
@@ -644,7 +644,7 @@ export async function getCustomizationItemToSave(folderDict, headers, customizat
 			while (retry && retryCount < maxRetries) {
 				await wixData.query(ATTACHMENTS_CUSTOMIZATION_DB)
 					.hasSome(WAYPOINT_ID_FIELD, customizationDetails.Attachments)
-					.find()
+					.find({ suppressAuth: true })
 					.then((results) => {
 						retry = false;
 
@@ -687,7 +687,7 @@ export async function getCustomizationItemToSave(folderDict, headers, customizat
 				while (retry && retryCount < maxRetries) {
 					await wixData.query(CUSTOMIZATION_DB)
 						.hasSome(WAYPOINT_ID_FIELD, customizationDetails.ChildItems)
-						.find()
+						.find({ suppressAuth: true })
 						.then((results) => {
 							retry = false;
 
@@ -727,7 +727,7 @@ export async function getCustomizationItemToSave(folderDict, headers, customizat
 				while (retry && retryCount < maxRetries) {
 					await wixData.query(ATTACHMENTS_CUSTOMIZATION_DB)
 						.hasSome(WAYPOINT_ID_FIELD, customizationDetails.ChildAttachments)
-						.find()
+						.find({ suppressAuth: true })
 						.then((results) => {
 							retry = false;
 
@@ -783,7 +783,7 @@ export async function getCustomizationItemToSave(folderDict, headers, customizat
 			const maxRetries = 10;
 
 			while (retry && retryCount < maxRetries) {
-				await wixData.queryReferenced(CUSTOMIZATION_DB, existingItem._id, CUSTOMIZATION_ATTACHMENT_REFERENCE_FIELD)
+				await wixData.queryReferenced(CUSTOMIZATION_DB, existingItem._id, CUSTOMIZATION_ATTACHMENT_REFERENCE_FIELD, { suppressAuth: true })
 					.then((results) => {
 						retry = false;
 
@@ -824,7 +824,7 @@ export async function getCustomizationItemToSave(folderDict, headers, customizat
 			const maxRetries = 10;
 
 			while (retry && retryCount < maxRetries) {
-				await wixData.queryReferenced(CUSTOMIZATION_DB, existingItem._id, CUSTOMIZATION_KIT_ITEM_REFERENCE_FIELD)
+				await wixData.queryReferenced(CUSTOMIZATION_DB, existingItem._id, CUSTOMIZATION_KIT_ITEM_REFERENCE_FIELD, { suppressAuth: true })
 					.then((results) => {
 						retry = false;
 
@@ -855,7 +855,7 @@ export async function getCustomizationItemToSave(folderDict, headers, customizat
 				const maxRetries = 10;
 
 				while (retry && retryCount < maxRetries) {
-					await wixData.queryReferenced(CUSTOMIZATION_DB, existingItem._id, CUSTOMIZATION_KIT_ATTACHMENT_REFERENCE_FIELD)
+					await wixData.queryReferenced(CUSTOMIZATION_DB, existingItem._id, CUSTOMIZATION_KIT_ATTACHMENT_REFERENCE_FIELD, { suppressAuth: true })
 						.then((results) => {
 							retry = false;
 
@@ -882,7 +882,7 @@ export async function getCustomizationItemToSave(folderDict, headers, customizat
 			retryCount = 0;
 
 			while (retry && retryCount < maxRetries) {
-				await wixData.queryReferenced(CUSTOMIZATION_DB, existingItem._id, CUSTOMIZATION_KIT_CUSTOMIZABLE_TYPES_REFERENCE_FIELD)
+				await wixData.queryReferenced(CUSTOMIZATION_DB, existingItem._id, CUSTOMIZATION_KIT_CUSTOMIZABLE_TYPES_REFERENCE_FIELD, { suppressAuth: true })
 					.then((results) => {
 						retry = false;
 
@@ -920,7 +920,7 @@ export async function getCustomizationItemToSave(folderDict, headers, customizat
 			const maxRetries = 10;
 
 			while (retry && retryCount < maxRetries) {
-				await wixData.queryReferenced(CUSTOMIZATION_DB, existingItem._id, CUSTOMIZATION_PALETTE_REFERENCE_FIELD)
+				await wixData.queryReferenced(CUSTOMIZATION_DB, existingItem._id, CUSTOMIZATION_PALETTE_REFERENCE_FIELD, { suppressAuth: true })
 					.then((results) => {
 						retry = false;
 
@@ -955,7 +955,7 @@ export async function getCustomizationItemToSave(folderDict, headers, customizat
 		const maxRetries = 10;
 
 		while (retry && retryCount < maxRetries) {
-			await wixData.queryReferenced(CUSTOMIZATION_DB, existingItem._id, DEFAULT_OF_CORE_REFERENCE_FIELD)
+			await wixData.queryReferenced(CUSTOMIZATION_DB, existingItem._id, DEFAULT_OF_CORE_REFERENCE_FIELD, { suppressAuth: true })
 				.then((results) => {
 					retry = false;
 					if (results.items.length > 0) {
@@ -1558,7 +1558,7 @@ async function getCoreItemToSave(folderDict, headers, customizationCategory, cus
 	while (retry && retryCount < maxRetries) {
 		await wixData.query(CORE_DB)
 			.eq(CORE_WAYPOINT_ID_FIELD, customizationDetails.WaypointId)
-			.find()
+			.find({ suppressAuth: true })
 			.then((results) => {
 				retry = false;
 
@@ -2059,7 +2059,7 @@ export async function fetchEmblemPaletteDbIds(emblemPalettePathArray) {
 			while (retry && retryCount < MAX_RETRIES) {
 				emblemPaletteDbId = await wixData.query(CustomizationConstants.EMBLEM_PALETTE_DB)
 					.eq(CustomizationConstants.EMBLEM_PALETTE_CONFIGURATION_ID_FIELD, emblemPalettePathObject.ConfigurationId)
-					.find()
+					.find({ suppressAuth: true })
 					.then((results) => {
 						retry = false;
 
@@ -2235,7 +2235,7 @@ async function processItem(headers,
 			const CORE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationCoreReferenceField;
 			customizationQuery = customizationQuery.include(CORE_REFERENCE_FIELD);
 		}
-		await customizationQuery.find()
+		await customizationQuery.find({ suppressAuth: true })
 			.then(async (results) => {
 				if (results.items.length > 0) {
 					idFound = true;
@@ -2323,7 +2323,7 @@ async function processItem(headers,
 				const CORE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationCoreReferenceField;
 				customizationQuery2 = customizationQuery2.include(CORE_REFERENCE_FIELD);
 			}
-			await customizationQuery2.find()
+			await customizationQuery2.find({ suppressAuth: true })
 				.then(async (results) => {
 					if (results.items.length > 0) {
 						idFound = true;
@@ -3220,8 +3220,7 @@ async function saveItemsToDbFromList(customizationCategory, customizationItemDbA
 
 	for (let i = 0; i < customizationItemDbArray.length; ++i) {
 		let options = {
-			//"suppressAuth": true,
-			//"suppressHooks": true
+			"suppressAuth": true
 		};
 
 		let customizationItemDbJson = customizationItemDbArray[i];
@@ -3418,7 +3417,7 @@ async function updateDbsFromApi(headers, customizationCategory, waypointGroupsTo
 	let folderDict; // This will be passed to our image grabbing function.
 	let results = await wixData.query(KeyConstants.KEY_VALUE_DB) // This might still be a bit inefficient. Consider moving query out and passing folderDict as arg.
 		.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + CustomizationConstants.CUSTOMIZATION_CATEGORY_FOLDER_DICT[customizationCategory] + "/")
-		.find()
+		.find({ suppressAuth: true })
 
 	if (results.items.length > 0) {
 		folderDict = results.items[0].value;
@@ -3447,7 +3446,7 @@ async function updateDbsFromApi(headers, customizationCategory, waypointGroupsTo
 		// Retrieve the checkpoint key from the Key Value DB:
 		itemCountOffset = await wixData.query(KeyConstants.KEY_VALUE_DB)
 			.eq("key", checkpointKey)
-			.find()
+			.find({ suppressAuth: true })
 			.then((results) => {
 				if (results.items.length > 0) {
 					return results.items[0].value.offset;
@@ -3521,7 +3520,7 @@ async function updateDbsFromApi(headers, customizationCategory, waypointGroupsTo
 
 			// It's time to save the Core entries to the Core DB.
 			const CORE_DB = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CoreDb;
-			await wixData.bulkSave(CORE_DB, coreDbJsonArray)
+			await wixData.bulkSave(CORE_DB, coreDbJsonArray, { suppressAuth: true })
 				.then((results) => {
 					console.info("After Core DB Save: " + results.inserted + " inserted, " + results.updated + " updated, " + results.skipped + " skipped.");
 					console.info("Inserted IDs: " + results.insertedItemIds);
@@ -3683,7 +3682,7 @@ async function updateDbsFromApi(headers, customizationCategory, waypointGroupsTo
 			if (checkpointKey) {
 				let currentOffsetObject = await wixData.query(KeyConstants.KEY_VALUE_DB)
 					.eq("key", checkpointKey)
-					.find()
+					.find({ suppressAuth: true })
 					.then((results) => {
 						if (results.items.length == 0) {
 							// Return a default object because there isn't one in the DB.
@@ -3703,7 +3702,7 @@ async function updateDbsFromApi(headers, customizationCategory, waypointGroupsTo
 						console.error("Error occurred when determining existing offset.", error);
 					});
 
-				wixData.save(KeyConstants.KEY_VALUE_DB, currentOffsetObject)
+				wixData.save(KeyConstants.KEY_VALUE_DB, currentOffsetObject, { suppressAuth: true })
 					.catch((error) => {
 						console.error(error, "occurred when updating current offset value");
 					});
@@ -3771,7 +3770,7 @@ async function updateDbsFromApi(headers, customizationCategory, waypointGroupsTo
 			if (checkpointKey) {
 				let currentOffsetObject = await wixData.query(KeyConstants.KEY_VALUE_DB)
 					.eq("key", checkpointKey)
-					.find()
+					.find({ suppressAuth: true })
 					.then((results) => {
 						if (results.items.length == 0) {
 							// Return a default object because there isn't one in the DB.
@@ -3791,7 +3790,7 @@ async function updateDbsFromApi(headers, customizationCategory, waypointGroupsTo
 						console.error("Error occurred when determining existing offset.", error);
 					});
 
-				wixData.save(KeyConstants.KEY_VALUE_DB, currentOffsetObject)
+				wixData.save(KeyConstants.KEY_VALUE_DB, currentOffsetObject, { suppressAuth: true })
 					.catch((error) => {
 						console.error(error, "occurred when updating current offset value");
 					});
@@ -3830,7 +3829,7 @@ async function updateDbsFromApi(headers, customizationCategory, waypointGroupsTo
 			if (checkpointKey) {
 				let currentOffsetObject = await wixData.query(KeyConstants.KEY_VALUE_DB)
 					.eq("key", checkpointKey)
-					.find()
+					.find({ suppressAuth: true })
 					.then((results) => {
 						if (results.items.length == 0) {
 							// Return a default object because there isn't one in the DB.
@@ -3850,7 +3849,7 @@ async function updateDbsFromApi(headers, customizationCategory, waypointGroupsTo
 						console.error("Error occurred when determining existing offset.", error);
 					});
 
-				wixData.save(KeyConstants.KEY_VALUE_DB, currentOffsetObject)
+				wixData.save(KeyConstants.KEY_VALUE_DB, currentOffsetObject, { suppressAuth: true })
 					.catch((error) => {
 						console.error(error, "occurred when updating current offset value");
 					});
@@ -3867,7 +3866,7 @@ export async function importManufacturers(headers) {
 	let folderDict; // This will be passed to our image grabbing function. 
 	let results = await wixData.query(KeyConstants.KEY_VALUE_DB) // This might still be a bit inefficient. Consider moving query out and passing folderDict as arg.
 		.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + CustomizationConstants.CUSTOMIZATION_CATEGORY_FOLDER_DICT[CustomizationConstants.MANUFACTURER_KEY] + "/")
-		.find();
+		.find({ suppressAuth: true });
 
 	if (results.items.length > 0) {
 		folderDict = results.items[0].value;
@@ -3883,7 +3882,7 @@ export async function importManufacturers(headers) {
 
 	let manufacturerDbResults = await wixData.query(CustomizationConstants.MANUFACTURER_DB)
 		.ne(CustomizationConstants.MANUFACTURER_FIELD, "N/A") // We know this will be in there but don't really want it.
-		.find();
+		.find({ suppressAuth: true });
 
 	let manufacturerApiNameArray = []; // We want to know which names didn't appear in the API list.
 
@@ -3934,7 +3933,7 @@ export async function importManufacturers(headers) {
 	});
 
 	if (manufacturerDbArray.length > 0) {
-		await wixData.bulkSave(CustomizationConstants.MANUFACTURER_DB, manufacturerDbArray)
+		await wixData.bulkSave(CustomizationConstants.MANUFACTURER_DB, manufacturerDbArray, { suppressAuth: true })
 			.then((results) => {
 				console.info("Manufacturers have been saved with these results: ", results);
 			});
@@ -4108,7 +4107,7 @@ export async function importEmblemPalettes(headers, generalDictsAndArrays, doImp
 
 		let existingEmblemPaletteResults = await wixData.query(CustomizationConstants.EMBLEM_PALETTE_DB)
 			.limit(1000)
-			.find();
+			.find({ suppressAuth: true });
 
 		existingEmblemPaletteResults.items.forEach((emblemPaletteDbObject) => {
 			existingEmblemPaletteETags[emblemPaletteDbObject[CustomizationConstants.EMBLEM_PALETTE_WAYPOINT_ID_FIELD]] = emblemPaletteDbObject[CustomizationConstants.EMBLEM_PALETTE_ITEM_E_TAG_FIELD];
@@ -4152,7 +4151,7 @@ export async function importEmblemPalettes(headers, generalDictsAndArrays, doImp
 			let emblemPaletteFolderDict; // This will be passed to our image grabbing function. 
 			let results = await wixData.query(KeyConstants.KEY_VALUE_DB) // This might still be a bit inefficient. Consider moving query out and passing folderDict as arg.
 				.eq("key", KeyConstants.KEY_VALUE_EMBLEM_PALETTE_FOLDERS_KEY)
-				.find();
+				.find({ suppressAuth: true });
 
 			if (results.items.length > 0) {
 				emblemPaletteFolderDict = results.items[0].value;
@@ -4219,7 +4218,7 @@ export async function importEmblemPalettes(headers, generalDictsAndArrays, doImp
 		console.info("Saving the following Emblem Palettes to the DB: ", emblemPalettesToPushToDb);
 
 		while (retry && retryCount < MAX_RETRIES) {
-			await wixData.bulkSave(CustomizationConstants.EMBLEM_PALETTE_DB, emblemPalettesToPushToDb)
+			await wixData.bulkSave(CustomizationConstants.EMBLEM_PALETTE_DB, emblemPalettesToPushToDb, { suppressAuth: true })
 				.then((results) => {
 					retry = false;
 					console.info("Inserted/Updated Emblem Palette results: ", results);
@@ -4494,7 +4493,7 @@ export async function deleteAllETags(customizationCategory) {
 	while (resultsReturned) {
 		await wixData.query(CUSTOMIZATION_DB)
 			.ne(ETAG_FIELD, "")
-			.find()
+			.find({ suppressAuth: true })
 			.then(async (results) => {
 				if (results.items.length <= 0) {
 					resultsReturned = false;
@@ -4505,7 +4504,7 @@ export async function deleteAllETags(customizationCategory) {
 				}
 				console.log("Removing ETags from group " + i);
 
-				wixData.bulkUpdate(CUSTOMIZATION_DB, results.items);
+				wixData.bulkUpdate(CUSTOMIZATION_DB, results.items, { suppressAuth: true });
 				++i;
 			});
 	}
@@ -4525,7 +4524,7 @@ export async function printOutdatedCustomizationEntries(customizationCategory) {
 	}
 	
 	let results = await wixData.query(CUSTOMIZATION_DB)
-		.find();
+		.find({ suppressAuth: true });
 
 	for (let i = 0; i < results.items.length; ++i) {
 		if (!inventoryIdDict[results.items[i][WAYPOINT_ID_FIELD]]) {
@@ -4547,5 +4546,5 @@ export async function printOutdatedCustomizationEntries(customizationCategory) {
 export async function getItemById(customizationCategory, waypointId) {
 	return await wixData.query(CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationDb)
 		.eq(CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationWaypointIdField, waypointId)
-		.find();
+		.find({ suppressAuth: true });
 }

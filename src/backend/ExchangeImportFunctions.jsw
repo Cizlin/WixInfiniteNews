@@ -50,7 +50,7 @@ export async function getCurrentlyAvailableExchangeListings() {
 		currentlyAvailableExchangeListings = await wixData.query(ExchangeConstants.EXCHANGE_DB)
 			.eq(currentlyAvailableField, true)
 			.limit(1000)
-			.find()
+			.find({ suppressAuth: true })
 			.then((results) => {
 				retry = false;
 				return results.items;
@@ -75,7 +75,7 @@ export async function getCurrentlyAvailableExchangeListings() {
 			retry = true;
 			retryCount = 0;
 			while (retry && retryCount < MAX_RETRIES) {
-				currentlyAvailableExchangeListings[i][itemField] = await wixData.queryReferenced(ExchangeConstants.EXCHANGE_DB, currentlyAvailableExchangeListings[i]._id, itemField)
+				currentlyAvailableExchangeListings[i][itemField] = await wixData.queryReferenced(ExchangeConstants.EXCHANGE_DB, currentlyAvailableExchangeListings[i]._id, itemField, { suppressAuth: true })
 					.then((results) => {
 						let idArray = [];
 						results.items.forEach((item) => {
@@ -217,7 +217,7 @@ export async function getCustomizationOffersExchangeListFromWaypoint(headers) {
 
 	let currentOffsetObject = await wixData.query(KeyConstants.KEY_VALUE_DB)
 		.eq("key", key)
-		.find()
+		.find({ suppressAuth: true })
 		.then((results) => {
 			if (results.items.length == 0) {
 				throw "Offset not found in Key Value DB. Throwing error.";
@@ -269,7 +269,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 
 	console.log("Querying for quality data");
 	let qualityResults = await wixData.query(CustomizationConstants.QUALITY_DB)
-		.find()
+		.find({ suppressAuth: true })
 		.then()
 		.catch((error) => {
 			console.error(error, "occurred while filling in quality dict");
@@ -294,7 +294,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 	let folderDict;
 	let results = await wixData.query(KeyConstants.KEY_VALUE_DB)
 		.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + CustomizationConstants.CUSTOMIZATION_CATEGORY_FOLDER_DICT[ExchangeConstants.EXCHANGE_KEY] + "/")
-		.find()
+		.find({ suppressAuth: true })
 		.catch((error) => {
 			console.error(error, "occurred while querying Key Value DB.");
 			return {
@@ -401,7 +401,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 					// Get the existing ETag from the DB.
 					let existingETag = await wixData.query(ExchangeConstants.EXCHANGE_DB)
 						.eq(ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD, exchangeWaypointArray[i].OfferingId)
-						.find()
+						.find({ suppressAuth: true })
 						.then((results) => {
 							if (results.items.length > 0) {
 								return results.items[0][ExchangeConstants.EXCHANGE_IMAGE_ETAG_FIELD];
@@ -629,7 +629,7 @@ export async function getNewExchangeList(processCustomizationOptions = false) {
 
 					let consumableId = await wixData.query(ConsumablesConstants.CONSUMABLES_DB)
 						.eq(ConsumablesConstants.CONSUMABLES_NAME_FIELD, consumableName)
-						.find()
+						.find({ suppressAuth: true })
 						.then((results) => {
 							if (results.items.length > 0) {
 								return results.items[0]._id;
@@ -674,8 +674,7 @@ export async function addItemIdArrayToExchangeItem(bundleId, fieldName, itemIdAr
 	}
 
 	let options = {
-		"suppressAuth": true,
-		"suppressHooks": true
+		"suppressAuth": true
 	};
 
 	let itemInfoArray = [];
@@ -718,7 +717,7 @@ export async function addItemIdArrayToExchangeItem(bundleId, fieldName, itemIdAr
 				.hasSome("_id", itemIdArray)
 				.include(SOCKET_REFERENCE_FIELD)
 				.include(CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD)
-				.find()
+				.find({ suppressAuth: true })
 				.then(async (results) => {
 					if (results.items.length > 0) {
 						let items = results.items;
@@ -776,7 +775,7 @@ export async function addItemIdArrayToExchangeItem(bundleId, fieldName, itemIdAr
 							while (sourceTypeRetry && sourceTypeRetryCount < MAX_SOURCE_TYPE_RETRIES) {
 								if (item[CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD].length == 1 && item[CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD][0]._id == PENDING_SOURCE_ID) {
 									// If we have exactly one source type and it's Pending, we want to get rid of it and do a replace.
-									await wixData.replaceReferences(CUSTOMIZATION_DB, CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD, item._id, [EXCHANGE_SOURCE_ID])
+									await wixData.replaceReferences(CUSTOMIZATION_DB, CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD, item._id, [EXCHANGE_SOURCE_ID], { suppressAuth: true })
 										.then (() => {
 											console.log("Added source type reference for item " + item._id + " in DB " + CUSTOMIZATION_DB);
 											sourceTypeRetry = false;
@@ -788,7 +787,7 @@ export async function addItemIdArrayToExchangeItem(bundleId, fieldName, itemIdAr
 								}
 								else if (!sourceTypeReferenceIncludesDesiredId) {
 									// We just want to insert the source type in this case.
-									await wixData.insertReference(CUSTOMIZATION_DB, CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD, item._id, [EXCHANGE_SOURCE_ID])
+									await wixData.insertReference(CUSTOMIZATION_DB, CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD, item._id, [EXCHANGE_SOURCE_ID], { suppressAuth: true })
 										.then (() => {
 											console.log("Added source type reference for item " + item._id + " in DB " + CUSTOMIZATION_DB);
 											sourceTypeRetry = false;
@@ -813,7 +812,7 @@ export async function addItemIdArrayToExchangeItem(bundleId, fieldName, itemIdAr
 								const CORE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationCoreReferenceField;
 								const CORE_NAME_FIELD = CustomizationConstants.CORE_CATEGORY_SPECIFIC_VARS[customizationCategory].CoreNameField;
 
-								let parentCores = (await wixData.queryReferenced(CUSTOMIZATION_DB, item._id, CORE_REFERENCE_FIELD)).items;
+								let parentCores = (await wixData.queryReferenced(CUSTOMIZATION_DB, item._id, CORE_REFERENCE_FIELD, { suppressAuth: true })).items;
 
 								// We only care about the parent core if there's only one core the item works with and the core isn't the "Any" shortcut.
 								if (parentCores.length == 1 && parentCores[0][CORE_NAME_FIELD] != "Any") {
@@ -852,7 +851,7 @@ export async function addItemIdArrayToExchangeItem(bundleId, fieldName, itemIdAr
 
 		while (retry && retryCount < MAX_RETRIES) {
 			try {
-				let consumables = (await wixData.query(ConsumablesConstants.CONSUMABLES_DB).hasSome("_id", itemIdArray).find()).items;
+				let consumables = (await wixData.query(ConsumablesConstants.CONSUMABLES_DB).hasSome("_id", itemIdArray).find({ suppressAuth: true })).items;
 
 				for (let i = 0; i < consumables.length; ++i) {
 					let numConsumables = 0;
@@ -896,8 +895,7 @@ export async function addItemIdArrayToExchangeItem(bundleId, fieldName, itemIdAr
 
 async function addBundleToDb(exchangeBundleJson) {
 	let options = {
-		"suppressAuth": true,
-		"suppressHooks": true
+		"suppressAuth": true
 	};
 
 	let exchangeBundleJsonCopy = structuredClone(exchangeBundleJson); // This ensures that insertions don't throw out our multi-references.
@@ -1231,7 +1229,7 @@ export async function updateExchangeListings() {
 		wixData.query(ExchangeConstants.EXCHANGE_DB)
 			.hasSome(ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD, newlyAvailableExchangeListingIds)
 			.limit(100)
-			.find()
+			.find({ suppressAuth: true })
 			.then(async (results) => {
 				let items = results.items;
 				console.log("Items returned: ", items);
@@ -1321,7 +1319,7 @@ export async function refreshCustomizationExchangeListings() {
 	wixData.query(ExchangeConstants.EXCHANGE_DB)
 		.hasSome(ExchangeConstants.EXCHANGE_WAYPOINT_ID_FIELD, newlyAvailableExchangeListingIds)
 		.limit(100)
-		.find()
+		.find({ suppressAuth: true })
 		.then(async (results) => {
 			let items = results.items;
 			console.log("Items returned: ", items);
@@ -1388,7 +1386,7 @@ export async function refreshCustomizationExchangeListings() {
 
 			let currentOffsetObject = await wixData.query(KeyConstants.KEY_VALUE_DB)
 				.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_EXCHANGE_OFFSET_KEY)
-				.find()
+				.find({ suppressAuth: true })
 				.then((results) => {
 					if (results.items.length == 0) {
 						throw "Offset not found in Key Value DB. Throwing error.";
@@ -1404,7 +1402,7 @@ export async function refreshCustomizationExchangeListings() {
 
 			currentOffsetObject.value.offset = (resetOffset) ? 0 : currentOffsetObject.value.offset + CUSTOMIZATION_EXCHANGE_LIMIT;
 
-			wixData.update(KeyConstants.KEY_VALUE_DB, currentOffsetObject)
+			wixData.update(KeyConstants.KEY_VALUE_DB, currentOffsetObject, { suppressAuth: true })
 				.catch((error) => {
 					console.error(error, "occurred when updating current offset value");
 					InternalNotifications.notifyOwner("Error when updating customization exchange offset.", "Resolve this issue promptly to ensure updates continue to occur.");
@@ -1422,7 +1420,7 @@ export async function deactivateUnavailableCustomizationExchangeListings() {
 		.eq(ExchangeConstants.EXCHANGE_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD, true)
 		.le("_updatedDate", new Date(Date.now() - DAYS_BACK * 24 * 60 * 60 * 1000)) // Convert the DAYS_BACK into a ms value to subtract from the current time.
 		.limit(1000)
-		.find()
+		.find({ suppressAuth: true })
 		.then((results) => {
 			let oldListings = results.items;
 			console.log("Marking the following listings as no longer available", oldListings);
@@ -1430,7 +1428,7 @@ export async function deactivateUnavailableCustomizationExchangeListings() {
 				oldListings[i][ExchangeConstants.EXCHANGE_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD] = false;
 			}
 
-			wixData.bulkUpdate(ExchangeConstants.EXCHANGE_DB, oldListings)
+			wixData.bulkUpdate(ExchangeConstants.EXCHANGE_DB, oldListings, { suppressAuth: true })
 				.then(result => {
 					console.log("Results of marking the listings as no longer available: ", result, oldListings);
 				})

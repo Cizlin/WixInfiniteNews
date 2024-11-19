@@ -42,7 +42,7 @@ export async function getNumCores(categoryKey) {
 
 	return await wixData.query(CORE_DB)
 		.eq(CORE_CURRENTLY_AVAILABLE_FIELD, true)
-		.find()
+		.find({ suppressAuth: true })
 		.then((results) => {
 			return results.items.length;
 		})
@@ -225,7 +225,7 @@ export async function getPassList(passPath, headers = null) {
 export async function updatePassInDb(passDbJson, folderDict, headers) {
 	let results = await wixData.query(PassConstants.PASS_DB)
 		.eq(PassConstants.PASS_WAYPOINT_ID_FIELD, passDbJson.waypointId)
-		.find();
+		.find({ suppressAuth: true });
 
 	let passETagChanged = true; // Assume we are processing stuff by default.
 
@@ -253,7 +253,7 @@ export async function updatePassInDb(passDbJson, folderDict, headers) {
 	passDbJson[PassConstants.PASS_IMAGE_FIELD] = imageResults[0];
 	passDbJson[PassConstants.PASS_IMAGE_ETAG_FIELD] = imageResults[1];
 
-	let saveResults = await wixData.save(PassConstants.PASS_DB, passDbJson);
+	let saveResults = await wixData.save(PassConstants.PASS_DB, passDbJson, { suppressAuth: true });
 
 	saveResults.passETagChanged = passETagChanged; // Add this to the saved item so we can determine whether processing is even necessary.
 
@@ -374,7 +374,7 @@ export async function processRank(
 				.eq(PassConstants.PASS_RANK_RANK_FIELD, rankDbJson[PassConstants.PASS_RANK_RANK_FIELD])
 				.eq(PassConstants.PASS_RANK_IS_PREMIUM_FIELD, rankDbJson[PassConstants.PASS_RANK_IS_PREMIUM_FIELD])
 				.eq(PassConstants.PASS_RANK_PARENT_PASS_FIELD, rankDbJson[PassConstants.PASS_RANK_PARENT_PASS_FIELD])
-				.find()
+				.find({ suppressAuth: true })
 				.catch((error) => {
 					console.error(error + " occurred while looking for existing rank matching ", rankDbJson);
 					throw error;
@@ -422,7 +422,7 @@ export async function processRank(
 							await wixData.query(CORE_DB)
 								.eq(CORE_WAYPOINT_ID_FIELD, itemWaypointId)
 								.include(CORE_DEFAULT_ITEMS_FIELD)
-								.find()
+								.find({ suppressAuth: true })
 								.then(async (results) => {
 									if (results.items.length > 0) {
 										if (results.items.length > 1) {
@@ -490,7 +490,7 @@ export async function processRank(
 											// We only want to add a source type reference if it isn't already there. It won't hurt if it is, but it will change the Updated Datetime of the item.
 											let sourceTypeReferenceIncludesDesiredId = false;
 
-											let itemSourceTypes = (await wixData.queryReferenced(CUSTOMIZATION_DB, item._id, CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD)).items;
+											let itemSourceTypes = (await wixData.queryReferenced(CUSTOMIZATION_DB, item._id, CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD, { suppressAuth: true })).items;
 
 											for (let i = 0; i < itemSourceTypes.length; ++i) {
 												if (itemSourceTypes[i]._id == sourceIdToUse) {
@@ -503,7 +503,7 @@ export async function processRank(
 											if (itemSourceTypes.length == 1 &&
 												itemSourceTypes[0]._id == CustomizationConstants.SOURCE_TYPE_PENDING_ID) {
 												// If we have exactly one source type and it's Pending, we want to get rid of it and do a replace.
-												wixData.replaceReferences(CUSTOMIZATION_DB, CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD, item._id, [sourceIdToUse])
+												wixData.replaceReferences(CUSTOMIZATION_DB, CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD, item._id, [sourceIdToUse], { suppressAuth: true })
 													.then(() => {
 														console.log("Added source type reference for item " + item._id + " in DB " + CUSTOMIZATION_DB);
 													})
@@ -514,7 +514,7 @@ export async function processRank(
 											}
 											else if (!sourceTypeReferenceIncludesDesiredId) {
 												// We just want to insert the source type in this case.
-												wixData.insertReference(CUSTOMIZATION_DB, CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD, item._id, [sourceIdToUse])
+												wixData.insertReference(CUSTOMIZATION_DB, CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD, item._id, [sourceIdToUse], { suppressAuth: true })
 													.then(() => {
 														console.log("Added source type reference for item " + item._id + " in DB " + CUSTOMIZATION_DB);
 													})
@@ -526,7 +526,7 @@ export async function processRank(
 
 											if (itemChanged) {
 												// Update the customizationItem.
-												wixData.update(CUSTOMIZATION_DB, item)
+												wixData.update(CUSTOMIZATION_DB, item, { suppressAuth: true })
 													.catch((error) => {
 														console.error(error + " occurred while saving Customization Item changes to " + CUSTOMIZATION_DB + " with ID " + itemWaypointId);
 														throw error;
@@ -544,7 +544,7 @@ export async function processRank(
 											const ATTACHMENT_DB = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[ATTACHMENT_KEY].CustomizationDb;
 
 											// We also need to process attachments.
-											let attachmentList = (await wixData.queryReferenced(CORE_DB, matchingCore._id, CORE_DEFAULT_ATTACHMENTS_FIELD)).items;
+											let attachmentList = (await wixData.queryReferenced(CORE_DB, matchingCore._id, CORE_DEFAULT_ATTACHMENTS_FIELD, { suppressAuth: true })).items;
 
 											for (let i = 0; i < attachmentList.length; ++i) {
 												let item = attachmentList[i];
@@ -569,7 +569,7 @@ export async function processRank(
 												// We only want to add a source type reference if it isn't already there. It won't hurt if it is, but it will change the Updated Datetime of the item.
 												let sourceTypeReferenceIncludesDesiredId = false;
 
-												let itemSourceTypes = (await wixData.queryReferenced(ATTACHMENT_DB, item._id, ATTACHMENT_SOURCE_TYPE_FIELD)).items;
+												let itemSourceTypes = (await wixData.queryReferenced(ATTACHMENT_DB, item._id, ATTACHMENT_SOURCE_TYPE_FIELD, { suppressAuth: true })).items;
 
 												for (let i = 0; i < itemSourceTypes.length; ++i) {
 													if (itemSourceTypes[i]._id == sourceIdToUse) {
@@ -582,7 +582,7 @@ export async function processRank(
 												if (itemSourceTypes.length == 1 &&
 													itemSourceTypes[0]._id == CustomizationConstants.SOURCE_TYPE_PENDING_ID) {
 													// If we have exactly one source type and it's Pending, we want to get rid of it and do a replace.
-													wixData.replaceReferences(ATTACHMENT_DB, ATTACHMENT_SOURCE_TYPE_FIELD, item._id, [sourceIdToUse])
+													wixData.replaceReferences(ATTACHMENT_DB, ATTACHMENT_SOURCE_TYPE_FIELD, item._id, [sourceIdToUse], { suppressAuth: true })
 														.then(() => {
 															console.log("Added source type reference for item " + item._id + " in DB " + ATTACHMENT_DB);
 														})
@@ -593,7 +593,7 @@ export async function processRank(
 												}
 												else if (!sourceTypeReferenceIncludesDesiredId) {
 													// We just want to insert the source type in this case.
-													wixData.insertReference(ATTACHMENT_DB, ATTACHMENT_SOURCE_TYPE_FIELD, item._id, [sourceIdToUse])
+													wixData.insertReference(ATTACHMENT_DB, ATTACHMENT_SOURCE_TYPE_FIELD, item._id, [sourceIdToUse], { suppressAuth: true })
 														.then(() => {
 															console.log("Added source type reference for item " + item._id + " in DB " + ATTACHMENT_DB);
 														})
@@ -605,7 +605,7 @@ export async function processRank(
 
 												if (itemChanged) {
 													// Update the customizationItem.
-													wixData.update(ATTACHMENT_DB, item)
+													wixData.update(ATTACHMENT_DB, item, { suppressAuth: true })
 														.catch((error) => {
 															console.error(error + " occurred while saving Customization Item changes to " + ATTACHMENT_DB + " with ID " + itemWaypointId);
 															throw error;
@@ -620,7 +620,7 @@ export async function processRank(
 											console.warn("Updated a Core as part of the Pass processing: " + matchingCore[CORE_WAYPOINT_ID_FIELD] + ", " + matchingCore[CORE_NAME_FIELD]);
 
 											// Update the core.
-											wixData.update(CORE_DB, matchingCore)
+											wixData.update(CORE_DB, matchingCore, { suppressAuth: true })
 												.catch((error) => {
 													console.error(error + " occurred while saving Core changes to " + CORE_DB + " with ID " + itemWaypointId);
 													throw error;
@@ -647,7 +647,7 @@ export async function processRank(
 							await wixData.query(CUSTOMIZATION_DB)
 								.eq(CUSTOMIZATION_WAYPOINT_ID_FIELD, itemWaypointId)
 								.include(CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD)
-								.find()
+								.find({ suppressAuth: true })
 								.then(async (results) => {
 									if (results.items.length > 0) {
 										if (results.items.length > 1) {
@@ -699,7 +699,7 @@ export async function processRank(
 													let currentMatchingItem = await wixData.query(CURRENT_CUSTOMIZATION_DB)
 														.contains(CURRENT_CUSTOMIZATION_WAYPOINT_ID_FIELD, waypointIdSuffix)
 														.include(CURRENT_CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD)
-														.find()
+														.find({ suppressAuth: true })
 														.then((results) => {
 															if (results.items.length > 1) {
 																throw "Error: Found too many items for given ID suffix " + waypointIdSuffix + ". Uniqueness was assumed. Found " + results.items.length + " items";
@@ -733,7 +733,7 @@ export async function processRank(
 											let matchingItems = await wixData.query(CUSTOMIZATION_DB)
 												.contains(CUSTOMIZATION_WAYPOINT_ID_FIELD, waypointIdSuffix)
 												.include(CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD)
-												.find()
+												.find({ suppressAuth: true })
 												.then((results) => {
 													if (results.items.length > 0) {
 														return results.items;
@@ -810,7 +810,7 @@ export async function processRank(
 											if (matchingItem[CURRENT_CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD].length == 1 &&
 												matchingItem[CURRENT_CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD][0]._id == CustomizationConstants.SOURCE_TYPE_PENDING_ID) {
 												// If we have exactly one source type and it's Pending, we want to get rid of it and do a replace.
-												wixData.replaceReferences(CURRENT_CUSTOMIZATION_DB, CURRENT_CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD, matchingItem._id, [sourceIdToUse])
+												wixData.replaceReferences(CURRENT_CUSTOMIZATION_DB, CURRENT_CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD, matchingItem._id, [sourceIdToUse], { suppressAuth: true })
 													.then(() => {
 														console.log("Added source type reference for item " + matchingItem._id + " in DB " + CURRENT_CUSTOMIZATION_DB);
 													})
@@ -821,7 +821,7 @@ export async function processRank(
 											}
 											else if (!sourceTypeReferenceIncludesDesiredId) {
 												// We just want to insert the source type in this case.
-												wixData.insertReference(CURRENT_CUSTOMIZATION_DB, CURRENT_CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD, matchingItem._id, [sourceIdToUse])
+												wixData.insertReference(CURRENT_CUSTOMIZATION_DB, CURRENT_CUSTOMIZATION_SOURCE_TYPE_REFERENCE_FIELD, matchingItem._id, [sourceIdToUse], { suppressAuth: true })
 													.then(() => {
 														console.log("Added source type reference for item " + matchingItem._id + " in DB " + CURRENT_CUSTOMIZATION_DB);
 													})
@@ -833,7 +833,7 @@ export async function processRank(
 
 											if (itemChanged) {
 												// Update the customizationItem.
-												wixData.update(CURRENT_CUSTOMIZATION_DB, matchingItem)
+												wixData.update(CURRENT_CUSTOMIZATION_DB, matchingItem, { suppressAuth: true })
 													.catch((error) => {
 														console.error(error + " occurred while saving Customization Item changes to " + CUSTOMIZATION_DB + " with ID " + itemWaypointId);
 														throw error;
@@ -863,7 +863,7 @@ export async function processRank(
 			// Add the rank to the DB. We'll need the ID shortly. First, though, make a copy.
 			let rankJsonCopy = structuredClone(rankDbJson);
 
-			let rankSaveResult = await wixData.save(PassConstants.PASS_RANK_DB, rankJsonCopy);
+			let rankSaveResult = await wixData.save(PassConstants.PASS_RANK_DB, rankJsonCopy, { suppressAuth: true });
 			let rankId = rankSaveResult._id;
 
 			// Finally, we need to add the items to our rank.
@@ -875,7 +875,7 @@ export async function processRank(
 					let retryCount = 0;
 
 					while (retry && retryCount < maxRetries) {
-						await wixData.replaceReferences(PassConstants.PASS_RANK_DB, CUSTOMIZATION_REFERENCE_FIELD, rankId, rankDbJson[CUSTOMIZATION_REFERENCE_FIELD])
+						await wixData.replaceReferences(PassConstants.PASS_RANK_DB, CUSTOMIZATION_REFERENCE_FIELD, rankId, rankDbJson[CUSTOMIZATION_REFERENCE_FIELD], { suppressAuth: true })
 							.then(() => {
 								retry = false;
 								//console.log("Added these item references to the " + customizationReferenceField + " field of the " + rankId + " rank", rankDbJson[customizationReferenceField]);
@@ -895,7 +895,7 @@ export async function processRank(
 						let retryCount = 0;
 
 						while (retry && retryCount < maxRetries) {
-							await wixData.replaceReferences(PassConstants.PASS_RANK_DB, CORE_REFERENCE_FIELD, rankId, rankDbJson[CORE_REFERENCE_FIELD])
+							await wixData.replaceReferences(PassConstants.PASS_RANK_DB, CORE_REFERENCE_FIELD, rankId, rankDbJson[CORE_REFERENCE_FIELD], { suppressAuth: true })
 								.then(() => {
 									retry = false;
 									//console.log("Added these item references to the " + coreReferenceField + " field of the " + rankId + " rank", rankDbJson[coreReferenceField]);
@@ -911,7 +911,7 @@ export async function processRank(
 
 			// Now, add the Consumables references to the item. We don't need this to be awaited.
 			if (rankDbJson[CONSUMABLES_REFERENCE_FIELD].length > 0) {
-				await wixData.replaceReferences(PassConstants.PASS_RANK_DB, CONSUMABLES_REFERENCE_FIELD, rankId, rankDbJson[CONSUMABLES_REFERENCE_FIELD])
+				await wixData.replaceReferences(PassConstants.PASS_RANK_DB, CONSUMABLES_REFERENCE_FIELD, rankId, rankDbJson[CONSUMABLES_REFERENCE_FIELD], { suppressAuth: true })
 					.catch((error) => {
 						console.error(error + " occurred while trying to add these item references to the " + CONSUMABLES_REFERENCE_FIELD + " field of the " + rankId +
 							" rank.", rankDbJson[CONSUMABLES_REFERENCE_FIELD]);
@@ -932,7 +932,7 @@ export async function processRank(
 export async function updateRanksInDb(rankArray, passDbId, currentlyAvailable, seasonNumber, isEvent, passName, typeDict) {
 
 	// There's only 5 consumables so this would be the easiest way to quickly get the desired IDs.
-	let consumableDbResults = await wixData.query(ConsumablesConstants.CONSUMABLES_DB).find();
+	let consumableDbResults = await wixData.query(ConsumablesConstants.CONSUMABLES_DB).find({ suppressAuth: true });
 	let consumableDbJsons = consumableDbResults.items;
 
 	let consumableNameToIdDict = {}; // This dictionary will use consumable names as keys and their DB IDs as values.
@@ -968,7 +968,7 @@ export async function updateRanksInDb(rankArray, passDbId, currentlyAvailable, s
 export async function getPreviouslyAvailablePassWaypointIdsFromDb() {
 	return await wixData.query(PassConstants.PASS_DB)
 		.eq(PassConstants.PASS_CURRENTLY_AVAILABLE_FIELD, true)
-		.find()
+		.find({ suppressAuth: true })
 		.then((results) => {
 			let waypointIdArray = [];
 			for (let i = 0; i < results.items.length; ++i) {
@@ -1011,7 +1011,7 @@ export async function importPasses() {
 	let folderDict;
 	let results = await wixData.query(KeyConstants.KEY_VALUE_DB) // This might still be a bit inefficient. Consider moving query out and passing folderDict as arg.
 		.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + CustomizationConstants.CUSTOMIZATION_CATEGORY_FOLDER_DICT[PassConstants.PASS_KEY] + "/")
-		.find();
+		.find({ suppressAuth: true });
 
 	if (results.items.length > 0) {
 		folderDict = results.items[0].value;
@@ -1073,26 +1073,26 @@ export async function importPasses() {
 							// If we have a new Battle Pass, we almost certainly have a new Season. We need to mark the previous season as unavailable and mark this one as current.
 							let currentReleaseResults = await wixData.query(CustomizationConstants.RELEASE_DB)
 								.eq(CustomizationConstants.RELEASE_IS_CURRENT_FIELD, true)
-								.find();
+								.find({ suppressAuth: true });
 
 							let currentRelease = {};
 							for (let i = 0; i < currentReleaseResults.items.length; ++i) { // Marking all active releases as inactive.
 								currentRelease = currentReleaseResults.items[i];
 								currentRelease[CustomizationConstants.RELEASE_IS_CURRENT_FIELD] = false;
 
-								let updateResults = await wixData.update(CustomizationConstants.RELEASE_DB, currentRelease);
+								let updateResults = await wixData.update(CustomizationConstants.RELEASE_DB, currentRelease, { suppressAuth: true });
 								console.log("Results after updating Season " + currentRelease[CustomizationConstants.RELEASE_ORDINAL_FIELD] + " to be inactive.", updateResults);
 							}
 
 							let releaseResults = await wixData.query(CustomizationConstants.RELEASE_DB) // Get the season associated with this pass.
 								.eq("_id", passListJsonDict[battlePassPath][PassConstants.PASS_SEASON_FIELD])
-								.find();
+								.find({ suppressAuth: true });
 
 							if (releaseResults.items.length > 0) {
 								let newRelease = releaseResults.items[0];
 								newRelease[CustomizationConstants.RELEASE_IS_CURRENT_FIELD] = true;
 
-								let updateResults = await wixData.update(CustomizationConstants.RELEASE_DB, newRelease);
+								let updateResults = await wixData.update(CustomizationConstants.RELEASE_DB, newRelease, { suppressAuth: true });
 								console.log("Results after updating Season " + newRelease[CustomizationConstants.RELEASE_ORDINAL_FIELD] + " to be active.", updateResults);
 							}
 							else {
@@ -1113,7 +1113,7 @@ export async function importPasses() {
 				// We need to get the site ID of the Season to which this item belongs. We'll query the Releases DB for items with a matching ordinal.
 				let releaseResults = await wixData.query(CustomizationConstants.RELEASE_DB)
 					.eq(CustomizationConstants.RELEASE_ORDINAL_FIELD, passWaypointJson.OperationNumber)
-					.find();
+					.find({ suppressAuth: true });
 
 				let seasonId = "";
 
@@ -1157,21 +1157,21 @@ export async function importPasses() {
 					// If we have a new Battle Pass, we almost certainly have a new Season. We need to mark the previous season(s) as unavailable and mark this one as current.
 					let currentReleaseResults = await wixData.query(CustomizationConstants.RELEASE_DB)
 						.eq(CustomizationConstants.RELEASE_IS_CURRENT_FIELD, true)
-						.find();
+						.find({ suppressAuth: true });
 
 					let currentRelease = {};
 					for (let i = 0; i < currentReleaseResults.items.length; ++i) { // Marking all active releases as inactive.
 						currentRelease = currentReleaseResults.items[i];
 						currentRelease[CustomizationConstants.RELEASE_IS_CURRENT_FIELD] = false;
 
-						let updateResults = await wixData.update(CustomizationConstants.RELEASE_DB, currentRelease);
+						let updateResults = await wixData.update(CustomizationConstants.RELEASE_DB, currentRelease, { suppressAuth: true });
 						console.log("Results after updating Season " + currentRelease[CustomizationConstants.RELEASE_ORDINAL_FIELD] + " to be inactive.", updateResults);
 					}
 
 					let newRelease = releaseResults.items[0]; // This is the season we retrieved earlier. We know it exists.
 					newRelease[CustomizationConstants.RELEASE_IS_CURRENT_FIELD] = true;
 
-					let updateResults = await wixData.update(CustomizationConstants.RELEASE_DB, newRelease);
+					let updateResults = await wixData.update(CustomizationConstants.RELEASE_DB, newRelease, { suppressAuth: true });
 					console.log("Results after updating Season " + newRelease[CustomizationConstants.RELEASE_ORDINAL_FIELD] + " to be active.", updateResults);
 				}
 
@@ -1222,7 +1222,7 @@ export async function importPasses() {
 				// We need to get the site ID of the Season to which this item belongs. We'll query the Releases DB for items with a matching ordinal.
 				let results = await wixData.query(CustomizationConstants.RELEASE_DB)
 					.eq(CustomizationConstants.RELEASE_ORDINAL_FIELD, passWaypointJson.OperationNumber)
-					.find();
+					.find({ suppressAuth: true });
 
 				let seasonId = "";
 
@@ -1433,7 +1433,7 @@ export async function getCurrentCapstoneChallengeDbJson() {
 	{
 		let spartanPointsId = await wixData.query(ConsumablesConstants.CONSUMABLES_DB)
 			.eq(ConsumablesConstants.CONSUMABLES_NAME_FIELD, ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_NAME)
-			.find()
+			.find({ suppressAuth: true })
 			.then((results) => {
 				if (results.items.length > 0) {
 					return results.items[0]._id;
@@ -1606,7 +1606,7 @@ export async function getCurrentCapstoneChallengeDbJson() {
 export async function getPreviousAvailableCapstoneChallenge() {
 	let currentlyAvailableCapstoneChallenges = await wixData.query(CapstoneChallengeConstants.CAPSTONE_CHALLENGE_DB)
 		.eq(CapstoneChallengeConstants.CAPSTONE_CHALLENGE_CURRENTLY_AVAILABLE_FIELD, true)
-		.find()
+		.find({ suppressAuth: true })
 		.then((results) => {
 			return results.items;
 		})
@@ -1620,7 +1620,7 @@ export async function getPreviousAvailableCapstoneChallenge() {
 		for (let j = 0; j < currentlyAvailableCapstoneChallenges[i][CapstoneChallengeConstants.CAPSTONE_CHALLENGE_FIELDS_WITH_ITEMS_FIELD].length; ++j) {
 			const FIELD = currentlyAvailableCapstoneChallenges[i][CapstoneChallengeConstants.CAPSTONE_CHALLENGE_FIELDS_WITH_ITEMS_FIELD][j];
 			currentlyAvailableCapstoneChallenges[i][FIELD] =
-				await wixData.queryReferenced(CapstoneChallengeConstants.CAPSTONE_CHALLENGE_DB, currentlyAvailableCapstoneChallenges[i]._id, FIELD)
+				await wixData.queryReferenced(CapstoneChallengeConstants.CAPSTONE_CHALLENGE_DB, currentlyAvailableCapstoneChallenges[i]._id, FIELD, { suppressAuth: true }
 					.then((results) => {
 						let idArray = [];
 						results.items.forEach((item) => {
@@ -1649,8 +1649,7 @@ export async function addItemIdArrayToCapstoneChallenge(challengeId, fieldName, 
 	}
 
 	let options = {
-		"suppressAuth": true,
-		"suppressHooks": true
+		"suppressAuth": true
 	};
 
 	wixData.replaceReferences(CapstoneChallengeConstants.CAPSTONE_CHALLENGE_DB, fieldName, challengeId, itemIdArray, options)
@@ -1679,7 +1678,7 @@ export async function addItemIdArrayToCapstoneChallenge(challengeId, fieldName, 
 				.hasSome("_id", itemIdArray)
 				.include(SOURCE_TYPE_REFERENCE_FIELD)
 				.include(CUSTOMIZATION_TYPE_REFERENCE_FIELD)
-				.find()
+				.find({ suppressAuth: true })
 				.then(async (results) => {
 					if (results.items.length > 0) {
 						let items = results.items;
@@ -1725,7 +1724,7 @@ export async function addItemIdArrayToCapstoneChallenge(challengeId, fieldName, 
 							// We also need to update or replace the sourcetype. Thankfully, we included this field.
 							if (item[SOURCE_TYPE_REFERENCE_FIELD].length == 1 && item[SOURCE_TYPE_REFERENCE_FIELD][0]._id == CustomizationConstants.SOURCE_TYPE_PENDING_ID) {
 								// If we have exactly one source type and it's Pending, we want to get rid of it and do a replace.
-								wixData.replaceReferences(CUSTOMIZATION_DB, SOURCE_TYPE_REFERENCE_FIELD, item._id, [CustomizationConstants.SOURCE_TYPE_CAPSTONE_CHALLENGE_ID])
+								wixData.replaceReferences(CUSTOMIZATION_DB, SOURCE_TYPE_REFERENCE_FIELD, item._id, [CustomizationConstants.SOURCE_TYPE_CAPSTONE_CHALLENGE_ID], { suppressAuth: true })
 									.then(() => {
 										console.log("Added source type reference for item " + item._id + " in DB " + CUSTOMIZATION_DB);
 									})
@@ -1735,7 +1734,7 @@ export async function addItemIdArrayToCapstoneChallenge(challengeId, fieldName, 
 							}
 							else if (!sourceTypeReferenceIncludesDesiredId) {
 								// We just want to insert the source type in this case.
-								wixData.insertReference(CUSTOMIZATION_DB, SOURCE_TYPE_REFERENCE_FIELD, item._id, [CustomizationConstants.SOURCE_TYPE_CAPSTONE_CHALLENGE_ID])
+								wixData.insertReference(CUSTOMIZATION_DB, SOURCE_TYPE_REFERENCE_FIELD, item._id, [CustomizationConstants.SOURCE_TYPE_CAPSTONE_CHALLENGE_ID], { suppressAuth: true })
 									.then(() => {
 										console.log("Added source type reference for item " + item._id + " in DB " + CUSTOMIZATION_DB);
 									})
@@ -1755,7 +1754,7 @@ export async function addItemIdArrayToCapstoneChallenge(challengeId, fieldName, 
 								const CORE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationCoreReferenceField;
 								const CORE_NAME_FIELD = CustomizationConstants.CORE_CATEGORY_SPECIFIC_VARS[customizationCategory].CoreNameField;
 
-								let parentCores = (await wixData.queryReferenced(CUSTOMIZATION_DB, item._id, CORE_REFERENCE_FIELD)).items;
+								let parentCores = (await wixData.queryReferenced(CUSTOMIZATION_DB, item._id, CORE_REFERENCE_FIELD, { suppressAuth: true })).items;
 
 								// We only care about the parent core if there's at least one core the item works with and the core isn't the "Any" shortcut.
 								if (parentCores.length >= 1 && parentCores[0][CORE_NAME_FIELD] != "Any") {
@@ -1800,7 +1799,7 @@ export async function addItemIdArrayToCapstoneChallenge(challengeId, fieldName, 
 
 		while (retry && retryCount < MAX_RETRIES) {
 			try {
-				let consumables = (await wixData.query(ConsumablesConstants.CONSUMABLES_DB).hasSome("_id", itemIdArray).find()).items;
+				let consumables = (await wixData.query(ConsumablesConstants.CONSUMABLES_DB).hasSome("_id", itemIdArray).find({ suppressAuth: true })).items;
 
 				for (let i = 0; i < consumables.length; ++i) {
 					let numConsumables = 0;
@@ -1844,8 +1843,7 @@ export async function addItemIdArrayToCapstoneChallenge(challengeId, fieldName, 
 
 async function addCapstoneChallengeToDb(capstoneChallengeJson) {
 	let options = {
-		"suppressAuth": true,
-		"suppressHooks": true
+		"suppressAuth": true
 	};
 
 	let capstoneChallengeJsonCopy = structuredClone(capstoneChallengeJson); // This ensures that insertions don't throw out our multi-references.
@@ -2052,7 +2050,7 @@ export async function updateCapstoneChallenge() {
 		// Now that we've got the old challenges being marked as no longer available, we need to mark the new challenges as currently available when they exist and add them when they don't.
 		wixData.query(CapstoneChallengeConstants.CAPSTONE_CHALLENGE_DB)
 			.hasSome(CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NAME_FIELD, newlyAvailableCapstoneChallengeNames)
-			.find()
+			.find({ suppressAuth: true })
 			.then(async (results) => {
 				let items = results.items;
 				console.log("Items returned: ", items);
@@ -2064,7 +2062,7 @@ export async function updateCapstoneChallenge() {
 
 					let itemFieldWithRewards = items[i][CapstoneChallengeConstants.CAPSTONE_CHALLENGE_FIELDS_WITH_ITEMS_FIELD][0];
 
-					let referencedReward = await wixData.queryReferenced(CapstoneChallengeConstants.CAPSTONE_CHALLENGE_DB, items[i]._id, itemFieldWithRewards);
+					let referencedReward = await wixData.queryReferenced(CapstoneChallengeConstants.CAPSTONE_CHALLENGE_DB, items[i]._id, itemFieldWithRewards, { suppressAuth: true });
 					itemRewardIds.push(referencedReward.items[0]._id);
 				}
 
@@ -2105,7 +2103,7 @@ export async function updateCapstoneChallenge() {
 						let currentWeekNum = -1; // The week of the Season we are currently in.
 						let currentReleaseResults = await wixData.query(CustomizationConstants.RELEASE_DB)
 							.eq(CustomizationConstants.RELEASE_IS_CURRENT_FIELD, true)
-							.find();
+							.find({ suppressAuth: true });
 
 						if (currentReleaseResults.items.length > 0) {
 							// Assuming that exactly one release is marked as current.
@@ -2165,7 +2163,7 @@ export async function updateCapstoneChallenge() {
 						let currentWeekNum = -1; // The week of the Season we are currently in.
 						let currentReleaseResults = await wixData.query(CustomizationConstants.RELEASE_DB)
 							.eq(CustomizationConstants.RELEASE_IS_CURRENT_FIELD, true)
-							.find();
+							.find({ suppressAuth: true });
 
 						if (currentReleaseResults.items.length > 0) {
 							// Assuming that exactly one release is marked as current.

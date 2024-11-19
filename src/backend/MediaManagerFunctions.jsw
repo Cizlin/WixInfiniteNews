@@ -273,15 +273,15 @@ export async function generateFolderDict() {
 
 	/*wixData.query(KeyConstants.KEY_VALUE_DB)
 		.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY)
-		.find()
+		.find({ suppressAuth: true })
 		.then((results) => {
 			if (results.items.length > 0) {
 				let item = results.items[0];
 				item.value = folderDict;
-				wixData.save(KeyConstants.KEY_VALUE_DB, item);
+				wixData.save(KeyConstants.KEY_VALUE_DB, item, { suppressAuth: true });
 			}
 			else {
-				wixData.save(KeyConstants.KEY_VALUE_DB, { "key": KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY, "value": folderDict });
+				wixData.save(KeyConstants.KEY_VALUE_DB, { "key": KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY, "value": folderDict }, { suppressAuth: true });
 			}
 		});*/
 
@@ -297,7 +297,7 @@ export async function generateFolderDict() {
 
 		wixData.query(KeyConstants.KEY_VALUE_DB)
 			.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + category)
-			.find()
+			.find({ suppressAuth: true })
 			.then((results) => {
 			if (results.items.length > 0) {
 				let item = results.items[0];
@@ -311,7 +311,7 @@ export async function generateFolderDict() {
 				};
 
 				item.value = categorySpecificFolderDict;
-				wixData.save(KeyConstants.KEY_VALUE_DB, item);
+				wixData.save(KeyConstants.KEY_VALUE_DB, item, { suppressAuth: true });
 			}
 			else {
 				let categorySpecificFolderDict = { 
@@ -322,7 +322,7 @@ export async function generateFolderDict() {
 					}
 				};
 
-				wixData.save(KeyConstants.KEY_VALUE_DB, { "key": KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + category, "value": categorySpecificFolderDict });
+				wixData.save(KeyConstants.KEY_VALUE_DB, { "key": KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + category, "value": categorySpecificFolderDict }, { suppressAuth: true });
 			}
 		});
 	}
@@ -462,15 +462,15 @@ export async function generateArmorFolderDict() {
 
 	wixData.query(KeyConstants.KEY_VALUE_DB)
 		.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + GeneralConstants.ARMOR_ROOT_FOLDER + "/")
-		.find()
+		.find({ suppressAuth: true })
 		.then((results) => {
 			if (results.items.length > 0) {
 				let item = results.items[0];
 				item.value = folderDict;
-				wixData.save(KeyConstants.KEY_VALUE_DB, item);
+				wixData.save(KeyConstants.KEY_VALUE_DB, item, { suppressAuth: true });
 			}
 			else {
-				wixData.save(KeyConstants.KEY_VALUE_DB, { "key": KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + GeneralConstants.ARMOR_ROOT_FOLDER + "/", "value": folderDict });
+				wixData.save(KeyConstants.KEY_VALUE_DB, { "key": KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + GeneralConstants.ARMOR_ROOT_FOLDER + "/", "value": folderDict }, { suppressAuth: true });
 			}
 		});
 }
@@ -609,15 +609,15 @@ export async function generateWeaponFolderDict() {
 
 	wixData.query(KeyConstants.KEY_VALUE_DB)
 		.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + GeneralConstants.WEAPON_ROOT_FOLDER + "/")
-		.find()
+		.find({ suppressAuth: true })
 		.then((results) => {
 			if (results.items.length > 0) {
 				let item = results.items[0];
 				item.value = folderDict;
-				wixData.save(KeyConstants.KEY_VALUE_DB, item);
+				wixData.save(KeyConstants.KEY_VALUE_DB, item, { suppressAuth: true });
 			}
 			else {
-				wixData.save(KeyConstants.KEY_VALUE_DB, { "key": KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + GeneralConstants.WEAPON_ROOT_FOLDER + "/", "value": folderDict });
+				wixData.save(KeyConstants.KEY_VALUE_DB, { "key": KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + GeneralConstants.WEAPON_ROOT_FOLDER + "/", "value": folderDict }, { suppressAuth: true });
 			}
 		});
 }
@@ -756,15 +756,15 @@ export async function generateVehicleFolderDict() {
 
 	wixData.query(KeyConstants.KEY_VALUE_DB)
 		.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + GeneralConstants.VEHICLE_ROOT_FOLDER + "/")
-		.find()
+		.find({ suppressAuth: true })
 		.then((results) => {
 			if (results.items.length > 0) {
 				let item = results.items[0];
 				item.value = folderDict;
-				wixData.save(KeyConstants.KEY_VALUE_DB, item);
+				wixData.save(KeyConstants.KEY_VALUE_DB, item, { suppressAuth: true });
 			}
 			else {
-				wixData.save(KeyConstants.KEY_VALUE_DB, { "key": KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + GeneralConstants.VEHICLE_ROOT_FOLDER + "/", "value": folderDict });
+				wixData.save(KeyConstants.KEY_VALUE_DB, { "key": KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_" + GeneralConstants.VEHICLE_ROOT_FOLDER + "/", "value": folderDict }, { suppressAuth: true });
 			}
 		});
 }
@@ -904,15 +904,15 @@ export async function generateShopFolderDict() {
 
 	wixData.query(KeyConstants.KEY_VALUE_DB)
 		.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_Shop/")
-		.find()
+		.find({ suppressAuth: true })
 		.then((results) => {
 			if (results.items.length > 0) {
 				let item = results.items[0];
 				item.value = folderDict;
-				wixData.save(KeyConstants.KEY_VALUE_DB, item);
+				wixData.save(KeyConstants.KEY_VALUE_DB, item, { suppressAuth: true });
 			}
 			else {
-				wixData.save(KeyConstants.KEY_VALUE_DB, { "key": KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_Shop/", "value": folderDict });
+				wixData.save(KeyConstants.KEY_VALUE_DB, { "key": KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY + "_Shop/", "value": folderDict }, { suppressAuth: true });
 			}
 		});
 }
@@ -1253,15 +1253,15 @@ export async function generateEmblemPaletteFolderDict() {
 
 	wixData.query(KeyConstants.KEY_VALUE_DB)
 		.eq("key", KeyConstants.KEY_VALUE_EMBLEM_PALETTE_FOLDERS_KEY)
-		.find()
+		.find({ suppressAuth: true })
 		.then((results) => {
 			if (results.items.length > 0) {
 				let item = results.items[0];
 				item.value = folderDict;
-				wixData.save(KeyConstants.KEY_VALUE_DB, item);
+				wixData.save(KeyConstants.KEY_VALUE_DB, item, { suppressAuth: true });
 			}
 			else {
-				wixData.save(KeyConstants.KEY_VALUE_DB, { "key": KeyConstants.KEY_VALUE_EMBLEM_PALETTE_FOLDERS_KEY, "value": folderDict });
+				wixData.save(KeyConstants.KEY_VALUE_DB, { "key": KeyConstants.KEY_VALUE_EMBLEM_PALETTE_FOLDERS_KEY, "value": folderDict }, { suppressAuth: true });
 			}
 		})
 		.catch(error => {
