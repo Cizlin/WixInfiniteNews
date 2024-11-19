@@ -4,7 +4,7 @@ import * as internalNotifications from 'backend/InternalNotificationFunctions.js
 import { BskyAgent } from '@atproto/api'
 
 // mediaIds should be comma-separated list of media IDs to include in the Tweet.
-export async function sendPost(body, parentCid = null, parentUri = null, rootCid = null, rootUri = null, mediaIds = null) {
+export async function sendPost(body, parentCid = null, parentUri = null, rootCid = null, rootUri = null, mediaList = null) {
 	// Generate and send post
 	const agent = new BskyAgent({
 		service: 'https://bsky.social'
@@ -33,17 +33,10 @@ export async function sendPost(body, parentCid = null, parentUri = null, rootCid
 		}
 	}
 
-	if (mediaIds && mediaIds.length > 0) {
-        let images = [];
-        for (let i = 0; i < mediaIds.length; ++i) {
-            images.push({
-                image: mediaIds[i]
-            });
-        }
-
+	if (mediaList && mediaList.length > 0) {
 		options.embed = {
             $type: 'app.bsky.embed.images',
-			images: images
+			images: mediaList
 		}
 	}
 
