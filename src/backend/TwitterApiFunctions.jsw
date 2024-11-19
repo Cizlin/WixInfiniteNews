@@ -3,7 +3,6 @@ const { TwitterApi } = require('twitter-api-v2');
 import {getSecret} from 'wix-secrets-backend';
 import wixMediaBackend from 'wix-media-backend';
 import * as internalNotifications from 'backend/InternalNotificationFunctions.jsw';
-import { BskyAgent } from '@atproto/api'
 
 // mediaIds should be comma-separated list of media IDs to include in the Tweet.
 export async function sendTweet(tweetBody, parentId = null, mediaIds = null) {
@@ -148,20 +147,4 @@ export async function testTweet() {
 	if (parentId) {
 		sendTweet("Test reply", parentId);
 	}
-}
-
-export async function testBlueskyPost() {
-	const agent = new BskyAgent({
-		service: 'https://bsky.social'
-	});
-
-	await agent.login({
-		identifier: 'haloinfinitenews.bsky.social',
-		password: await getSecret("BlueskyPassword")
-	});
-	
-	await agent.post({
-		text: 'Test post.',
-		createdAt: new Date().toISOString()
-	});
 }
