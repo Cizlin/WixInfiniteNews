@@ -1388,19 +1388,19 @@ export async function addItemIdArrayToShopItem(bundleId, fieldName, itemIdArray,
 					switch (consumables[i][ConsumablesConstants.CONSUMABLES_NAME_FIELD])
 					{
 						case ConsumablesConstants.CONSUMABLES_CHALLENGE_SWAP_NAME:
-							numConsumables = bundleJson[numChallengeSwapsField];
+							numConsumables = bundleJson[ShopConstants.SHOP_NUMBER_OF_CHALLENGE_SWAPS_FIELD];
 							break;
 						case ConsumablesConstants.CONSUMABLES_XP_BOOST_NAME:
-							numConsumables = bundleJson[numXpBoostsField];
+							numConsumables = bundleJson[ShopConstants.SHOP_NUMBER_OF_XP_BOOSTS_FIELD];
 							break;
 						case ConsumablesConstants.CONSUMABLES_XP_GRANT_NAME:
-							numConsumables = bundleJson[numXpGrantsField];
+							numConsumables = bundleJson[ShopConstants.SHOP_NUMBER_OF_XP_GRANTS_FIELD];
 							break;
 						case ConsumablesConstants.CONSUMABLES_CREDITS_NAME:
-							numConsumables = bundleJson[numCreditsField];
+							numConsumables = bundleJson[ShopConstants.SHOP_NUMBER_OF_CREDITS_FIELD];
 							break;
 						case ConsumablesConstants.CONSUMABLES_SPARTAN_POINTS_NAME:
-							numConsumables = bundleJson[numSpartanPointsField];
+							numConsumables = bundleJson[ShopConstants.SHOP_NUMBER_OF_SPARTAN_POINTS_FIELD];
 							break;
 						default:
 							console.error("No match found for consumable with name " + consumables[i][ConsumablesConstants.CONSUMABLES_NAME_FIELD]);
