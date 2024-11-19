@@ -1620,7 +1620,7 @@ export async function getPreviousAvailableCapstoneChallenge() {
 		for (let j = 0; j < currentlyAvailableCapstoneChallenges[i][CapstoneChallengeConstants.CAPSTONE_CHALLENGE_FIELDS_WITH_ITEMS_FIELD].length; ++j) {
 			const FIELD = currentlyAvailableCapstoneChallenges[i][CapstoneChallengeConstants.CAPSTONE_CHALLENGE_FIELDS_WITH_ITEMS_FIELD][j];
 			currentlyAvailableCapstoneChallenges[i][FIELD] =
-				await wixData.queryReferenced(CapstoneChallengeConstants.CAPSTONE_CHALLENGE_DB, currentlyAvailableCapstoneChallenges[i]._id, FIELD, { suppressAuth: true }
+				await wixData.queryReferenced(CapstoneChallengeConstants.CAPSTONE_CHALLENGE_DB, currentlyAvailableCapstoneChallenges[i]._id, FIELD, { suppressAuth: true })
 					.then((results) => {
 						let idArray = [];
 						results.items.forEach((item) => {
