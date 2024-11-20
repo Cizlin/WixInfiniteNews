@@ -1,7 +1,8 @@
 import {getSecret} from 'wix-secrets-backend';
 import wixMediaBackend from 'wix-media-backend';
 import * as internalNotifications from 'backend/InternalNotificationFunctions.jsw';
-import { BskyAgent } from '@atproto/api'
+import { BskyAgent } from '@atproto/api';
+import { RichText } from '@atproto/api';
 
 // mediaIds should be comma-separated list of media IDs to include in the Tweet.
 export async function sendPost(body, parentCid = null, parentUri = null, rootCid = null, rootUri = null, mediaList = null) {
@@ -15,8 +16,12 @@ export async function sendPost(body, parentCid = null, parentUri = null, rootCid
 		password: await getSecret("BlueskyPassword")
 	});
 
+    const rt = new RichText({ text: body });
+    await rt.detectFacets(agent)
+
 	let options = {
-        text: body,
+        text: rt.text,
+        facets: rt.facets,
         createdAt: new Date().toISOString()
     };
 
