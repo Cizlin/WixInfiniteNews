@@ -715,7 +715,7 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
             for (let j = 0; j < rewardArray.length; ++j) {
                 nameArray.push(rewardArray[j].notificationText);
 
-                for (let k = 0; k < rewardArray[j].imageSet; ++k)
+                for (let k = 0; k < rewardArray[j].imageSet.length; ++k)
                 {
                     imageArray.push({
                         image: rewardArray[j].imageSet[k],
