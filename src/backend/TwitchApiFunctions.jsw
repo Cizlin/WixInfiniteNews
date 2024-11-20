@@ -801,7 +801,7 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
         //#region Drop Start and End Dates
         // Now, we add the start and end dates if it's an upcoming drop.
         if (isUpcoming) {
-            let startDate = dropRewards[i].start.toLocaleString("en-US", {
+            let startDate = new Date(dropRewards[i].start).toLocaleString("en-US", {
                 year: "numeric",
                 month: "short",
                 day: "numeric",
@@ -813,7 +813,7 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
                 dayPeriod: "short"
             });
 
-            let endDate = dropRewards[i].end.toLocaleString("en-US", {
+            let endDate = new Date(dropRewards[i].end).toLocaleString("en-US", {
                 year: "numeric",
                 month: "short",
                 day: "numeric",
