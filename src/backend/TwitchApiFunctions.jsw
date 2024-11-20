@@ -282,9 +282,13 @@ function rewardGroupsAreEqual(rewardGroupArray1, rewardGroupArray2) {
             if (arraysAreEqual(rewardGroupArray1[i].rewards, rewardGroupArray2[j].rewards)) {
                 console.log("Arrays are equal.");
                 // The two reward arrays are equal. Now, check to see if the start, end, and requiredMinutesWatched match.
-                console.log(rewardGroupArray1[i].start.getTime(), rewardGroupArray2[j].start.getTime());
-                if (rewardGroupArray1[i].start.getTime() != rewardGroupArray2[j].start.getTime()
-                || rewardGroupArray1[i].end.getTime() != rewardGroupArray2[j].end.getTime()
+                let start1 = new Date(rewardGroupArray1[i].start);
+                let start2 = new Date(rewardGroupArray2[j].start);
+                let end1 = new Date(rewardGroupArray1[i].end);
+                let end2 = newDate(rewardGroupArray2[j].end);
+                console.log(start1, start2);
+                if (start1.getTime() != start2.getTime()
+                || end1.getTime() != end2.getTime()
                 || rewardGroupArray1[i].requiredMinutesWatched != rewardGroupArray2[j].requiredMinutesWatched) {
                     // This is a mismatch, so we return false.
                     return false;
