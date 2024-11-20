@@ -17,7 +17,8 @@ export async function sendPost(body, parentCid = null, parentUri = null, rootCid
 	});
 
     const rt = new RichText({ text: body });
-    await rt.detectFacets(agent)
+    await rt.detectFacets(agent);
+    console.log(rt.graphemeLength);
 
 	let options = {
         text: rt.text,
