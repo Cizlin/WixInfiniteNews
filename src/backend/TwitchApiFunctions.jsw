@@ -1013,6 +1013,7 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
                 additionalTweetIndex++;
             }
             for (let j = 0; j < imageArray.length; ++j) {
+                console.log(imageArray[j]);
                 let mediaId = await twitter.uploadTwitterImage(imageArray[j].image);
                 mediaIdArray.push(mediaId);
 
@@ -1020,7 +1021,7 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
                 blueskyMediaArray.push({
                     image: blueskyMediaInfo,
                     alt: imageArray[j].name
-                })
+                });
             }
         }
         //#endregion
@@ -1058,10 +1059,10 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
             console.log("Post: ", blueskyArray[j], "Media: ", blueskyMediaSubArray);
 
             if (!parentInfo) {
-                rootInfo = parentInfo = await bluesky.sendPost(blueskyArray[j], null, null, null, null, blueskyMediaSubArray);
+                //rootInfo = parentInfo = await bluesky.sendPost(blueskyArray[j], null, null, null, null, blueskyMediaSubArray);
             }
             else {
-                parentInfo = await bluesky.sendPost(blueskyArray[j], parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri, blueskyMediaSubArray);
+                //parentInfo = await bluesky.sendPost(blueskyArray[j], parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri, blueskyMediaSubArray);
             }
 
         }
