@@ -683,6 +683,9 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
         let tweetArray = [];
         let currentTweetIndex = 0;
 
+        let blueskyArray = [];
+        let currentBlueskyIndex = 0;
+
         //#region Obtain information from reward references
         let nameArray = [];
         let imageArray = [];
@@ -729,7 +732,9 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
         // Begin forming the Tweet.
         //#region Tweet Header
         let tweetText = "";
+        let blueskyText = "";
         let charsLeftInTweet = 280;
+        let charsLeftInBluesky = 300;
 
         if (isCorrection) {
             tweetText += "CORRECTION: ";
@@ -760,7 +765,9 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
         charsLeftInTweet -= tweetText.length; // Subtract away the characters for this header.
 
         tweetText += "https://www.haloinfinitenews.com" + drop["link-twitch-drops-1-campaignName"] + "\n\n";
+        blueskyText = tweetText;
         charsLeftInTweet -= 25; // The link is always 23 characters after reduction, and we have two newlines at the end.
+        charsLeftInBluesky -= tweetText.length;
         //#endregion
 
         //#region Reward Name List
@@ -775,8 +782,19 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
                 charsLeftInTweet = 280;
             }
 
+            if (charsLeftInBluesky - dropText.length < 0) {
+                // This text goes over the limit. We need to make a new post.
+                blueskyArray[currentBlueskyIndex] = blueskyText;
+                currentBlueskyIndex++;
+
+                blueskyText = "";
+                charsLeftInTweet = 300;
+            }
+
             tweetText += dropText;
-            charsLeftInTweet -= dropText.length;            
+            blueskyText += dropText;
+            charsLeftInTweet -= dropText.length;
+            charsLeftInBluesky -= dropText.length;          
         }
         //#endregion
 
@@ -818,8 +836,20 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
                 charsLeftInTweet = 280;
             }
 
+            if (charsLeftInBluesky - dateString.length < 0) {
+                // This text goes over the limit. We need to make a new post.
+                blueskyArray[currentBlueskyIndex] = blueskyText;
+                currentBlueskyIndex++;
+
+                blueskyText = "";
+                charsLeftInBluesky = 300;
+            }
+
             tweetText += dateString;
             charsLeftInTweet -= dateString.length;
+
+            blueskyText += dateString;
+            charsLeftInBluesky -= dateString.length;
         }
         //#endregion
 
@@ -854,8 +884,20 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
             charsLeftInTweet = 280;
         }
 
+        if (charsLeftInBluesky - watchLengthText.length < 0) {
+            // This text goes over the limit. We need to make a new post.
+            blueskyArray[currentBlueskyIndex] = blueskyText;
+            currentBlueskyIndex++;
+
+            blueskyText = "";
+            charsLeftInBluesky = 300;
+        }
+
         tweetText += watchLengthText;
         charsLeftInTweet -= watchLengthText.length;
+
+        blueskyText += watchLengthText;
+        charsLeftInBluesky -= watchLengthText.length;
         //#endregion
 
         //#region Channels List
@@ -883,24 +925,47 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
         tweetText += channelText;
 
         if (drop.allowedChannels.length > 0) {
+            channelText += drop.allowedChannels[0].url + "\n";
             tweetText += drop.allowedChannels[0].url + "\n"; // We always want to add the first one.
             charsLeftInTweet -= 24; // Must be hardcoded due to URL encoding.
 
+            if (charsLeftInBluesky - channelText.length < 0) {
+                // URLs aren't shortened in Bluesky.
+                blueskyArray[currentBlueskyIndex] = blueskyText;
+                currentBlueskyIndex++;
+
+                blueskyText = "";
+                charsLeftInBluesky = 300;
+            }
+
+            blueskyText += channelText;
+            charsLeftInBluesky -= channelText.length;
+
             for (let j = 1; j < drop.allowedChannels.length; ++j) {
+                let channelUrl = drop.allowedChannels[j].url + "\n";
                 if (charsLeftInTweet - 24 < 0) {
                     // This text goes over the limit. We need to make a new tweet.
                     tweetArray[currentTweetIndex] = tweetText;
                     currentTweetIndex++;
 
-                    tweetText = "";
-                    charsLeftInTweet = 280;
-
                     tweetText = "Channels (cont.)\n";
-                    charsLeftInTweet -= tweetText.length;
+                    charsLeftInTweet = 280 - tweetText.length;
                 }
 
-                tweetText += drop.allowedChannels[j].url + "\n";
+                if (charsLeftInBluesky - channelUrl.length < 0) {
+                    // This text goes over the limit. We need to make a new tweet.
+                    blueskyArray[currentTweetIndex] = blueskyText;
+                    currentBlueskyIndex++;
+
+                    blueskyText = "Channels (cont.)\n";
+                    charsLeftInBluesky = 300 - blueskyText.length;
+                }
+
+                tweetText += channelUrl;
                 charsLeftInTweet -= 24;
+
+                blueskyText += channelUrl;
+                charsLeftInTweet -= channelUrl.length;
             }
         }        
         //#endregion
@@ -908,12 +973,21 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
         // At this point, add what's left to the array.
         tweetArray[currentTweetIndex] = tweetText;
         currentTweetIndex++;
-        console.log(charsLeftInTweet);
+        console.log("Twitter: ", charsLeftInTweet);
+
+        blueskyArray[currentBlueskyIndex] = blueskyText;
+        currentBlueskyIndex++;
+        console.log("Bluesky: ", charsLeftInBluesky);
 
         tweetText = "";
         charsLeftInTweet = 280;
 
-        console.log(tweetArray);
+        console.log("Twitter: ", tweetArray);
+
+        blueskyText = "";
+        charsLeftInBluesky = 300;
+
+        console.log("Bluesky: ", blueskyArray);
 
         //#region Image Tweet Additions
         // Determine how many images we need to upload. Note that we can only send 4 in one Tweet, so we may need multiple Tweets.
@@ -952,10 +1026,8 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
         for (let j = 0; j < tweetArray.length; ++j) {
             // Get the media to add to this Tweet.
             let mediaIdSubArray = [];
-            let blueskyMediaSubArray = [];
             for (let k = 4 * j; k < mediaIdArray.length; ++k) {
                 mediaIdSubArray.push(mediaIdArray[k]);
-                blueskyMediaSubArray.push(blueskyMediaArray[k]);
                 if (mediaIdSubArray.length >= 4) { // Can't add more than four media IDs to a single tweet.
                     break;
                 }
@@ -965,11 +1037,26 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
 
             parentId = await twitter.sendTweet(tweetArray[j], parentId, mediaIdSubArray);
 
+        }
+
+        // We now have the necessary arrays of posts and images to send to Bluesky. So we shall.
+        for (let j = 0; j < blueskyArray.length; ++j) {
+            // Get the media to add to this Tweet.
+            let blueskyMediaSubArray = [];
+            for (let k = 4 * j; k < blueskyMediaArray.length; ++k) {
+                blueskyMediaSubArray.push(blueskyMediaArray[k]);
+                if (blueskyMediaSubArray.length >= 4) { // Can't add more than four media IDs to a single tweet.
+                    break;
+                }
+            }
+
+            console.log("Post: ", blueskyArray[j], "Media: ", blueskyMediaSubArray);
+
             if (!parentInfo) {
-                rootInfo = parentInfo = await bluesky.sendPost(tweetArray[j], null, null, null, null, blueskyMediaSubArray);
+                rootInfo = parentInfo = await bluesky.sendPost(blueskyArray[j], null, null, null, null, blueskyMediaSubArray);
             }
             else {
-                parentInfo = await bluesky.sendPost(tweetArray[j], parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri, blueskyMediaSubArray);
+                parentInfo = await bluesky.sendPost(blueskyArray[j], parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri, blueskyMediaSubArray);
             }
 
         }

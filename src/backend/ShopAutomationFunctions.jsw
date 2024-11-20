@@ -1693,8 +1693,14 @@ export async function generateSocialNotifications(updateItemArray) {
 	let tweetTextArray = [mainTweetText];	// We'll print the contents of these arrays in order as individual Tweets.
 	let hcsTweetTextArray = [hcsTweetText];
 
+	let blueskyTextArray = [mainTweetText];
+	let hcsBlueskyTextArray = [hcsTweetText];
+
 	let currentTweetIndex = 0;
 	let currentHcsTweetIndex = 0;
+
+	let currentBlueskyIndex = 0;
+	let currentHcsBlueskyIndex = 0;
 
 	// Now to assemble the full tweets. Note that we might need additional tweets if we can't fit everything in the first one.
 	for (let i = 0; i < mainItemListingArray.length; ++i) {
@@ -1706,16 +1712,34 @@ export async function generateSocialNotifications(updateItemArray) {
 		else {
 			tweetTextArray[currentTweetIndex] += mainItemListingArray[i] + "\n";
 		}
+
+		if (blueskyTextArray[currentBlueskyIndex].length + mainItemListingArray[i].length > 280) {
+			// Move to the next Post if we can't send this one.
+			++currentBlueskyIndex;
+			blueskyTextArray.push(mainItemListingArray[i] + "\n");
+		}
+		else {
+			blueskyTextArray[currentBlueskyIndex] += mainItemListingArray[i] + "\n";
+		}
 	}
 
 	for (let i = 0; i < hcsItemListingArray.length; ++i) {
-		if (hcsTweetTextArray[currentHcsTweetIndex].length + hcsItemListingArray[i].length > 280) {
+		if (hcsTweetTextArray[currentHcsTweetIndex].length + hcsItemListingArray[i].length > 300) {
 			// Move to the next Tweet if we can't send this one.
 			++currentHcsTweetIndex;
 			hcsTweetTextArray.push(hcsItemListingArray[i] + "\n");
 		}
 		else {
 			hcsTweetTextArray[currentHcsTweetIndex] += hcsItemListingArray[i] + "\n";
+		}
+
+		if (hcsBlueskyTextArray[currentHcsBlueskyIndex].length + hcsItemListingArray[i].length > 300) {
+			// Move to the next Tweet if we can't send this one.
+			++currentHcsBlueskyIndex;
+			hcsBlueskyTextArray.push(hcsItemListingArray[i] + "\n");
+		}
+		else {
+			hcsBlueskyTextArray[currentHcsBlueskyIndex] += hcsItemListingArray[i] + "\n";
 		}
 	}
 
@@ -1724,15 +1748,20 @@ export async function generateSocialNotifications(updateItemArray) {
 	const NUM_VEHICLE_CORES = await WaypointFunctions.getNumCores(VehicleConstants.VEHICLE_KEY);
 
 	if (mainItemListingArray.length > 0) {
-		console.log(tweetTextArray[0]);
+		console.log("Twitter: ", tweetTextArray[0]);
+		console.log("Bluesky: ", blueskyTextArray[0]);
 		let parentId = await sendTweet(tweetTextArray[0]);
 		let rootInfo, parentInfo;
-		rootInfo = parentInfo = await sendPost(tweetTextArray[0]);
+		rootInfo = parentInfo = await sendPost(blueskyTextArray[0]);
 
 		for (let i = 1; i < tweetTextArray.length; ++i) {
-			console.log(tweetTextArray[i]);
+			console.log("Twitter: ", tweetTextArray[i]);
 			parentId = await sendTweet(tweetTextArray[i], parentId);
-			parentInfo = await sendPost(tweetTextArray[i], parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri);
+		}
+
+		for (let i = 1; i < blueskyTextArray.length; ++i) {
+			console.log("Bluesky: ", blueskyTextArray[i]);
+			parentInfo = await sendPost(blueskyTextArray[i], parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri);
 		}
 
 		let discordMessageText = "";
@@ -1751,6 +1780,9 @@ export async function generateSocialNotifications(updateItemArray) {
 			// Subtweets may not be longer than 280 characters. Need to adjust for this.
 			let subTweetTextArray = [subTweetText];
 			let currentSubTweetIndex = 0;
+
+			let subBlueskyTextArray = [subTweetText];
+			let currentSubBlueskyIndex = 0;
 
 			let emblemNamesToSkip = [];
 			let armorCoatingNamesToSkip = [];
@@ -1820,14 +1852,28 @@ export async function generateSocialNotifications(updateItemArray) {
 				else {
 					subTweetTextArray[currentSubTweetIndex] += childItemText;
 				}
+
+				// Bluesky does not use URL shortening.
+				if (currentSubBlueskyIndex != 0 && subBlueskyTextArray[currentSubBlueskyIndex].length + childItemText.length > 300) {
+					++currentSubBlueskyIndex;
+					subBlueskyTextArray.push(childItemText);
+				}
+				else {
+					subBlueskyTextArray[currentSubBlueskyIndex] += childItemText;
+				}
 			}
 			
 			console.log("Subtweet Array has length " + subTweetTextArray.length, subTweetTextArray);
+			console.log("Sub Bluesky Array has length " + subBlueskyTextArray.length, subBlueskyTextArray);
 
 			for (let i = 0; i < subTweetTextArray.length; ++i) {
-				console.log(subTweetTextArray[i]);
+				console.log("Twitter: ", subTweetTextArray[i]);
 				parentId = await sendTweet(subTweetTextArray[i], parentId);
-				parentInfo = await sendPost(subTweetTextArray[i], parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri);
+			}
+
+			for (let i = 0; i < subBlueskyTextArray.length; ++i) {
+				console.log("Bluesky: ", subBlueskyTextArray[i]);
+				parentInfo = await sendPost(subBlueskyTextArray[i], parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri);
 			}
 
 			let discordMessageSubText = "";
@@ -1840,15 +1886,20 @@ export async function generateSocialNotifications(updateItemArray) {
 	}
 
 	if (hcsItemListingArray.length > 0) {
-		console.log(hcsTweetTextArray[0]);
+		console.log("Twitter: ", hcsTweetTextArray[0]);
+		console.log("Bluesky: ", hcsBlueskyTextArray[0]);
 		let parentId = await sendTweet(hcsTweetTextArray[0]);
 		let rootInfo, parentInfo;
-		rootInfo = parentInfo = await sendPost(hcsTweetTextArray[0]);
+		rootInfo = parentInfo = await sendPost(hcsBlueskyTextArray[0]);
 
 		for (let i = 1; i < hcsTweetTextArray.length; ++i) {
-			console.log(hcsTweetTextArray[i]);
+			console.log("Twitter: ", hcsTweetTextArray[i]);
 			parentId = await sendTweet(hcsTweetTextArray[i], parentId);
-			parentInfo = await sendPost(hcsTweetTextArray[i], parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri);
+		}
+
+		for (let i = 1; i < hcsBlueskyTextArray.length; ++i) {
+			console.log("Bluesky: ", hcsBlueskyTextArray[i]);
+			parentInfo = await sendPost(hcsBlueskyTextArray[i], parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri);
 		}
 
 		let discordMessageText = "";
@@ -1867,6 +1918,9 @@ export async function generateSocialNotifications(updateItemArray) {
 			// Subtweets may not be longer than 280 characters. Need to adjust for this.
 			let subTweetTextArray = [subTweetText];
 			let currentSubTweetIndex = 0;
+
+			let subBlueskyTextArray = [subTweetText];
+			let currentSubBlueskyIndex = 0;
 
 			let emblemNamesToSkip = [];
 			let armorCoatingNamesToSkip = [];
@@ -1933,14 +1987,28 @@ export async function generateSocialNotifications(updateItemArray) {
 				else {
 					subTweetTextArray[currentSubTweetIndex] += childItemText;
 				}
+
+				// Bluesky does not shorten URLs
+				if (currentSubBlueskyIndex != 0 && subBlueskyTextArray[currentSubBlueskyIndex].length + childItemText.length > 280) {
+					++currentSubBlueskyIndex;
+					subBlueskyTextArray.push(childItemText);
+				}
+				else {
+					subBlueskyTextArray[currentSubBlueskyIndex] += childItemText;
+				}
 			}
 			
 			console.log("Subtweet Array has length " + subTweetTextArray.length, subTweetTextArray);
+			console.log("Sub Bluesky Array has length " + subBlueskyTextArray.length, subBlueskyTextArray);
 
 			for (let i = 0; i < subTweetTextArray.length; ++i) {
-				console.log(subTweetTextArray[i]);
+				console.log("Twitter: ", subTweetTextArray[i]);
 				parentId = await sendTweet(subTweetTextArray[i], parentId);
-				parentInfo = await sendPost(subTweetTextArray[i], parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri);
+			}
+
+			for (let i = 0; i < subBlueskyTextArray.length; ++i) {
+				console.log("Bluesky: ", subBlueskyTextArray[i]);
+				parentInfo = await sendPost(subBlueskyTextArray[i], parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri);
 			}
 
 			let discordMessageSubText = "";
