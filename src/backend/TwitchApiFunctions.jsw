@@ -720,7 +720,7 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
                     imageArray.push({
                         image: rewardArray[j].imageSet[k],
                         name: rewardArray[j].notificationText
-                    })
+                    });
                 }
 
                 if (rewardArray[j].rewardIsNew) {
@@ -792,7 +792,7 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
                 currentBlueskyIndex++;
 
                 blueskyText = "";
-                charsLeftInTweet = 300;
+                charsLeftInBluesky = 300;
             }
 
             tweetText += dropText;
@@ -969,7 +969,7 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
                 charsLeftInTweet -= 24;
 
                 blueskyText += channelUrl;
-                charsLeftInTweet -= channelUrl.length;
+                charsLeftInBluesky -= channelUrl.length;
             }
         }        
         //#endregion
@@ -1014,8 +1014,9 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
             }
             for (let j = 0; j < imageArray.length; ++j) {
                 let mediaId = await twitter.uploadTwitterImage(imageArray[j].image);
-                let blueskyMediaInfo = await bluesky.uploadBlueskyImage(imageArray[j].image);
                 mediaIdArray.push(mediaId);
+
+                let blueskyMediaInfo = await bluesky.uploadBlueskyImage(imageArray[j].image);
                 blueskyMediaArray.push({
                     image: blueskyMediaInfo,
                     alt: imageArray[j].name
@@ -1039,7 +1040,7 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
 
             console.log("Tweet: ", tweetArray[j], "Media: ", mediaIdSubArray);
 
-            parentId = await twitter.sendTweet(tweetArray[j], parentId, mediaIdSubArray);
+            //parentId = await twitter.sendTweet(tweetArray[j], parentId, mediaIdSubArray);
 
         }
 
