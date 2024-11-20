@@ -1041,7 +1041,7 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
 
             console.log("Tweet: ", tweetArray[j], "Media: ", mediaIdSubArray);
 
-            //parentId = await twitter.sendTweet(tweetArray[j], parentId, mediaIdSubArray);
+            parentId = await twitter.sendTweet(tweetArray[j], parentId, mediaIdSubArray);
 
         }
 
@@ -1059,10 +1059,10 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
             console.log("Post: ", blueskyArray[j], "Media: ", blueskyMediaSubArray);
 
             if (!parentInfo) {
-                //rootInfo = parentInfo = await bluesky.sendPost(blueskyArray[j], null, null, null, null, blueskyMediaSubArray);
+                rootInfo = parentInfo = await bluesky.sendPost(blueskyArray[j], null, null, null, null, blueskyMediaSubArray);
             }
             else {
-                //parentInfo = await bluesky.sendPost(blueskyArray[j], parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri, blueskyMediaSubArray);
+                parentInfo = await bluesky.sendPost(blueskyArray[j], parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri, blueskyMediaSubArray);
             }
 
         }
