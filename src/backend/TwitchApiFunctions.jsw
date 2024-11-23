@@ -1017,11 +1017,11 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
                 let mediaId = await twitter.uploadTwitterImage(imageArray[j].image);
                 mediaIdArray.push(mediaId);
 
-                let blueskyMediaInfo = await bluesky.uploadBlueskyImage(imageArray[j].image);
+                /*let blueskyMediaInfo = await bluesky.uploadBlueskyImage(imageArray[j].image);
                 blueskyMediaArray.push({
                     image: blueskyMediaInfo,
                     alt: imageArray[j].name
-                });
+                });*/
             }
         }
         //#endregion
