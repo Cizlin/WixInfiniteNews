@@ -1854,7 +1854,7 @@ export async function generateSocialNotifications(updateItemArray) {
 				}
 
 				// Bluesky does not use URL shortening.
-				if (currentSubBlueskyIndex != 0 && subBlueskyTextArray[currentSubBlueskyIndex].length + childItemText.length > 300) {
+				if (subBlueskyTextArray[currentSubBlueskyIndex].length + childItemText.length > 300) {
 					++currentSubBlueskyIndex;
 					subBlueskyTextArray.push(childItemText);
 				}
@@ -1989,7 +1989,7 @@ export async function generateSocialNotifications(updateItemArray) {
 				}
 
 				// Bluesky does not shorten URLs
-				if (currentSubBlueskyIndex != 0 && subBlueskyTextArray[currentSubBlueskyIndex].length + childItemText.length > 280) {
+				if (subBlueskyTextArray[currentSubBlueskyIndex].length + childItemText.length > 280) {
 					++currentSubBlueskyIndex;
 					subBlueskyTextArray.push(childItemText);
 				}

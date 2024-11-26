@@ -1157,7 +1157,7 @@ export async function generateSocialNotifications(updateItemArray) {
 				}
 
 				// Bluesky does not do URL shortening via the API.
-				if (currentSubBlueskyIndex != 0 && subBlueskyTextArray[currentSubBlueskyIndex].length + childItemText.length > 300) {
+				if (subBlueskyTextArray[currentSubBlueskyIndex].length + childItemText.length > 300) {
 					++currentSubBlueskyIndex;
 					subBlueskyTextArray.push(childItemText);
 				} 
