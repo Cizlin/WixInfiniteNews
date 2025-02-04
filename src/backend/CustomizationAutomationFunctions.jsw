@@ -3544,9 +3544,10 @@ async function updateDbsFromApi(headers, customizationCategory, waypointGroupsTo
 			for (let i = 0; i < coreList.length; i++) {
 				try {
 					let coreWaypointJson = await ApiFunctions.getCustomizationItem(headers, coreList[i]);
+					let optionPaths = coreWaypointJson.Themes.OptionPaths;
 					coreWaypointJsonArray.push(coreWaypointJson);
-					for (let j = 0; j < coreWaypointJson.Themes.OptionPaths.length; ++j) {
-						let waypointThemePath = coreWaypointJson.Themes.OptionPaths[j];
+					for (let j = 0; j < optionPaths.length; ++j) {
+						let waypointThemePath = optionPaths[j];
 						waypointThemePathToCoreDict[waypointThemePath.toLowerCase()] = coreWaypointJson.CommonData.Id;
 
 						// We want to add all customization items to this dictionary with the full list of cores they can apply to.
@@ -3588,8 +3589,8 @@ async function updateDbsFromApi(headers, customizationCategory, waypointGroupsTo
 					}
 				}
 				catch (error) {
-					console.error("Error occurred while retrieving core list: " + error);
-					return -1;
+					console.error("Error occurred while retrieving core list: " + error + "; continuing...");
+					continue;
 				}
 			}
 		}
