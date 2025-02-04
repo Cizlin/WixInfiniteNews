@@ -59,7 +59,9 @@ $w.onReady(function () {
 		}
 		else {
 			$w("#passTypeText").text = PassConstants.PASS_BATTLE;
-			let currentSeasonInfo = await wixData.queryReferenced("Releases", currentPass, PassConstants.PASS_SEASON_FIELD);
+			let currentSeasonInfo = await wixData.query("Releases")
+				.eq("_id", currentPass[PassConstants.PASS_SEASON_FIELD])
+				.find();
 			if (currentSeasonInfo.items.length > 0 && currentSeasonInfo.items[0].ordinal >= 10000) {
 				$w("#datesFeaturedExplanationText").text = "The Battle Pass can be progressed at any time during these timeframes and after if purchased during these timeframes.";
 			}
