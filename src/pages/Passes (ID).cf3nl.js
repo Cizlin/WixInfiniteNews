@@ -59,7 +59,13 @@ $w.onReady(function () {
 		}
 		else {
 			$w("#passTypeText").text = PassConstants.PASS_BATTLE;
-			$w("#datesFeaturedExplanationText").text = "The Battle Pass can be progressed at any time during and after these timeframes.";
+			let currentSeasonInfo = await wixData.queryReferenced("Releases", currentPass, PassConstants.PASS_SEASON_FIELD);
+			if (currentSeasonInfo.items.length > 0 && currentSeasonInfo.items[0].ordinal >= 10000) {
+				$w("#datesFeaturedExplanationText").text = "The Battle Pass can be progressed at any time during these timeframes and after if purchased during these timeframes.";
+			}
+			else {
+				$w("#datesFeaturedExplanationText").text = "The Battle Pass can be progressed at any time during these timeframes and after if purchased.";
+			}
 			showCorrectAvailability(true); // Battle Passes are always available after release.
 			$w("#eventPassImage").hide();
 		}
