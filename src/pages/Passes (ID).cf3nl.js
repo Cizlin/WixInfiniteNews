@@ -63,10 +63,10 @@ $w.onReady(function () {
 				.eq("_id", currentPass[PassConstants.PASS_SEASON_FIELD])
 				.find();
 			if (currentSeasonInfo.items.length > 0 && currentSeasonInfo.items[0].ordinal >= 10000) {
-				$w("#datesFeaturedExplanationText").text = "The Battle Pass can be progressed at any time during these timeframes and after if purchased during these timeframes.";
+				$w("#datesFeaturedExplanationText").text = "The Battle Pass can be progressed at any time during these timeframes. If purchased, it can also be progressed afterward. This pass can only be purchased during these timeframes.";
 			}
 			else {
-				$w("#datesFeaturedExplanationText").text = "The Battle Pass can be progressed at any time during these timeframes and after if purchased.";
+				$w("#datesFeaturedExplanationText").text = "The Battle Pass can be progressed at any time during these timeframes and after if purchased. If purchased, it can also be progressed afterward.";
 			}
 			showCorrectAvailability(true); // Battle Passes are always available after release.
 			$w("#eventPassImage").hide();
