@@ -105,7 +105,7 @@ export async function post_updateTwitchDrops(request) {
         }
         else {
 
-          let twitchDropInfoJson = request.body.json();
+          let twitchDropInfoJson = await request.body.json();
           TwitchFunctions.refreshAllTwitchDrops(false, twitchDropInfoJson)
           return ok();
         }
