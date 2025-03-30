@@ -96,19 +96,20 @@ export async function post_updateTwitchDrops(request) {
     else {
       const message = request.headers["in-access-timestamp"] + request.method + request.url + (request.body ? request.body : "");
       console.log(message)
-      await hmac.verify(Buffer.from(secretKey.value), message, request.headers["in-access-sign"], hash).then( (result) => {
+      hmac.verify(Buffer.from(secretKey.value), message, request.headers["in-access-sign"], hash).then( (result) => {
         if (!result) {
           return badRequest(defaultInvalidAuthResponse);
         }
+        else {
+          let options = {
+            "headers": {
+                  "Content-Type": "application/json"
+              }
+          };
+      
+          options.body = {"Good job": "You did it"};
+          return ok(options);
+        }
       });
     }
-
-    let options = {
-      "headers": {
-            "Content-Type": "application/json"
-        }
-    };
-
-    options.body = {"Good job": "You did it"};
-    return ok(options);
 }
