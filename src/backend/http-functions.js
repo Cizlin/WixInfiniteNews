@@ -94,25 +94,31 @@ export async function post_updateTwitchDrops(request) {
       return badRequest(defaultInvalidAuthResponse)
     }
     else {
-      const bodyText = await request.body.text();
-      const message = request.headers["in-access-timestamp"] + request.method + request.url + bodyText;
-      const signature = Buffer.from(request.headers["in-access-sign"], 'base64');
-      console.log(message)
-      console.log(signature)
-      hmac.verify(Buffer.from(secretKey.value), message, signature, hash).then( (result) => {
-        if (!result) {
-          return badRequest(defaultInvalidAuthResponse);
-        }
-        else {
-          let options = {
-            "headers": {
-                  "Content-Type": "application/json"
-              }
-          };
-      
-          options.body = {"Good job": "You did it"};
-          return ok(options);
-        }
-      });
+      try {
+        const bodyText = await request.body.text();
+        const message = request.headers["in-access-timestamp"] + request.method + request.url + bodyText;
+        console.log(request.headers["in-access-sign"]);
+        const signature = Buffer.from(request.headers["in-access-sign"], 'base64');
+        console.log(message)
+        console.log(signature)
+        hmac.verify(Buffer.from(secretKey.value), message, signature, hash).then( (result) => {
+          if (!result) {
+            return badRequest(defaultInvalidAuthResponse);
+          }
+          else {
+            let options = {
+              "headers": {
+                    "Content-Type": "application/json"
+                }
+            };
+        
+            options.body = {"Good job": "You did it"};
+            return ok(options);
+          }
+        });
+      }
+      catch (e) {
+        console.error(e);
+      }
     }
 }
