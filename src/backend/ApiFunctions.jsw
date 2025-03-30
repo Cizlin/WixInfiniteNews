@@ -585,6 +585,6 @@ export async function hmacGenerator(secret, msg) {
 	const secretArr = Buffer.from(secret, "utf-8");
 	const msgArr = Buffer.from(msg, "utf-8");
 	const mac = await hmac.compute(secretArr, msgArr);
-	var b64encoded = mac.toBase64();
+	var b64encoded = Buffer.from(mac).toString('base64');
 	return b64encoded;
 }
