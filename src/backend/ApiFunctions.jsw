@@ -6,6 +6,7 @@ import * as AuthenticationFunctions from 'backend/AuthenticationFunctions.jsw';
 import * as InternalNotificationFunctions from 'backend/InternalNotificationFunctions.jsw';
 
 import hmac from 'js-crypto-hmac';
+const hash = 'SHA-256';
 
 // Retrieves the Spartan Token, either from HaloDotAPI or the SpartanToken secret with the following value format:
 /* 
