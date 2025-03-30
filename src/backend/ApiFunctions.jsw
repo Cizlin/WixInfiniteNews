@@ -580,3 +580,12 @@ export async function hmacTester(secret, msg, sign) {
 	const signArr = Buffer.from(sign, "base64");
 	return await hmac.verify(secretArr, msgArr, signArr, hash);
 }
+
+export async function hmacGenerator(secret, msg) {
+	const secretArr = Buffer.from(secret);
+	const msgArr = Buffer.from(msg);
+	const mac = await hmac.compute(secretArr, msgArr);
+	var decoder = new TextDecoder('utf8');
+	var b64encoded = btoa(decoder.decode(mac));
+	return b64encoded;
+}
