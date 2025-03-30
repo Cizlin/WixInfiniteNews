@@ -38,6 +38,7 @@ import wixFetch from 'wix-fetch';
 
 import * as ApiConstants from 'public/Constants/ApiConstants.js';
 import * as ApiFunctions from 'backend/ApiFunctions.jsw';
+import * as TwitchFunctions from 'backend/TwitchApiFunctions.jsw';
 
 import hmac from 'js-crypto-hmac';
 
@@ -96,26 +97,22 @@ export async function post_updateTwitchDrops(request) {
     }
     else {
       try {
-        const bodyText = await request.body.text();
-        const message = request.headers["in-access-timestamp"] + request.method + request.url + bodyText;
+        const message = request.headers["in-access-timestamp"] + request.method + request.url;
 
         const generatedHash = await ApiFunctions.hmacGenerator(secretKey.value, message);
         if (generatedHash !== request.headers["in-access-sign"]) {
           return badRequest(defaultInvalidAuthResponse);
         }
         else {
-          let options = {
-            "headers": {
-                  "Content-Type": "application/json"
-              }
-          };
-      
-          options.body = {"Good job": "You did it"};
-          return ok(options);
+
+          let twitchDropInfoJson = request.body.json();
+          TwitchFunctions.refreshAllTwitchDrops(false, twitchDropInfoJson)
+          return ok();
         }
       }
       catch (e) {
         console.error("Error:" + e);
+        return badRequest(defaultInvalidAuthResponse);
       }
     }
 }
