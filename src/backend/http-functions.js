@@ -35,6 +35,8 @@ import { ok, serverError, badRequest } from 'wix-http-functions';
 import { secrets } from "wix-secrets-backend.v2";
 import { elevate } from "wix-auth";
 
+import hmac from 'js-crypto-hmac';
+
 const elevatedGetSecretValue = elevate(secrets.getSecretValue);
 
 // Define some simple default response objects
@@ -50,6 +52,8 @@ const defaultInvalidAuthResponse = {
     	    error: "Invalid authentication token"
 	}
 }
+
+const hash = 'SHA-256';
 
 import wixFetch from 'wix-fetch';
 
@@ -83,13 +87,26 @@ export async function get_waypointProgressionGuideXoJson(request) {
 }
 
 export async function post_updateTwitchDrops(request) {
-    //let secretKey = await elevatedGetSecretValue("HMAC_SECRET_KEY");
+    let secretKey = await elevatedGetSecretValue("HMAC_SECRET_KEY");
+
+    if(!request.headers.hasOwnProperty("IN-ACCESS-SIGN") && !request.headers.hasOwnProperty("IN-ACCESS-TIMESTAMP")) {
+      return badRequest(defaultInvalidAuthResponse)
+    }
+    else {
+      const message = request.headers["IN-ACCESS-TIMESTAMP"] + request.method + request.url + (request.body ? request.body : "");
+      hmac.verify(Buffer.from(secretKey.value), message, request.headers["IN-ACCESS-SIGN"], hash).then( (result) => {
+        if (!result) {
+          return badRequest(defaultInvalidAuthResponse);
+        }
+      });
+    }
+
     let options = {
       "headers": {
             "Content-Type": "application/json"
         }
     };
 
-    options.body = request;
+    options.body = {"Good job": "You did it"};
     return ok(options);
 }
