@@ -575,17 +575,17 @@ export async function getCustomizationItem(headers, path, returnETag = false) {
 }
 
 export async function hmacTester(secret, msg, sign) {
-	const secretArr = Buffer.from(secret);
-	const msgArr = Buffer.from(msg);
+	const secretArr = Buffer.from(secret, "utf-8");
+	const msgArr = Buffer.from(msg, "utf-8");
 	const signArr = Buffer.from(sign, "base64");
 	return await hmac.verify(secretArr, msgArr, signArr, hash);
 }
 
 export async function hmacGenerator(secret, msg) {
-	const secretArr = Buffer.from(secret);
-	const msgArr = Buffer.from(msg);
+	const secretArr = Buffer.from(secret, "utf-8");
+	const msgArr = Buffer.from(msg, "utf-8");
 	const mac = await hmac.compute(secretArr, msgArr);
-	var decoder = new TextDecoder('utf8');
+	var decoder = new TextDecoder('utf-8');
 	var b64encoded = btoa(decoder.decode(mac));
 	return b64encoded;
 }
