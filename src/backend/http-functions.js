@@ -84,5 +84,12 @@ export async function get_waypointProgressionGuideXoJson(request) {
 
 export async function post_updateTwitchDrops(request) {
     //let secretKey = await elevatedGetSecretValue("HMAC_SECRET_KEY");
-    console.log(request);
+    let options = {
+      "headers": {
+            "Content-Type": "application/json"
+        }
+    };
+
+    options.body = request;
+    return ok(options);
 }
