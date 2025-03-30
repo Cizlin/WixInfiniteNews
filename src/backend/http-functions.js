@@ -31,7 +31,25 @@ https://www.wix.com/velo/reference/wix-http-functions
 
 **********************/
 
-import { ok, serverError } from 'wix-http-functions';
+import { ok, serverError, badRequest } from 'wix-http-functions';
+import { secrets } from "wix-secrets-backend.v2";
+import { elevate } from "wix-auth";
+
+const elevatedGetSecretValue = elevate(secrets.getSecretValue);
+
+// Define some simple default response objects
+const defaultResponse = {
+	headers: {
+    	    "Content-Type": "application/json"
+	},
+};
+
+const defaultInvalidAuthResponse = {
+	...defaultResponse,
+	body: {
+    	    error: "Invalid authentication token"
+	}
+}
 
 import wixFetch from 'wix-fetch';
 
@@ -40,7 +58,7 @@ import * as ApiConstants from 'public/Constants/ApiConstants.js';
 import * as ApiFunctions from 'backend/ApiFunctions.jsw';
 
 export async function get_waypointProgressionGuideXoJson(request) {
-    // URL looks like: https://www.mysite.com/_functions/myFunction/John/Doe
+  
     let options = {
         "headers": {
             "Content-Type": "application/json"
@@ -62,4 +80,9 @@ export async function get_waypointProgressionGuideXoJson(request) {
             };
             return serverError(options);
         });
+}
+
+export async function post_updateTwitchDrops(request) {
+    //let secretKey = await elevatedGetSecretValue("HMAC_SECRET_KEY");
+    console.log(request);
 }
