@@ -89,14 +89,14 @@ export async function get_waypointProgressionGuideXoJson(request) {
 export async function post_updateTwitchDrops(request) {
     let secretKey = await elevatedGetSecretValue("HMAC_SECRET_KEY");
 
-    if(!request.headers.hasOwnProperty("IN-ACCESS-SIGN") && !request.headers.hasOwnProperty("IN-ACCESS-TIMESTAMP")) {
+    if(!request.headers.hasOwnProperty("in-access-sign") && !request.headers.hasOwnProperty("in-access-timestamp")) {
       console.log(request.headers);
       return badRequest(defaultInvalidAuthResponse)
     }
     else {
-      const message = request.headers["IN-ACCESS-TIMESTAMP"] + request.method + request.url + (request.body ? request.body : "");
+      const message = request.headers["in-access-timestamp"] + request.method + request.url + (request.body ? request.body : "");
       console.log(message)
-      hmac.verify(Buffer.from(secretKey.value), message, request.headers["IN-ACCESS-SIGN"], hash).then( (result) => {
+      hmac.verify(Buffer.from(secretKey.value), message, request.headers["in-access-sign"], hash).then( (result) => {
         if (!result) {
           return badRequest(defaultInvalidAuthResponse);
         }
