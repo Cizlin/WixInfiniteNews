@@ -94,6 +94,7 @@ export async function post_updateTwitchDrops(request) {
     }
     else {
       const message = request.headers["IN-ACCESS-TIMESTAMP"] + request.method + request.url + (request.body ? request.body : "");
+      console.log(message)
       hmac.verify(Buffer.from(secretKey.value), message, request.headers["IN-ACCESS-SIGN"], hash).then( (result) => {
         if (!result) {
           return badRequest(defaultInvalidAuthResponse);
