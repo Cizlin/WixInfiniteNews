@@ -107,22 +107,17 @@ export async function getDropListManual(jsonResponse) {
             dropsList.push(drop); // Add the ID to the list.
         }
     }
-    if (!returnIdsOnly) {
-        return dropsList;
-    }
-    else {
-        let commaSeparatedIds = "";
-        for (let i = 0; i < dropsList.length; ++i) {
-            if (i === 0) {
-                commaSeparatedIds = dropsList[i].id;
-            }
-            else {
-                commaSeparatedIds += "," + dropsList[i].id;
-            }
+    let commaSeparatedIds = "";
+    for (let i = 0; i < dropsList.length; ++i) {
+        if (i === 0) {
+            commaSeparatedIds = dropsList[i].id;
         }
-
-        return commaSeparatedIds;
+        else {
+            commaSeparatedIds += "," + dropsList[i].id;
+        }
     }
+
+    return commaSeparatedIds;
 }
 
 // Retrieves specific drop information based on a provided drop ID.
