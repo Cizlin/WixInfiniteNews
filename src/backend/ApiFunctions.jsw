@@ -570,3 +570,10 @@ export async function getCustomizationItem(headers, path, returnETag = false) {
 		return waypointJson;
 	}
 }
+
+export async function hmacTester(secret, msg, sign) {
+	const secretArr = Buffer.from(secret);
+	const msgArr = Buffer.from(msg);
+	const signArr = Buffer.from(sign);
+	return await hmac.verify(secretArr, msgArr, signArr, hash);
+}
