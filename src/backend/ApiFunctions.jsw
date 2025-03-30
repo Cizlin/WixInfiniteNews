@@ -577,6 +577,6 @@ export async function getCustomizationItem(headers, path, returnETag = false) {
 export async function hmacTester(secret, msg, sign) {
 	const secretArr = Buffer.from(secret);
 	const msgArr = Buffer.from(msg);
-	const signArr = Buffer.from(sign);
+	const signArr = Buffer.from(sign, "base64");
 	return await hmac.verify(secretArr, msgArr, signArr, hash);
 }
