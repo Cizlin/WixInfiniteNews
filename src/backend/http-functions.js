@@ -90,6 +90,7 @@ export async function post_updateTwitchDrops(request) {
     let secretKey = await elevatedGetSecretValue("HMAC_SECRET_KEY");
 
     if(!request.headers.hasOwnProperty("IN-ACCESS-SIGN") && !request.headers.hasOwnProperty("IN-ACCESS-TIMESTAMP")) {
+      console.log(request.headers);
       return badRequest(defaultInvalidAuthResponse)
     }
     else {
