@@ -88,6 +88,7 @@ export async function get_waypointProgressionGuideXoJson(request) {
 
 export async function post_updateTwitchDrops(request) {
     let secretKey = await elevatedGetSecretValue("HMAC_SECRET_KEY");
+    console.log(secretKey.value);
 
     if(!request.headers.hasOwnProperty("in-access-sign") && !request.headers.hasOwnProperty("in-access-timestamp")) {
       console.log(request.headers);
