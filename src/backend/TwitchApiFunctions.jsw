@@ -97,6 +97,7 @@ export async function getDropList(returnIdsOnly = false) {
 }
 
 export async function getDropListManual(jsonResponse) {
+    jsonResponse = jsonResponse[0]
     let dropsList = [];
     console.log(jsonResponse);
     for (let i = 0; i < jsonResponse.data.currentUser.dropCampaigns.length; ++i) {
