@@ -96,6 +96,34 @@ export async function getDropList(returnIdsOnly = false) {
     });
 }
 
+export async function getDropListManual(jsonResponse) {
+    let dropsList = [];
+    console.log(jsonResponse);
+    for (let i = 0; i < jsonResponse.data.currentUser.dropCampaigns.length; ++i) {
+        let drop = jsonResponse.data.currentUser.dropCampaigns[i];
+        if (drop.game.id in gameIdToGameName) { // Halo Infinite or Halo: MCC ID.
+            console.log(drop.id);
+            dropsList.push(drop); // Add the ID to the list.
+        }
+    }
+    if (!returnIdsOnly) {
+        return dropsList;
+    }
+    else {
+        let commaSeparatedIds = "";
+        for (let i = 0; i < dropsList.length; ++i) {
+            if (i === 0) {
+                commaSeparatedIds = dropsList[i].id;
+            }
+            else {
+                commaSeparatedIds += "," + dropsList[i].id;
+            }
+        }
+
+        return commaSeparatedIds;
+    }
+}
+
 // Retrieves specific drop information based on a provided drop ID.
 export async function getDropInfo(dropId) {
     let headers = await makeTwitchHeaders();
