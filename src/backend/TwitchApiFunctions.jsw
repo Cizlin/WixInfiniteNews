@@ -517,12 +517,15 @@ export async function refreshAllTwitchDrops(useAutomation = true, dropJsonArray 
             for (let i = 0; i < databaseTwitchDrops.length; ++i) {
                 if (!databaseTwitchDrops._id) {
                     // Retrieve it from the database.
+                    console.log("Looking for drop ID: " + databaseTwitchDrops.dropId);
                     const savedDropResults = await wixData.query("TwitchDrops")
                         .eq('dropId', databaseTwitchDrops.dropId)
                         .find();
+
+                    console.log("Found ", savedDropResults.items);
                     databaseTwitchDrops._id = savedDropResults.items[0]._id;
                 }
-                wixData.replaceReferences("TwitchDrops", "rewardReferences", deepCopy[i]._id, databaseTwitchDrops[i].rewardReferences, { suppressAuth: true })
+                wixData.replaceReferences("TwitchDrops", "rewardReferences", databaseTwitchDrops[i]._id, databaseTwitchDrops[i].rewardReferences, { suppressAuth: true })
                     .then(() => {
                         console.log("Successfully added reward references to Twitch Drops.");
                     })
@@ -534,6 +537,8 @@ export async function refreshAllTwitchDrops(useAutomation = true, dropJsonArray 
         .catch((error) => {
             console.error("Failed to update Twitch Drops due to " + error);
         });
+
+    return;
 
     // Associate the URL fields as necessary.
     for (let i = 0; i < deepCopy.length; ++i) {
