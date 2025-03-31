@@ -515,15 +515,15 @@ export async function refreshAllTwitchDrops(useAutomation = true, dropJsonArray 
             console.log("Successfully updated Twitch Drops. Results:", results);
             // Now that the drops themselves saved properly, we need to add the rewardReferences.
             for (let i = 0; i < databaseTwitchDrops.length; ++i) {
-                if (!databaseTwitchDrops._id) {
+                if (!databaseTwitchDrops[i]._id) {
                     // Retrieve it from the database.
-                    console.log("Looking for drop ID: " + databaseTwitchDrops.dropId);
+                    console.log("Looking for drop ID: " + databaseTwitchDrops[i].dropId);
                     const savedDropResults = await wixData.query("TwitchDrops")
-                        .eq('dropId', databaseTwitchDrops.dropId)
+                        .eq('dropId', databaseTwitchDrops[i].dropId)
                         .find();
 
                     console.log("Found ", savedDropResults.items);
-                    databaseTwitchDrops._id = savedDropResults.items[0]._id;
+                    databaseTwitchDrops[i]._id = savedDropResults.items[0]._id;
                 }
                 wixData.replaceReferences("TwitchDrops", "rewardReferences", databaseTwitchDrops[i]._id, databaseTwitchDrops[i].rewardReferences, { suppressAuth: true })
                     .then(() => {
