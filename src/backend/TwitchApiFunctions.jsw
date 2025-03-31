@@ -516,7 +516,7 @@ export async function refreshAllTwitchDrops(useAutomation = true, dropJsonArray 
             // Now that the drops themselves saved properly, we need to add the rewardReferences.
             for (let i = 0; i < databaseTwitchDrops.length; ++i) {
                 if (!databaseTwitchDrops[i]._id) {
-                    // Retrieve it from the database.
+                    // Retrieve it from the database since this is a new item and we need the DB info from it.
                     console.log("Looking for drop ID: " + databaseTwitchDrops[i].dropId);
                     const savedDropResults = await wixData.query("TwitchDrops")
                         .eq('dropId', databaseTwitchDrops[i].dropId)
@@ -524,6 +524,7 @@ export async function refreshAllTwitchDrops(useAutomation = true, dropJsonArray 
 
                     console.log("Found ", savedDropResults.items);
                     databaseTwitchDrops[i]._id = savedDropResults.items[0]._id;
+                    databaseTwitchDrops[i]["link-twitch-drops-1-campaignName"] = savedDropResults.items[0]["link-twitch-drops-1-campaignName"];
                 }
                 wixData.replaceReferences("TwitchDrops", "rewardReferences", databaseTwitchDrops[i]._id, databaseTwitchDrops[i].rewardReferences, { suppressAuth: true })
                     .then(() => {
@@ -537,11 +538,6 @@ export async function refreshAllTwitchDrops(useAutomation = true, dropJsonArray 
         .catch((error) => {
             console.error("Failed to update Twitch Drops due to " + error);
         });
-
-    // Associate the URL fields as necessary.
-    for (let i = 0; i < deepCopy.length; ++i) {
-        databaseTwitchDrops[i]["link-twitch-drops-1-campaignName"] = deepCopy[i]["link-twitch-drops-1-campaignName"];
-    }
 
     for (let i = 0; i < databaseTwitchDrops.length; ++i) {
         console.log("Reward References: ", databaseTwitchDrops[i].rewardReferences);
