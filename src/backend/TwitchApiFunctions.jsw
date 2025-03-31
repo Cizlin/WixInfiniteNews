@@ -511,10 +511,17 @@ export async function refreshAllTwitchDrops(useAutomation = true, dropJsonArray 
     let deepCopy = _.cloneDeep(databaseTwitchDrops);
 
     await wixData.bulkSave("TwitchDrops", deepCopy, { suppressAuth: true })
-        .then((results) => {
-            console.log("Successfully updated Twitch Drops. Results:", results, deepCopy);
+        .then(async (results) => {
+            console.log("Successfully updated Twitch Drops. Results:", results);
             // Now that the drops themselves saved properly, we need to add the rewardReferences.
             for (let i = 0; i < databaseTwitchDrops.length; ++i) {
+                if (!databaseTwitchDrops._id) {
+                    // Retrieve it from the database.
+                    const savedDropResults = await wixData.query("TwitchDrops")
+                        .eq('dropId', databaseTwitchDrops.dropId)
+                        .find();
+                    databaseTwitchDrops._id = savedDropResults.items[0]._id;
+                }
                 wixData.replaceReferences("TwitchDrops", "rewardReferences", deepCopy[i]._id, databaseTwitchDrops[i].rewardReferences, { suppressAuth: true })
                     .then(() => {
                         console.log("Successfully added reward references to Twitch Drops.");
@@ -531,7 +538,6 @@ export async function refreshAllTwitchDrops(useAutomation = true, dropJsonArray 
     // Associate the URL fields as necessary.
     for (let i = 0; i < deepCopy.length; ++i) {
         databaseTwitchDrops[i]["link-twitch-drops-1-campaignName"] = deepCopy[i]["link-twitch-drops-1-campaignName"];
-        databaseTwitchDrops[i]._id = deepCopy[i]._id; // Ensure the IDs are ported if they don't already exist so we don't make duplicate records later.
     }
 
     for (let i = 0; i < databaseTwitchDrops.length; ++i) {
