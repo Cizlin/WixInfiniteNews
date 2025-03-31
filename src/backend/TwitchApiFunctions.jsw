@@ -512,10 +512,10 @@ export async function refreshAllTwitchDrops(useAutomation = true, dropJsonArray 
 
     await wixData.bulkSave("TwitchDrops", deepCopy, { suppressAuth: true })
         .then((results) => {
-            console.log("Successfully updated Twitch Drops. Results:", results);
+            console.log("Successfully updated Twitch Drops. Results:", results, deepCopy);
             // Now that the drops themselves saved properly, we need to add the rewardReferences.
             for (let i = 0; i < databaseTwitchDrops.length; ++i) {
-                wixData.replaceReferences("TwitchDrops", "rewardReferences", databaseTwitchDrops[i]._id, databaseTwitchDrops[i].rewardReferences, { suppressAuth: true })
+                wixData.replaceReferences("TwitchDrops", "rewardReferences", deepCopy[i]._id, databaseTwitchDrops[i].rewardReferences, { suppressAuth: true })
                     .then(() => {
                         console.log("Successfully added reward references to Twitch Drops.");
                     })
