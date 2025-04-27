@@ -267,6 +267,7 @@ export function initialItemSetup(customizationCategory, isCore = false) {
 
 								if (matches.length > 0) {
 									let commonIdString = matches[0];
+									console.log(commonIdString);
 									for (let waypointId in emblemPaletteImageMapping) {
 										if (waypointId.includes(commonIdString)) {
 											$item("#emblemPaletteImage").src = emblemPaletteImageMapping[waypointId].Emblem.URL;
@@ -275,6 +276,7 @@ export function initialItemSetup(customizationCategory, isCore = false) {
 								}
 							}
 							else { // If we're working with a Nameplate.
+								console.log(emblemPaletteImageMapping[itemWaypointId].Emblem.URL);
 								$item("#emblemPaletteImage").src = emblemPaletteImageMapping[itemWaypointId].Emblem.URL;
 								$item("#nameplateBackgroundImage").src = emblemPaletteImageMapping[itemWaypointId].Nameplate.URL;
 
