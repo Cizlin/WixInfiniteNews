@@ -1214,38 +1214,55 @@ export async function generateEmblemPaletteFolderDict() {
 			});
 
 			iterations++;
-			customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-				{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+			if (customizationCategoryFileList.length == GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT) {
+				customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+					{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+			}
+			else {
+				break;
+			}
 		}
 
 		let customizationTypeFolderName;
 		let folderIterations = 0;
 		let categoryParentFolderId = parentFolderId;
+		let parentFolderDictReference = folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"];
 		while (customizationCategoryFolderList.length > 0)
 		{
 			for (let j = 0; j < customizationCategoryFolderList.length; j++) {
 				let typeElement = customizationCategoryFolderList[j];
-				folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][typeElement.folderName + "/"] = { "_id": typeElement.folderId }
+				parentFolderDictReference[typeElement.folderName + "/"] = { "_id": typeElement.folderId }
 				parentFolderId = typeElement.folderId;
 				customizationTypeFolderName = typeElement.folderName;
 
 				let customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 				iterations = 0;
+				let customizationTypeFolderDictReference = parentFolderDictReference[typeElement.folderName + "/"];
 				while (customizationTypeFileList.length > 0)
 				{
 					customizationTypeFileList.forEach((file) => {
-						folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][customizationTypeFolderName + "/"][file.originalFileName.replace(/\./g, ",")] = file.fileName;
+						customizationTypeFolderDictReference[file.originalFileName.replace(/\./g, ",")] = file.fileName;
 					});
 
 					iterations++;
-					customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-						{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+					if (customizationTypeFileList.length == GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT) {
+						customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+							{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+					}
+					else {
+						break;
+					}
 				}
 			}
 
 			folderIterations++;
-			customizationCategoryFolderList = await mediaManager.listFolders({ parentFolderId: categoryParentFolderId }, null, 
-				{ limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT * folderIterations });
+			if (customizationCategoryFolderList.length == GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT) {
+				customizationCategoryFolderList = await mediaManager.listFolders({ parentFolderId: categoryParentFolderId }, null, 
+					{ limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT * folderIterations });
+			}
+			else {
+				break;
+			}
 		}
 	}
 
