@@ -1047,7 +1047,7 @@ export async function updateBundleAndItemsCurrentlyAvailableStatus(itemJson, cur
 		numCreditsField = CapstoneChallengeConstants.CAPSTONE_CHALLENGE_NUMBER_OF_CREDITS_FIELD;
 	}
 	else if (itemDb === ExchangeConstants.EXCHANGE_DB) {
-		currentlyAvailableField = ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD;
+		currentlyAvailableField = (isCustomizationShopBundle) ? ExchangeConstants.EXCHANGE_AVAILABLE_THROUGH_CUSTOMIZATION_FIELD : ExchangeConstants.EXCHANGE_CURRENTLY_AVAILABLE_FIELD;
 		fieldsWithItemsField = ExchangeConstants.EXCHANGE_FIELDS_WITH_ITEMS_FIELD;
 		consumableReferenceField = ExchangeConstants.EXCHANGE_CONSUMABLE_REFERENCE_FIELD;
 		referenceFieldToCategoryDict = CustomizationConstants.EXCHANGE_ITEM_FIELD_TO_CUSTOMIZATION_CATEGORY_DICT;
