@@ -1,5 +1,6 @@
 import wixFetch from 'wix-fetch';
 import { createSecret, updateSecret, getSecret, listSecretInfo } from 'wix-secrets-backend';
+import { elevate } from 'wix-auth';
 
 import * as ApiConstants from 'public/Constants/ApiConstants.js';
 import * as AuthenticationFunctions from 'backend/AuthenticationFunctions.jsw';
@@ -392,13 +393,13 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 				});
 
 				if (spartanTokenId) {
-					updateSecret(spartanTokenId, secret)
+					elevate(updateSecret(spartanTokenId, secret))
 						.catch((error) => {
 							console.error(error);
 						});
 				}
 				else {
-					createSecret(secret)
+					elevate(createSecret(secret))
 						.catch((error) => {
 							console.error(error);
 						});
