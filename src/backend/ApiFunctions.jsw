@@ -393,7 +393,7 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 				});
 
 				if (spartanTokenId) {
-					elevate(updateSecret(spartanTokenId, secret))
+					updateSecret(spartanTokenId, secret)
 						.catch((error) => {
 							console.error(error);
 						});
