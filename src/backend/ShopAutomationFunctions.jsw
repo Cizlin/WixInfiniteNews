@@ -519,6 +519,9 @@ export async function getConvertedShopList(processCustomizationOptions = false) 
 								if (shopWaypointJson.Title.trim() === "Boost and Swap Pack") {
 									mainShopSiteJson[ShopConstants.SHOP_TIME_TYPE_FIELD] = [ShopConstants.SHOP_INDEFINITE]; // The Boost and Swap Pack is getting picked up by this.
 								}
+								else if (mainShopWaypointArray[i].OfferingId === "SpartanPointsOffer1" || mainShopWaypointArray[i].OfferingId === "SpartanPointsOffer2" || mainShopWaypointArray[i].OfferingId === "SpartanPointsOffer3") {
+									mainShopSiteJson[ShopConstants.SHOP_TIME_TYPE_FIELD] = [ShopConstants.SHOP_INDEFINITE];
+								}
 								else if (mainShopWaypointArray.length > i + 1) { // Check the next item to see if this should be semi-weekly.
 									let tempShopWaypointJson = await ApiFunctions.getCustomizationItem(headers, mainShopWaypointArray[i + 1].OfferingDisplayPath);
 									if (tempShopWaypointJson.FlairText
