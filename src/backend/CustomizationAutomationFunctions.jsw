@@ -4270,11 +4270,11 @@ export async function armorImportPartOne(headers = null, manufacturerImportCompl
 			await importEmblemPalettes(headers, generalDictsAndArrays);
 		}
 
-		returnCode = await updateDbsFromApi(headers, customizationCategory, [CustomizationConstants.KIT_PROCESSING_KEY], generalDictsAndArrays, categorySpecificDictsAndArrays)
+		/*returnCode = await updateDbsFromApi(headers, customizationCategory, [CustomizationConstants.KIT_PROCESSING_KEY], generalDictsAndArrays, categorySpecificDictsAndArrays)
 			.catch((error) => {
 				console.error("Error occurred while processing Kits for " + customizationCategory, error);
 				return -1;
-			});
+			});*/
 
 		if (!returnCode) {
 			let processingGroups = [
