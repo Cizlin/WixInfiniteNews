@@ -4280,7 +4280,7 @@ export async function armorImportPartOne(headers = null, manufacturerImportCompl
 			let processingGroups = [
 				{ groups: ["Coatings"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_COATINGS_KEY, isHelmets: false },
 				//{ groups: ["Emblems"], crossCore: true, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_EMBLEMS_KEY, isHelmets: false },
-				//{ groups: ["Helmets"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_HELMETS_KEY , isHelmets: true }, // This is technically cross-core, but we have to pull the armor attachments from each core specifically.
+				{ groups: ["Helmets"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_HELMETS_KEY , isHelmets: true }, // This is technically cross-core, but we have to pull the armor attachments from each core specifically.
 				//{ groups: ["LeftShoulderPads", "RightShoulderPads"], crossCore: true, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_ARMOR_LSHOULDER_RSHOULDER_KEY, isHelmets: false },
 			];
 
