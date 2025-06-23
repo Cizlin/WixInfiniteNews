@@ -4522,7 +4522,8 @@ export function generalCustomizationImport() {
 				.then(() => {
 					importEmblemPalettes(headers)
 						.then(() => {
-							armorImportFull(headers, true);
+							armorImportPartOne(headers, true);
+							armorImportPartTwo(headers, true);
 							weaponImportFull(headers, true);
 							vehicleImportFull(headers, true);
 							bodyAiImport(headers, true);
