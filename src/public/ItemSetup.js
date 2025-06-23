@@ -223,7 +223,7 @@ export function initialItemSetup(customizationCategory, isCore = false) {
 		try { // This should only exist when the Shop Listing is on the page.
 			$w("#ShopDataset").onReady(function() {
 				if ($w("#shopListRepeater").data.length > 0) {
-					$w("#shopListRepeater").forEachItem(($item, itemData) => {
+					$w("#shopListRepeater").onItemReady(($item, itemData) => {
 						$item("#shopBundleImage").fitMode = "fit";
 					});
 				}
@@ -240,7 +240,7 @@ export function initialItemSetup(customizationCategory, isCore = false) {
 		try { // This should only exist when the Exchange Listing is on the page.
 			$w("#ExchangeDataset").onReady(function() {
 				if ($w("#exchangeListRepeater").data.length > 0) {
-					$w("#exchangeListRepeater").forEachItem(($item, itemData) => {
+					$w("#exchangeListRepeater").onItemReady(($item, itemData) => {
 						$item("#exchangeBundleImage").fitMode = "fit";
 					});
 				}
@@ -257,7 +257,7 @@ export function initialItemSetup(customizationCategory, isCore = false) {
 		try { // This should only exist on pages that can have emblems/nameplates.
 			$w("#emblemPaletteDataset").onReady(function() {
 				if ($w("#emblemPaletteRepeater").data.length > 0) {
-					$w("#emblemPaletteRepeater").forEachItem(($item, itemData) => {
+					$w("#emblemPaletteRepeater").onItemReady(($item, itemData) => {
 						let emblemPaletteImageMapping = itemData[CustomizationConstants.EMBLEM_PALETTE_IMAGE_MAPPING_FIELD];
 						let itemWaypointId = currentItem[CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationWaypointIdField];
 
@@ -329,7 +329,7 @@ export function initialItemSetup(customizationCategory, isCore = false) {
 					// The source type reference field.
 					let sourceTypeReferenceField = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationSourceTypeField;
 
-					$w("#kitItemRepeater").forEachItem(($item, itemData) => {
+					$w("#kitItemRepeater").onItemReady(($item, itemData) => {
 						$item("#kitItemImage").fitMode = "fit";
 						//console.log(itemData);
 						let currentItem = itemData;
@@ -404,7 +404,7 @@ export function initialItemSetup(customizationCategory, isCore = false) {
 					// The source type reference field.
 					let sourceTypeReferenceField = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationSourceTypeField;
 
-					$w("#kitAttachmentRepeater").forEachItem(($item, itemData) => {
+					$w("#kitAttachmentRepeater").onItemReady(($item, itemData) => {
 						$item("#kitAttachmentImage").fitMode = "fit";
 						//console.log(itemData);
 						let currentItem = itemData;
