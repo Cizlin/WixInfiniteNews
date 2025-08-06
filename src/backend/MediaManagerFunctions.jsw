@@ -157,7 +157,7 @@ export async function generateFolderDict() {
 	});
 
 	// Now that we're in the Customization Images folder, we need to get the list of folders within it.
-	let customizationImagesFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+	let customizationImagesFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 	let customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 	let iterations = 0;
 	while (customizationImagesFileList.length > 0) {
@@ -188,7 +188,7 @@ export async function generateFolderDict() {
 		}
 
 		// For each of these category folders, we need to get the folders within.
-		let customizationCategoryFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+		let customizationCategoryFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 		let customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 		iterations = 0;
 		while (customizationCategoryFileList.length > 0)
@@ -210,7 +210,7 @@ export async function generateFolderDict() {
 			customizationTypeFolderName = typeElement.folderName;
 
 			// Same for the type folders.
-			let customizationTypeFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+			let customizationTypeFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 			let customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 			iterations = 0;
 			while (customizationTypeFileList.length > 0)
@@ -233,7 +233,7 @@ export async function generateFolderDict() {
 				customizationCoreFolderName = coreElement.folderName;
 
 				// And for attachments, the parent customization type...
-				let customizationCoreFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+				let customizationCoreFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 				let customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 				iterations = 0;
 				while (customizationCoreFileList.length > 0)
@@ -350,7 +350,7 @@ export async function generateArmorFolderDict() {
 	});
 
 	// Now that we're in the Customization Images folder, we need to get the list of folders within it.
-	let customizationImagesFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+	let customizationImagesFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 	let customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 	let iterations = 0;
 	while (customizationImagesFileList.length > 0) {
@@ -377,7 +377,7 @@ export async function generateArmorFolderDict() {
 		}
 
 		// For each of these category folders, we need to get the folders within.
-		let customizationCategoryFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+		let customizationCategoryFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 		let customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 		iterations = 0;
 		while (customizationCategoryFileList.length > 0)
@@ -399,7 +399,7 @@ export async function generateArmorFolderDict() {
 			customizationTypeFolderName = typeElement.folderName;
 
 			// Same for the type folders.
-			let customizationTypeFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+			let customizationTypeFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 			let customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 			iterations = 0;
 			while (customizationTypeFileList.length > 0)
@@ -422,7 +422,7 @@ export async function generateArmorFolderDict() {
 				customizationCoreFolderName = coreElement.folderName;
 
 				// And for attachments, the parent customization type...
-				let customizationCoreFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+				let customizationCoreFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 				let customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 				iterations = 0;
 				while (customizationCoreFileList.length > 0)
@@ -497,7 +497,7 @@ export async function generateWeaponFolderDict() {
 	});
 
 	// Now that we're in the Customization Images folder, we need to get the list of folders within it.
-	let customizationImagesFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+	let customizationImagesFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 	let customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 	let iterations = 0;
 	while (customizationImagesFileList.length > 0) {
@@ -524,7 +524,7 @@ export async function generateWeaponFolderDict() {
 		}
 
 		// For each of these category folders, we need to get the folders within.
-		let customizationCategoryFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+		let customizationCategoryFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 		let customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 		iterations = 0;
 		while (customizationCategoryFileList.length > 0)
@@ -546,7 +546,7 @@ export async function generateWeaponFolderDict() {
 			customizationTypeFolderName = typeElement.folderName;
 
 			// Same for the type folders.
-			let customizationTypeFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+			let customizationTypeFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 			let customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 			iterations = 0;
 			while (customizationTypeFileList.length > 0)
@@ -569,7 +569,7 @@ export async function generateWeaponFolderDict() {
 				customizationCoreFolderName = coreElement.folderName;
 
 				// And for attachments, the parent customization type...
-				let customizationCoreFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+				let customizationCoreFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 				let customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 				iterations = 0;
 				while (customizationCoreFileList.length > 0)
@@ -644,7 +644,7 @@ export async function generateVehicleFolderDict() {
 	});
 
 	// Now that we're in the Customization Images folder, we need to get the list of folders within it.
-	let customizationImagesFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+	let customizationImagesFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 	let customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 	let iterations = 0;
 	while (customizationImagesFileList.length > 0) {
@@ -671,7 +671,7 @@ export async function generateVehicleFolderDict() {
 		}
 
 		// For each of these category folders, we need to get the folders within.
-		let customizationCategoryFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+		let customizationCategoryFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 		let customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 		iterations = 0;
 		while (customizationCategoryFileList.length > 0)
@@ -693,7 +693,7 @@ export async function generateVehicleFolderDict() {
 			customizationTypeFolderName = typeElement.folderName;
 
 			// Same for the type folders.
-			let customizationTypeFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+			let customizationTypeFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 			let customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 			iterations = 0;
 			while (customizationTypeFileList.length > 0)
@@ -716,7 +716,7 @@ export async function generateVehicleFolderDict() {
 				customizationCoreFolderName = coreElement.folderName;
 
 				// And for attachments, the parent customization type...
-				let customizationCoreFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+				let customizationCoreFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 				let customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 				iterations = 0;
 				while (customizationCoreFileList.length > 0)
@@ -792,7 +792,7 @@ export async function generateShopFolderDict() {
 	});
 
 	// Now that we're in the Customization Images folder, we need to get the list of folders within it.
-	let customizationImagesFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+	let customizationImagesFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 	let customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 	let iterations = 0;
 	while (customizationImagesFileList.length > 0) {
@@ -819,7 +819,7 @@ export async function generateShopFolderDict() {
 		}
 
 		// For each of these category folders, we need to get the folders within.
-		let customizationCategoryFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+		let customizationCategoryFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 		let customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 		iterations = 0;
 		while (customizationCategoryFileList.length > 0)
@@ -841,7 +841,7 @@ export async function generateShopFolderDict() {
 			customizationTypeFolderName = typeElement.folderName;
 
 			// Same for the type folders.
-			let customizationTypeFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+			let customizationTypeFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 			let customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 			iterations = 0;
 			while (customizationTypeFileList.length > 0)
@@ -864,7 +864,7 @@ export async function generateShopFolderDict() {
 				customizationCoreFolderName = coreElement.folderName;
 
 				// And for attachments, the parent customization type...
-				let customizationCoreFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+				let customizationCoreFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 				let customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 				iterations = 0;
 				while (customizationCoreFileList.length > 0)
@@ -1177,7 +1177,7 @@ export async function generateEmblemPaletteFolderDict() {
 	});
 
 	// Now that we're in the Customization Images folder, we need to get the list of folders within it.
-	let customizationImagesFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId });
+	let customizationImagesFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 	let customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 	let iterations = 0;
 	while (customizationImagesFileList.length > 0) {
