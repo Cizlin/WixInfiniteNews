@@ -430,26 +430,32 @@ export async function getClearance(spartanToken="") {
 	// We use the API Key stored in our secrets to query the API.
 	const XUID = (await elevatedGetSecretValue(ApiConstants.SECRETS_XUID_KEY)).value;
 
+	let numAttempts = 0;
+	const MAX_ATTEMPTS = 10;
+
 	// Query the API. Note that the Authorization, Content-Type, and Cryptum-API-Version must all be provided.
-	return await wixFetch
-		.fetch(ApiConstants.WAYPOINT_URL_BASE_343_CLEARANCE + ApiConstants.WAYPOINT_URL_XUID_PREFIX + XUID + ApiConstants.WAYPOINT_URL_XUID_SUFFIX + ApiConstants.WAYPOINT_URL_SUFFIX_343_CLEARANCE_FLIGHT, {
-			"headers": {
-				[ApiConstants.WAYPOINT_SPARTAN_TOKEN_HEADER]: spartanToken
-			}
-		})
-		.then((httpResponse) => {
-			if (httpResponse.ok) {
-				return httpResponse.json();
-			} else {
-				return Promise.reject("Fetch did not succeed. Got HTTP Response: " + httpResponse.status);
-			}
-		})
-		.then((json) => {
-			return json.FlightConfigurationId;
-		})
-		.catch(err => {
-			console.error(err);
-		});
+	while (numAttempts < MAX_ATTEMPTS) {
+		return await wixFetch
+			.fetch(ApiConstants.WAYPOINT_URL_BASE_343_CLEARANCE + ApiConstants.WAYPOINT_URL_XUID_PREFIX + XUID + ApiConstants.WAYPOINT_URL_XUID_SUFFIX + ApiConstants.WAYPOINT_URL_SUFFIX_343_CLEARANCE_FLIGHT, {
+				"headers": {
+					[ApiConstants.WAYPOINT_SPARTAN_TOKEN_HEADER]: spartanToken
+				}
+			})
+			.then((httpResponse) => {
+				if (httpResponse.ok) {
+					return httpResponse.json();
+				} else {
+					return Promise.reject("Fetch did not succeed. Got HTTP Response: " + httpResponse.status);
+				}
+			})
+			.then((json) => {
+				return json.FlightConfigurationId;
+			})
+			.catch(err => {
+				console.error(err);
+				numAttempts++;
+			});
+	}
 }
 
 // Combines the Spartan Token and Clearance into a single JSON header object, along with other necessary headers.
