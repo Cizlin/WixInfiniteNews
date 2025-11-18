@@ -1,5 +1,5 @@
 import wixFetch from 'wix-fetch';
-import { createSecret, updateSecret, getSecretValue, listSecretInfo } from 'wix-secrets-backend.v2';
+import { secrets } from 'wix-secrets-backend.v2';
 import { elevate } from 'wix-auth';
 
 import * as ApiConstants from 'public/Constants/ApiConstants.js';
@@ -9,10 +9,10 @@ import * as InternalNotificationFunctions from 'backend/InternalNotificationFunc
 import hmac from 'js-crypto-hmac';
 const hash = 'SHA-256';
 
-const elevatedListSecretInfo = elevate(listSecretInfo);
-const elevatedGetSecretValue = elevate(getSecretValue);
-const elevatedCreateSecret = elevate(createSecret);
-const elevatedUpdateSecret = elevate(updateSecret);
+const elevatedListSecretInfo = elevate(secrets.listSecretInfo);
+const elevatedGetSecretValue = elevate(secrets.getSecretValue);
+const elevatedCreateSecret = elevate(secrets.createSecret);
+const elevatedUpdateSecret = elevate(secrets.updateSecret);
 
 // Retrieves the Spartan Token, either from HaloDotAPI or the SpartanToken secret with the following value format:
 /* 
@@ -30,8 +30,12 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 
 	// If it exists and hasn't expired, we can just return the token. If it has expired, we need to get a new one.
 	try {
+<<<<<<< HEAD
 		spartanTokenJson = JSON.parse(await elevatedGetSecretValue(ApiConstants.SECRETS_SPARTAN_TOKEN_KEY));
 		console.log(spartanTokenJson);
+=======
+		spartanTokenJson = JSON.parse((await elevatedGetSecretValue(ApiConstants.SECRETS_SPARTAN_TOKEN_KEY)).value);
+>>>>>>> ff3bc3a0d6ac359abd771256a8ca2385f452ab60
 		let expirationDatetime = new Date(spartanTokenJson.Expiration); // The expiration datetime is stored within the JSON.
 
 		// If the datetime is too close to or past the expiration, we need to grab a new token.
@@ -73,7 +77,7 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 
 		secretInfo.secrets.forEach((item) => {
 			if (SECRET_KEY_ARRAY.includes(item.name)) {
-				secretIdDict[item.name] = item.id;
+				secretIdDict[item.name] = item._id;
 			}
 		});
 
@@ -93,7 +97,7 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 					let useCodeFromArgs = true; // This will become false if the secrets code works instead.
 					if (ApiConstants.SECRETS_AUTHORIZATION_CODE_KEY in secretIdDict) {
 						// We have an Authorization Code in the Secrets API, but it might not work. Let's try it first.
-						let authorizationCode = await elevatedGetSecretValue(ApiConstants.SECRETS_AUTHORIZATION_CODE_KEY);
+						let authorizationCode = (await elevatedGetSecretValue(ApiConstants.SECRETS_AUTHORIZATION_CODE_KEY)).value;
 
 						let oAuthTokenResults = await AuthenticationFunctions.requestOAuthToken(authorizationCode);
 
@@ -202,7 +206,7 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 				try {
 					// We'll only have a refresh token from the secrets API. If it isn't there, we need to generate it.
 					if (ApiConstants.SECRETS_REFRESH_TOKEN_KEY in secretIdDict) {
-						let refreshToken = await elevatedGetSecretValue(ApiConstants.SECRETS_REFRESH_TOKEN_KEY);
+						let refreshToken = (await elevatedGetSecretValue(ApiConstants.SECRETS_REFRESH_TOKEN_KEY)).value;
 						let oAuthTokenResults = await AuthenticationFunctions.refreshOAuthToken(refreshToken);
 
 						if (oAuthTokenResults) {
@@ -264,7 +268,7 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 				try {
 					// We'll only have an Access Token from the Secrets API. If it isn't there, we'll need to generate it.
 					if (ApiConstants.SECRETS_ACCESS_TOKEN_KEY in secretIdDict) {
-						let accessToken = await elevatedGetSecretValue(ApiConstants.SECRETS_ACCESS_TOKEN_KEY);
+						let accessToken = (await elevatedGetSecretValue(ApiConstants.SECRETS_ACCESS_TOKEN_KEY)).value;
 						let userTokenResults = await AuthenticationFunctions.requestUserToken(accessToken);
 
 						if (userTokenResults) {
@@ -310,7 +314,7 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 				try {
 					// We'll only have a User Token from the Secrets API. If it isn't there, we'll need to generate it.
 					if (ApiConstants.SECRETS_USER_TOKEN_KEY in secretIdDict) {
-						let userToken = await elevatedGetSecretValue(ApiConstants.SECRETS_USER_TOKEN_KEY);
+						let userToken = (await elevatedGetSecretValue(ApiConstants.SECRETS_USER_TOKEN_KEY)).value;
 						let xstsTokenResults = await AuthenticationFunctions.requestXstsToken(userToken); // We'll also use the Halo Relying Party by using the default true arg.
 
 						if (xstsTokenResults) {
@@ -356,7 +360,7 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 				try {
 					// We'll only have a User Token from the Secrets API. If it isn't there, we'll need to generate it.
 					if (ApiConstants.SECRETS_XSTS_TOKEN_KEY in secretIdDict) {
-						let xstsToken = await elevatedGetSecretValue(ApiConstants.SECRETS_XSTS_TOKEN_KEY);
+						let xstsToken = (await elevatedGetSecretValue(ApiConstants.SECRETS_XSTS_TOKEN_KEY)).value;
 						spartanTokenData = await AuthenticationFunctions.generateSpartanToken(xstsToken); // We'll also use the Halo Relying Party by using the default true arg.
 
 						if (!spartanTokenData) {
@@ -394,8 +398,8 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 				secrets.forEach(element => {
 					if (element.name == ApiConstants.SECRETS_SPARTAN_TOKEN_KEY) {
 						//console.log("Found Spartan Token");
-						//console.log("Returning " + element.id);
-						spartanTokenId = element.id;
+						//console.log("Returning " + element._id);
+						spartanTokenId = element._id;
 					}
 				});
 
@@ -429,7 +433,7 @@ export async function getClearance(spartanToken="") {
 	}
 
 	// We use the API Key stored in our secrets to query the API.
-	const XUID = await elevatedGetSecretValue(ApiConstants.SECRETS_XUID_KEY);
+	const XUID = (await elevatedGetSecretValue(ApiConstants.SECRETS_XUID_KEY)).value;
 
 	// Query the API. Note that the Authorization, Content-Type, and Cryptum-API-Version must all be provided.
 	return await wixFetch
