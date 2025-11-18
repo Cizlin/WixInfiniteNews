@@ -1,5 +1,5 @@
 import wixFetch from 'wix-fetch';
-import { createSecret, updateSecret, getSecret, listSecretInfo } from 'wix-secrets-backend';
+import { createSecret, updateSecret, getSecret, listSecretInfo } from 'wix-secrets-backend.v2';
 import { elevate } from 'wix-auth';
 
 import * as ApiConstants from 'public/Constants/ApiConstants.js';
@@ -8,6 +8,8 @@ import * as InternalNotificationFunctions from 'backend/InternalNotificationFunc
 
 import hmac from 'js-crypto-hmac';
 const hash = 'SHA-256';
+
+const elevatedListSecretInfo = elevate(secrets.listSecretInfo);
 
 // Retrieves the Spartan Token, either from HaloDotAPI or the SpartanToken secret with the following value format:
 /* 
@@ -48,7 +50,7 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 		// We're going to try performing the necessary steps to retrieve the Spartan Token in reverse order. If one fails, we go back a step and keep repeating this until we succeed.
 		// If all else fails, we'll have to get the code manually from the URL provided by getAuthUrl() in the AuthenticationFunctions.jsw file. Make sure to use it with the Infinite News account.
 
-		let secretInfo = await listSecretInfo()
+		let secretInfo = await elevatedListSecretInfo()
 			.catch((error) => {
 				console.error(error + " occurred. Unable to retrieve secret info. Cannot proceed with retrieving Spartan Token.");
 				throw "Fatal: Could not list secret info while retrieving Spartan Token.";
