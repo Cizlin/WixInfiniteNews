@@ -386,7 +386,7 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 
 		//console.log("Found Spartan Token, adding to secrets...");
 
-		elevatedlistSecretInfo() // The Spartan Token Key might exist, in which case we need to update based on the ID.
+		elevatedListSecretInfo() // The Spartan Token Key might exist, in which case we need to update based on the ID.
 			.then((secrets) => {
 				let spartanTokenId = null;
 				secrets.forEach(element => {
