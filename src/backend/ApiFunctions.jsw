@@ -70,7 +70,7 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 			ApiConstants.SECRETS_AUTHORIZATION_CODE_KEY // Provided manually by using the getAuthUrl() function and copying the URL to a browser. Retrieved from the redirect URL.
 		];
 
-		secretInfo.forEach((item) => {
+		secretInfo.secrets.forEach((item) => {
 			if (SECRET_KEY_ARRAY.includes(item.name)) {
 				secretIdDict[item.name] = item.id;
 			}
@@ -387,7 +387,8 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 		//console.log("Found Spartan Token, adding to secrets...");
 
 		elevatedListSecretInfo() // The Spartan Token Key might exist, in which case we need to update based on the ID.
-			.then((secrets) => {
+			.then((secretResults) => {
+				let secrets = secretResults.secrets;
 				let spartanTokenId = null;
 				secrets.forEach(element => {
 					if (element.name == ApiConstants.SECRETS_SPARTAN_TOKEN_KEY) {
