@@ -31,6 +31,7 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 	// If it exists and hasn't expired, we can just return the token. If it has expired, we need to get a new one.
 	try {
 		spartanTokenJson = JSON.parse(await elevatedGetSecretValue(ApiConstants.SECRETS_SPARTAN_TOKEN_KEY));
+        console.log(spartanTokenJson);
 		let expirationDatetime = new Date(spartanTokenJson.Expiration); // The expiration datetime is stored within the JSON.
 
 		// If the datetime is too close to or past the expiration, we need to grab a new token.
