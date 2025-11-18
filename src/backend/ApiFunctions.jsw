@@ -1,5 +1,5 @@
 import wixFetch from 'wix-fetch';
-import { createSecret, updateSecret, getSecret, listSecretInfo } from 'wix-secrets-backend.v2';
+import { createSecret, updateSecret, getSecretValue, listSecretInfo } from 'wix-secrets-backend.v2';
 import { elevate } from 'wix-auth';
 
 import * as ApiConstants from 'public/Constants/ApiConstants.js';
@@ -9,7 +9,10 @@ import * as InternalNotificationFunctions from 'backend/InternalNotificationFunc
 import hmac from 'js-crypto-hmac';
 const hash = 'SHA-256';
 
-const elevatedListSecretInfo = elevate(secrets.listSecretInfo);
+const elevatedListSecretInfo = elevate(listSecretInfo);
+const elevatedGetSecretValue = elevate(getSecretValue);
+const elevatedCreateSecret = elevate(createSecret);
+const elevatedUpdateSecret = elevate(updateSecret);
 
 // Retrieves the Spartan Token, either from HaloDotAPI or the SpartanToken secret with the following value format:
 /* 
@@ -27,7 +30,7 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 
 	// If it exists and hasn't expired, we can just return the token. If it has expired, we need to get a new one.
 	try {
-		spartanTokenJson = JSON.parse(await getSecret(ApiConstants.SECRETS_SPARTAN_TOKEN_KEY));
+		spartanTokenJson = JSON.parse(await elevatedGetSecretValue(ApiConstants.SECRETS_SPARTAN_TOKEN_KEY));
 		let expirationDatetime = new Date(spartanTokenJson.Expiration); // The expiration datetime is stored within the JSON.
 
 		// If the datetime is too close to or past the expiration, we need to grab a new token.
@@ -89,7 +92,7 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 					let useCodeFromArgs = true; // This will become false if the secrets code works instead.
 					if (ApiConstants.SECRETS_AUTHORIZATION_CODE_KEY in secretIdDict) {
 						// We have an Authorization Code in the Secrets API, but it might not work. Let's try it first.
-						let authorizationCode = await getSecret(ApiConstants.SECRETS_AUTHORIZATION_CODE_KEY);
+						let authorizationCode = await elevatedGetSecretValue(ApiConstants.SECRETS_AUTHORIZATION_CODE_KEY);
 
 						let oAuthTokenResults = await AuthenticationFunctions.requestOAuthToken(authorizationCode);
 
@@ -100,14 +103,14 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 
 							// We should update or create the secrets with these values to make sure we can access the right details in the future.
 							if (ApiConstants.SECRETS_ACCESS_TOKEN_KEY in secretIdDict) {
-								await updateSecret(secretIdDict[ApiConstants.SECRETS_ACCESS_TOKEN_KEY], {
+								await elevatedUpdateSecret(secretIdDict[ApiConstants.SECRETS_ACCESS_TOKEN_KEY], {
 									name: ApiConstants.SECRETS_ACCESS_TOKEN_KEY,
 									value: accessToken,
 									description: "The Xbox OAuth Access Token."
 								});
 							}
 							else {
-								await createSecret({
+								await elevatedCreateSecret({
 									name: ApiConstants.SECRETS_ACCESS_TOKEN_KEY,
 									value: accessToken,
 									description: "The Xbox OAuth Access Token."
@@ -115,14 +118,14 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 							}
 
 							if (ApiConstants.SECRETS_REFRESH_TOKEN_KEY in secretIdDict) {
-								await updateSecret(secretIdDict[ApiConstants.SECRETS_REFRESH_TOKEN_KEY], {
+								await elevatedUpdateSecret(secretIdDict[ApiConstants.SECRETS_REFRESH_TOKEN_KEY], {
 									name: ApiConstants.SECRETS_REFRESH_TOKEN_KEY,
 									value: refreshToken,
 									description: "The Xbox OAuth Refresh Token."
 								});
 							}
 							else {
-								await createSecret({
+								await elevatedCreateSecret({
 									name: ApiConstants.SECRETS_REFRESH_TOKEN_KEY,
 									value: refreshToken,
 									description: "The Xbox OAuth Refresh Token."
@@ -145,14 +148,14 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 
 							// We should update or create the secrets with these values to make sure we can access the right details in the future.
 							if (ApiConstants.SECRETS_ACCESS_TOKEN_KEY in secretIdDict) {
-								await updateSecret(secretIdDict[ApiConstants.SECRETS_ACCESS_TOKEN_KEY], {
+								await elevatedUpdateSecret(secretIdDict[ApiConstants.SECRETS_ACCESS_TOKEN_KEY], {
 									name: ApiConstants.SECRETS_ACCESS_TOKEN_KEY,
 									value: accessToken,
 									description: "The Xbox OAuth Access Token."
 								});
 							}
 							else {
-								await createSecret({
+								await elevatedCreateSecret({
 									name: ApiConstants.SECRETS_ACCESS_TOKEN_KEY,
 									value: accessToken,
 									description: "The Xbox OAuth Access Token."
@@ -160,14 +163,14 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 							}
 
 							if (ApiConstants.SECRETS_REFRESH_TOKEN_KEY in secretIdDict) {
-								await updateSecret(secretIdDict[ApiConstants.SECRETS_REFRESH_TOKEN_KEY], {
+								await elevatedUpdateSecret(secretIdDict[ApiConstants.SECRETS_REFRESH_TOKEN_KEY], {
 									name: ApiConstants.SECRETS_REFRESH_TOKEN_KEY,
 									value: refreshToken,
 									description: "The Xbox OAuth Refresh Token."
 								});
 							}
 							else {
-								await createSecret({
+								await elevatedCreateSecret({
 									name: ApiConstants.SECRETS_REFRESH_TOKEN_KEY,
 									value: refreshToken,
 									description: "The Xbox OAuth Refresh Token."
@@ -198,7 +201,7 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 				try {
 					// We'll only have a refresh token from the secrets API. If it isn't there, we need to generate it.
 					if (ApiConstants.SECRETS_REFRESH_TOKEN_KEY in secretIdDict) {
-						let refreshToken = await getSecret(ApiConstants.SECRETS_REFRESH_TOKEN_KEY);
+						let refreshToken = await elevatedGetSecretValue(ApiConstants.SECRETS_REFRESH_TOKEN_KEY);
 						let oAuthTokenResults = await AuthenticationFunctions.refreshOAuthToken(refreshToken);
 
 						if (oAuthTokenResults) {
@@ -208,14 +211,14 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 
 							// We should update or create the secrets with these values to make sure we can access the right details in the future.
 							if (ApiConstants.SECRETS_ACCESS_TOKEN_KEY in secretIdDict) {
-								await updateSecret(secretIdDict[ApiConstants.SECRETS_ACCESS_TOKEN_KEY], {
+								await elevatedUpdateSecret(secretIdDict[ApiConstants.SECRETS_ACCESS_TOKEN_KEY], {
 									name: ApiConstants.SECRETS_ACCESS_TOKEN_KEY,
 									value: accessToken,
 									description: "The Xbox OAuth Access Token."
 								});
 							}
 							else {
-								await createSecret({
+								await elevatedCreateSecret({
 									name: ApiConstants.SECRETS_ACCESS_TOKEN_KEY,
 									value: accessToken,
 									description: "The Xbox OAuth Access Token."
@@ -223,14 +226,14 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 							}
 
 							if (ApiConstants.SECRETS_REFRESH_TOKEN_KEY in secretIdDict) {
-								await updateSecret(secretIdDict[ApiConstants.SECRETS_REFRESH_TOKEN_KEY], {
+								await elevatedUpdateSecret(secretIdDict[ApiConstants.SECRETS_REFRESH_TOKEN_KEY], {
 									name: ApiConstants.SECRETS_REFRESH_TOKEN_KEY,
 									value: refreshToken,
 									description: "The Xbox OAuth Refresh Token."
 								});
 							}
 							else {
-								await createSecret({
+								await elevatedCreateSecret({
 									name: ApiConstants.SECRETS_REFRESH_TOKEN_KEY,
 									value: refreshToken,
 									description: "The Xbox OAuth Refresh Token."
@@ -260,7 +263,7 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 				try {
 					// We'll only have an Access Token from the Secrets API. If it isn't there, we'll need to generate it.
 					if (ApiConstants.SECRETS_ACCESS_TOKEN_KEY in secretIdDict) {
-						let accessToken = await getSecret(ApiConstants.SECRETS_ACCESS_TOKEN_KEY);
+						let accessToken = await elevatedGetSecretValue(ApiConstants.SECRETS_ACCESS_TOKEN_KEY);
 						let userTokenResults = await AuthenticationFunctions.requestUserToken(accessToken);
 
 						if (userTokenResults) {
@@ -269,14 +272,14 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 
 							// We should update or create the secrets with these values to make sure we can access the right details in the future.
 							if (ApiConstants.SECRETS_USER_TOKEN_KEY in secretIdDict) {
-								await updateSecret(secretIdDict[ApiConstants.SECRETS_USER_TOKEN_KEY], {
+								await elevatedUpdateSecret(secretIdDict[ApiConstants.SECRETS_USER_TOKEN_KEY], {
 									name: ApiConstants.SECRETS_USER_TOKEN_KEY,
 									value: userToken,
 									description: "The Xbox User Token."
 								});
 							}
 							else {
-								await createSecret({
+								await elevatedCreateSecret({
 									name: ApiConstants.SECRETS_USER_TOKEN_KEY,
 									value: userToken,
 									description: "The Xbox User Token."
@@ -306,7 +309,7 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 				try {
 					// We'll only have a User Token from the Secrets API. If it isn't there, we'll need to generate it.
 					if (ApiConstants.SECRETS_USER_TOKEN_KEY in secretIdDict) {
-						let userToken = await getSecret(ApiConstants.SECRETS_USER_TOKEN_KEY);
+						let userToken = await elevatedGetSecretValue(ApiConstants.SECRETS_USER_TOKEN_KEY);
 						let xstsTokenResults = await AuthenticationFunctions.requestXstsToken(userToken); // We'll also use the Halo Relying Party by using the default true arg.
 
 						if (xstsTokenResults) {
@@ -315,14 +318,14 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 
 							// We should update or create the secrets with these values to make sure we can access the right details in the future.
 							if (ApiConstants.SECRETS_XSTS_TOKEN_KEY in secretIdDict) {
-								await updateSecret(secretIdDict[ApiConstants.SECRETS_XSTS_TOKEN_KEY], {
+								await elevatedUpdateSecret(secretIdDict[ApiConstants.SECRETS_XSTS_TOKEN_KEY], {
 									name: ApiConstants.SECRETS_XSTS_TOKEN_KEY,
 									value: xstsToken,
 									description: "The XSTS Token."
 								});
 							}
 							else {
-								await createSecret({
+								await elevatedCreateSecret({
 									name: ApiConstants.SECRETS_XSTS_TOKEN_KEY,
 									value: xstsToken,
 									description: "The XSTS Token."
@@ -352,7 +355,7 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 				try {
 					// We'll only have a User Token from the Secrets API. If it isn't there, we'll need to generate it.
 					if (ApiConstants.SECRETS_XSTS_TOKEN_KEY in secretIdDict) {
-						let xstsToken = await getSecret(ApiConstants.SECRETS_XSTS_TOKEN_KEY);
+						let xstsToken = await elevatedGetSecretValue(ApiConstants.SECRETS_XSTS_TOKEN_KEY);
 						spartanTokenData = await AuthenticationFunctions.generateSpartanToken(xstsToken); // We'll also use the Halo Relying Party by using the default true arg.
 
 						if (!spartanTokenData) {
@@ -383,7 +386,7 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 
 		//console.log("Found Spartan Token, adding to secrets...");
 
-		listSecretInfo() // The Spartan Token Key might exist, in which case we need to update based on the ID.
+		elevatedlistSecretInfo() // The Spartan Token Key might exist, in which case we need to update based on the ID.
 			.then((secrets) => {
 				let spartanTokenId = null;
 				secrets.forEach(element => {
@@ -395,13 +398,13 @@ export async function getSpartanToken(refresh = true, code = "") { // The refres
 				});
 
 				if (spartanTokenId) {
-					updateSecret(spartanTokenId, secret)
+					elevatedUpdateSecret(spartanTokenId, secret)
 						.catch((error) => {
 							console.error(error);
 						});
 				}
 				else {
-					elevate(createSecret(secret))
+					elevatedCreateSecret(secret)
 						.catch((error) => {
 							console.error(error);
 						});
@@ -424,7 +427,7 @@ export async function getClearance(spartanToken="") {
 	}
 
 	// We use the API Key stored in our secrets to query the API.
-	const XUID = await getSecret(ApiConstants.SECRETS_XUID_KEY);
+	const XUID = await elevatedGetSecretValue(ApiConstants.SECRETS_XUID_KEY);
 
 	// Query the API. Note that the Authorization, Content-Type, and Cryptum-API-Version must all be provided.
 	return await wixFetch
