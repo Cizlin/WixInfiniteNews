@@ -715,40 +715,6 @@ function updateSort() {
 }
 //#endregion
 
-//#region Twitch Drop Sort code
-// Update the user-selected sort
-function updateTwitchDropSort() {
-	let dropdownValue = $w("#sortDropdown").value;
-	let sortOrder = $w("#sortOrderDropdown").value;
-	let sort = wixData.sort();
-
-	if (dropdownValue == "Rarity") {
-		// Show the order selector.
-		$w("#sortOrderDropdown").show();
-		$w("#SortOrderTitle").show();
-
-		// Implement a sort on the number of times the drop has appeared.
-		if (sortOrder == "Ascending") {
-			sort = sort.ascending("numberTimesAppeared");
-		}
-		else if (sortOrder == "Descending") {
-			sort = sort.descending("numberTimesAppeared");
-		}
-	}
-	else {
-		// To keep consistency with the shop, we hide the sort order for this relatively simple sort.
-		$w("#sortOrderDropdown").hide();
-		$w("#SortOrderTitle").hide();
-
-		sort = sort
-			.ascending("notificationText");
-	}
-
-	console.log("Sorting as follows:", sort);
-	$w("#dynamicDataset").setSort(sort);
-}
-//#endregion
-
 //#region Exchange Sort code
 // Update the user-selected sort.
 function updateExchangeSort() {
@@ -825,7 +791,7 @@ export async function initialItemListSetup(customizationCategory) {
 	}
     //#endregion
 
-	if (customizationCategory == ShopConstants.SHOP_KEY || customizationCategory === ExchangeConstants.EXCHANGE_KEY || customizationCategory === KeyConstants.TWITCH_DROPS_KEY) {
+	if (customizationCategory == ShopConstants.SHOP_KEY || customizationCategory === ExchangeConstants.EXCHANGE_KEY) {
 		// Hide the sort order dropdown and title by default. They will be revealed if the user changes their sort settings.
 		$w("#sortOrderDropdown").hide();
 		$w("#SortOrderTitle").hide();
@@ -1299,10 +1265,6 @@ export async function initialItemListSetup(customizationCategory) {
 
 				// If the Status filter is set.
 				$w("#statusDropdown").onChange(setOptionalFiltersTwitchDrops);
-
-				// Add event handlers for the sorters.
-				$w("#sortDropdown").onChange(updateTwitchDropSort);
-				$w("#sortOrderDropdown").onChange(updateTwitchDropSort);
 			});
 		}
 		//#endregion
