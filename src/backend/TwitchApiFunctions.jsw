@@ -1403,3 +1403,27 @@ export function markExpiredDrops() {
             console.error(error + " occurred while trying to retrieve ACTIVE Twitch Drops.");
         })
 }
+
+export function updateDropFrequencies() {
+    wixData.query("TwitchDropRewards")
+        .limit(1000)
+        .include("TwitchDrops")
+        .find({suppressAuth: true})
+        .then((results) => {
+            results.items.forEach(item => {
+                item.numberTimesAppeared = item.TwitchDrops.length;
+            });
+
+            wixData.bulkUpdate("TwitchDropRewards", resultsToUpdate, { suppressAuth: true })
+                .then((results) => {
+                    console.log("Results aftering updating Twitch Drop Rewards with latest counts:", results);
+                })
+                .catch((error) => {
+                    console.error(error + " occurred while updating Twitch Drop Reward counts.");
+                })
+        })
+        .catch((error) => {
+            console.error(error + " occurred while trying to retrieve Twitch Drop Rewards.")
+        })
+
+}
