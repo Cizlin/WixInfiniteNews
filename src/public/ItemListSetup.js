@@ -825,7 +825,7 @@ export async function initialItemListSetup(customizationCategory) {
 	}
     //#endregion
 
-	if (customizationCategory == ShopConstants.SHOP_KEY || customizationCategory === ExchangeConstants.EXCHANGE_KEY) {
+	if (customizationCategory == ShopConstants.SHOP_KEY || customizationCategory === ExchangeConstants.EXCHANGE_KEY || customizationCategory === KeyConstants.TWITCH_DROPS_KEY) {
 		// Hide the sort order dropdown and title by default. They will be revealed if the user changes their sort settings.
 		$w("#sortOrderDropdown").hide();
 		$w("#SortOrderTitle").hide();
