@@ -1414,7 +1414,7 @@ export function updateDropFrequencies() {
                 item.numberTimesAppeared = item.TwitchDrops.length;
             });
 
-            wixData.bulkUpdate("TwitchDropRewards", resultsToUpdate, { suppressAuth: true })
+            wixData.bulkUpdate("TwitchDropRewards", results.items, { suppressAuth: true })
                 .then((results) => {
                     console.log("Results aftering updating Twitch Drop Rewards with latest counts:", results);
                 })
