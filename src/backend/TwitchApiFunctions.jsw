@@ -511,13 +511,14 @@ export async function refreshAllTwitchDrops(useAutomation = true, dropJsonArray 
     let deepCopy = _.cloneDeep(databaseTwitchDrops);
 
     for (let i = 0; i < deepCopy.length; ++i) {
-        if (!(deepCopy[i].hasOwnProperty("_id"))) {
-            await wixData.insert("TwitchDrops", deepCopy[i], { suppressAuth: true })
-                .catch((error) => {
-                    console.error("Failed to insert Twitch Drop due to " + error);
-                });
+        rewardReferencesArray = []; // Reward references must be an array of string IDs to be inserted properly.
+        for (let j = 0; j < deepCopy[i].rewardReferences.length; ++j) {
+            rewardReferencesArray.push(deepCopy[i].rewardReferences[j]._id);
         }
+        deepCopy[i].rewardReferences = rewardReferencesArray;
     }
+
+    console.log("Inserting/updating the following: ", deepCopy);
 
     await wixData.bulkSave("TwitchDrops", deepCopy, { suppressAuth: true })
         .then(async (results) => {
