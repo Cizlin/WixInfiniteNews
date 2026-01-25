@@ -1427,3 +1427,10 @@ export function updateDropFrequencies() {
         })
 
 }
+
+export function testAddDrop() {
+    wixData.insert("TwitchDrops", {dropId: "1"})
+    .then((results) => {
+        console.log(results);
+    })
+}
