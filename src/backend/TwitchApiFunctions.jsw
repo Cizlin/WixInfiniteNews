@@ -511,7 +511,7 @@ export async function refreshAllTwitchDrops(useAutomation = true, dropJsonArray 
     let deepCopy = _.cloneDeep(databaseTwitchDrops);
 
     for (let i = 0; i < deepCopy.length; ++i) {
-        if (!(deepCopy[i]..hasOwnProperty("_id"))) {
+        if (!(deepCopy[i].hasOwnProperty("_id"))) {
             await wixData.insert("TwitchDrops", deepCopy, { suppressAuth: true })
                 .catch((error) => {
                     console.error("Failed to insert Twitch Drop due to " + error);
