@@ -7,6 +7,8 @@ import * as twitter from 'backend/TwitterApiFunctions.jsw';
 import * as bluesky from 'backend/BlueskyApiFunctions.jsw';
 import * as discord from 'backend/NotificationFunctions.jsw';
 
+import * as KeyConstants from 'public/Constants/KeyConstants.js';
+
 const gameIdToGameName = {
     "417969": "Halo: The Master Chief Collection",
     "506416": "Halo Infinite"
