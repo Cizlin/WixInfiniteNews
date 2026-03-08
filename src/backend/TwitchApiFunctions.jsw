@@ -627,6 +627,31 @@ export async function refreshAllTwitchDrops(useAutomation = true, dropJsonArray 
         console.log("Sending ACTIVE Twitch Drop alert to owner...");
         notifs.notifyOwner("Twitch Drop Now ACTIVE", "Validate the active Twitch Drop(s) and update these drop IDs (includes all drops in API): " + commaSeparatedDropIds);
     }
+
+    // Get and re-save the Twitch Drop item in the DB to update the timestamp.
+    let currentOffsetObject = await wixData.query(KeyConstants.KEY_VALUE_DB)
+        .eq("key", "TwitchDropsProcessed")
+        .find({ suppressAuth: true })
+        .then((results) => {
+            if (results.items.length == 0) {
+                // Return a default object because there isn't one in the DB.
+                return { 
+                    "key": "TwitchDropsProcessed",
+                    "value": {}
+                }
+            }
+            else {
+                return results.items[0];
+            }
+        })
+        .catch((error) => {
+            console.error("Error occurred when retrieving Twitch Drop time entry.", error);
+        });
+
+    wixData.save(KeyConstants.KEY_VALUE_DB, currentOffsetObject, { suppressAuth: true })
+        .catch((error) => {
+            console.error(error, "occurred when updating Twitch Drop time entry.");
+        });
 }
 
 function arraysAreEqual(arr1, arr2) {
@@ -1443,4 +1468,37 @@ export function testAddDrop() {
     .then((results) => {
         console.log(results);
     })
+}
+
+export async function checkLastUpdateTime() {
+    let currentOffsetObject = await wixData.query(KeyConstants.KEY_VALUE_DB)
+        .eq("key", "TwitchDropsProcessed")
+        .find({ suppressAuth: true })
+        .then((results) => {
+            if (results.items.length == 0) {
+                // Return a default object because there isn't one in the DB.
+                return { 
+                    "key": "TwitchDropsProcessed",
+                    "value": {}
+                }
+            }
+            else {
+                return results.items[0];
+            }
+        })
+        .catch((error) => {
+            console.error("Error occurred when retrieving Twitch Drop time entry.", error);
+        });
+
+    let lastUpdateDate = currentOffsetObject._updatedDate;
+    let currentDateTime = Date.now();
+    let timeDiffMs = currentDateTime - lastUpdateDate;
+
+    const thresholdMs = 6 * 60 * 60 * 1000;
+
+    console.log("Time in ms since Twitch Drop Notifier ran: ", timeDiffMs);
+
+    if (timeDiffMs > thresholdMs) {
+        notifs.notifyOwner("Twitch Drop Notifier Not Running", "Check to make sure that there are no issues in the runner");
+    }
 }
