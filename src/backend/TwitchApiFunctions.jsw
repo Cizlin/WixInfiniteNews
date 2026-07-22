@@ -11,7 +11,8 @@ import * as KeyConstants from 'public/Constants/KeyConstants.js';
 
 const gameIdToGameName = {
     "417969": "Halo: The Master Chief Collection",
-    "506416": "Halo Infinite"
+    "506416": "Halo Infinite",
+    "796500915": "Halo: Campaign Evolved"
 }
 
 // Retrieves the headers from the secret manager.
