@@ -49,6 +49,9 @@ export function sendPromotionNotification(articleTitle, articleShortDescription,
     {
         twitchDropChannelName = "mcc-twitch-drops";
     }
+    else {
+        twitchDropChannelName = "infinite-twitch-drops";
+    }
 
     DiscordFunctions.sendDiscordMessage(((isTwitchDrop) ? twitchDropChannelName : "promotions"), articleTitle + "\n" + articleShortDescription + "\n" + articleUrl, true, isNewTwitchDrop);
 }
