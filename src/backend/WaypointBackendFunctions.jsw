@@ -995,7 +995,7 @@ export async function generatePassSocialNotifications(newlyAvailablePasses) {
 		}
 
 		console.log(mainTweetText);
-		TwitterFunctions.sendTweet(mainTweetText);
+		//TwitterFunctions.sendTweet(mainTweetText);
 		BlueskyFunctions.sendPost(mainTweetText);
 		await DiscordFunctions.sendDiscordMessage("weekly-reset", mainTweetText, true);
 	}
@@ -1904,7 +1904,7 @@ export async function generateCapstoneSocialNotifications(updateItemArray) {
 		}
 
 		console.log(mainTweetText);
-		let parentId = await TwitterFunctions.sendTweet(mainTweetText);
+		//let parentId = await TwitterFunctions.sendTweet(mainTweetText);
 		let rootInfo, parentInfo;
 		rootInfo = parentInfo = await BlueskyFunctions.sendPost(mainTweetText);
 		await DiscordFunctions.sendDiscordMessage("weekly-reset", mainTweetText, true);
@@ -1974,7 +1974,7 @@ export async function generateCapstoneSocialNotifications(updateItemArray) {
 			}
 			
 			console.log(childItemText);
-			parentId = await TwitterFunctions.sendTweet(childItemText, parentId);
+			//parentId = await TwitterFunctions.sendTweet(childItemText, parentId);
 			parentInfo = await BlueskyFunctions.sendPost(childItemText, parentInfo.cid, parentInfo.uri, rootInfo.cid, rootInfo.uri);
 			await DiscordFunctions.sendDiscordMessage("weekly-reset", childItemText);
 		}

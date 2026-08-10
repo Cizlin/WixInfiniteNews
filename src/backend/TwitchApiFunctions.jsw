@@ -724,7 +724,7 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
         tweetText += "https://www.twitch.tv/drops/campaigns?dropID=" + drop.dropId;
         console.log(tweetText);
 
-        await twitter.sendTweet(tweetText, null);
+        //await twitter.sendTweet(tweetText, null);
         await bluesky.sendPost(tweetText);
 
         return true;
@@ -1077,24 +1077,24 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
                 tweetArray[tweetArray.length] = "Additional reward images, Part " + additionalTweetIndex.toString();
                 additionalTweetIndex++;
             }
-            for (let j = 0; j < imageArray.length; ++j) {
+            /*for (let j = 0; j < imageArray.length; ++j) {
                 console.log(imageArray[j]);
                 let mediaId = await twitter.uploadTwitterImage(imageArray[j].image);
                 mediaIdArray.push(mediaId);
 
-                /*let blueskyMediaInfo = await bluesky.uploadBlueskyImage(imageArray[j].image);
+                let blueskyMediaInfo = await bluesky.uploadBlueskyImage(imageArray[j].image);
                 blueskyMediaArray.push({
                     image: blueskyMediaInfo,
                     alt: imageArray[j].name
-                });*/
-            }
+                });
+            }*/
         }
         //#endregion
 
         let rootInfo = null, parentInfo = null;
 
         // We now have the necessary arrays of tweets and images to send to Twitter. So we shall.
-        for (let j = 0; j < tweetArray.length; ++j) {
+        /*for (let j = 0; j < tweetArray.length; ++j) {
             // Get the media to add to this Tweet.
             let mediaIdSubArray = [];
             for (let k = 4 * j; k < mediaIdArray.length; ++k) {
@@ -1106,9 +1106,9 @@ async function sendTwitterNotification(drop, isUpcoming = true, isCorrection = f
 
             console.log("Tweet: ", tweetArray[j], "Media: ", mediaIdSubArray);
 
-            parentId = await twitter.sendTweet(tweetArray[j], parentId, mediaIdSubArray);
+            //parentId = await twitter.sendTweet(tweetArray[j], parentId, mediaIdSubArray);
 
-        }
+        }*/
 
         // We now have the necessary arrays of posts and images to send to Bluesky. So we shall.
         for (let j = 0; j < blueskyArray.length; ++j) {

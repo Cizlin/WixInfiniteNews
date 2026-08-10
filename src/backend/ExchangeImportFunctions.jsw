@@ -1051,16 +1051,16 @@ export async function generateSocialNotifications(updateItemArray) {
 	const NUM_VEHICLE_CORES = await WaypointFunctions.getNumCores(VehicleConstants.VEHICLE_KEY);
 
 	if (mainItemListingArray.length > 0) {
-		console.log("Twitter: ", tweetTextArray[0]);
+		//console.log("Twitter: ", tweetTextArray[0]);
 		console.log("Bluesky: ", blueskyTextArray[0]);
-		let parentId = await sendTweet(tweetTextArray[0]);
+		//let parentId = await sendTweet(tweetTextArray[0]);
 		let rootInfo, parentInfo;
 		rootInfo = parentInfo = await sendPost(blueskyTextArray[0]);
 
-		for (let i = 1; i < tweetTextArray.length; ++i) {
+		/*for (let i = 1; i < tweetTextArray.length; ++i) {
 			console.log("Twitter: ", tweetTextArray[i]);
-			parentId = await sendTweet(tweetTextArray[i], parentId);
-		}
+			//parentId = await sendTweet(tweetTextArray[i], parentId);
+		}*/
 
 		for (let i = 1; i < blueskyTextArray.length; ++i) {
 			console.log("Bluesky: ", blueskyTextArray[i]);
@@ -1166,13 +1166,13 @@ export async function generateSocialNotifications(updateItemArray) {
 				}
 			}
 			
-			console.log("Subtweet Array has length " + subTweetTextArray.length, subTweetTextArray);
+			//console.log("Subtweet Array has length " + subTweetTextArray.length, subTweetTextArray);
 			console.log("Sub Bluesky Array has length " + subBlueskyTextArray.length, subBlueskyTextArray);
 
-			for (let i = 0; i < subTweetTextArray.length; ++i) {
+			/*for (let i = 0; i < subTweetTextArray.length; ++i) {
 				console.log("Twitter: ", subTweetTextArray[i]);
 				parentId = await sendTweet(subTweetTextArray[i], parentId);
-			}
+			}*/
 
 			for (let i = 0; i < subBlueskyTextArray.length; ++i) {
 				console.log("Bluesky: ", subBlueskyTextArray[i]);
