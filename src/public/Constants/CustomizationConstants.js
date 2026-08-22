@@ -50,17 +50,6 @@ export const SOURCE_TYPE_EVENT_PASS = "Event Pass";
 export const SOURCE_TYPE_CAPSTONE_CHALLENGE_ID = "f473441a-a02f-4c96-bf99-8324d1bb23cb";
 export const SOURCE_TYPE_EXCHANGE_ID = "916c46d3-ad35-4b9a-a3a6-8689465dc6c6";
 
-// These constant define the DB name and key for the Emblem Palette DB.
-export const EMBLEM_PALETTE_DB = "EmblemPalettes";
-export const EMBLEM_PALETTE_NAME_FIELD = "itemName";
-export const EMBLEM_PALETTE_IMAGE_FIELD = "image";
-export const EMBLEM_PALETTE_WAYPOINT_ID_FIELD = "waypointId";
-export const EMBLEM_PALETTE_CONFIGURATION_ID_FIELD = "configurationId";
-export const EMBLEM_PALETTE_ITEM_E_TAG_FIELD = "itemETag";
-export const EMBLEM_PALETTE_CHANGE_LOG_FIELD = "changeLog";
-export const EMBLEM_PALETTE_KEY = "Emblem Palette";
-export const EMBLEM_PALETTE_IMAGE_MAPPING_FIELD = "imageMapping";
-
 // Usually, we use the Waypoint Field value for our processing keys, but Cores and Kits don't have this. We specify those keys here.
 export const CORE_PROCESSING_KEY = "Cores";
 export const KIT_PROCESSING_KEY = "Kits";
@@ -96,14 +85,6 @@ export const HAS_KITS_ARRAY = [
 // If a Customization Category is for Attachments, it will be listed here.
 export const IS_ATTACHMENTS_ARRAY = [
 	ArmorConstants.ARMOR_ATTACHMENT_KEY
-];
-
-// If a Customization Category has a type with Emblem Palettes, it can be referenced here.
-export const HAS_EMBLEM_PALETTES_ARRAY = [
-	ArmorConstants.ARMOR_KEY,
-	WeaponConstants.WEAPON_KEY,
-	VehicleConstants.VEHICLE_KEY,
-	SpartanIdConstants.SPARTAN_ID_KEY
 ];
 
 // All Customization Category belong in this Array.
@@ -153,7 +134,6 @@ export const CUSTOMIZATION_CATEGORY_SPECIFIC_VARS = {
 		"SocketWaypointFieldAttachmentListField": "waypointFieldAttachmentList",
 		"SocketHasAttachmentsField": "hasAttachments",
 		"SocketIsKitField": "isKit",
-		"SocketHasPalettesField": "hasPalettes",
 		"SocketIsCrossCoreField": "isCrossCore",
 		"SocketIsPartialCrossCoreField": "isPartialCrossCore",
 		"SocketMediaFolderField": "mediaFolder",
@@ -187,7 +167,6 @@ export const CUSTOMIZATION_CATEGORY_SPECIFIC_VARS = {
 		"CustomizationAltTextField": "altText",
 		"CustomizationImageCreditField": "imageCredit",
 		"CustomizationUrlField": ArmorConstants.ARMOR_CUSTOMIZATION_URL_FIELD,
-		"EmblemPaletteReferenceField": "emblemPalettes",
 		"CustomizationApiLastUpdatedDatetimeField": "apiLastUpdatedDatetime",
 		"CustomizationDefaultOfCoreReferenceField": "ArmorCores",
 		"CustomizationEffectVideoField": "effectVideo",
@@ -258,7 +237,6 @@ export const CUSTOMIZATION_CATEGORY_SPECIFIC_VARS = {
 		"SocketWaypointFieldField": "waypointField",
 		"SocketHasAttachmentsField": "hasAttachments",
 		"SocketIsKitField": "isKit",
-		"SocketHasPalettesField": "hasPalettes",
 		"SocketIsCrossCoreField": "isCrossCore",
 		"SocketIsPartialCrossCoreField": "isPartialCrossCore",
 		"SocketMediaFolderField": "mediaFolder",
@@ -290,7 +268,6 @@ export const CUSTOMIZATION_CATEGORY_SPECIFIC_VARS = {
 		"CustomizationAltTextField": "altText",
 		"CustomizationImageCreditField": "imageCredit",
 		"CustomizationUrlField": "link-items-title",
-		"EmblemPaletteReferenceField": "emblemPalettes",
 		"CustomizationApiLastUpdatedDatetimeField": "apiLastUpdatedDatetime",
 		"CustomizationDefaultOfCoreReferenceField": "WeaponCores",
 		"CustomizationEffectVideoField": "effectVideo",
@@ -314,7 +291,6 @@ export const CUSTOMIZATION_CATEGORY_SPECIFIC_VARS = {
 		"SocketWaypointIdField": "waypointId",
 		"SocketWaypointFieldField": "waypointField",
 		"SocketHasAttachmentsField": "hasAttachments",
-		"SocketHasPalettesField": "hasPalettes",
 		"SocketIsCrossCoreField": "isCrossCore",
 		"SocketIsPartialCrossCoreField": "isPartialCrossCore",
 		"SocketMediaFolderField": "mediaFolder",
@@ -345,7 +321,6 @@ export const CUSTOMIZATION_CATEGORY_SPECIFIC_VARS = {
 		"CustomizationImageCreditField": "imageCredit",
 		"CustomizationUrlField": "link-vehicle-customizations-title",
 		"CustomizationCrossCompatibleField": "crossCompatible",
-		"EmblemPaletteReferenceField": "emblemPalettes",
 		"CustomizationApiLastUpdatedDatetimeField": "apiLastUpdatedDatetime",
 		"CustomizationDefaultOfCoreReferenceField": "VehicleCores",
 		"ShopReferenceField": ShopConstants.SHOP_VEHICLE_REFERENCE_FIELD,
@@ -404,7 +379,6 @@ export const CUSTOMIZATION_CATEGORY_SPECIFIC_VARS = {
 		"SocketDb": SpartanIdConstants.SPARTAN_ID_SOCKET_DB,
 		"SocketNameField": "name",
 		"SocketWaypointIdField": "waypointId",
-		"SocketHasPalettesField": "hasPalettes",
 		"SocketMediaFolderField": "mediaFolder",
 		"AnySocketId": SpartanIdConstants.ANY_SPARTAN_ID_SOCKET_ID,
 		"CustomizationDb": SpartanIdConstants.SPARTAN_ID_CUSTOMIZATION_DB,
@@ -418,7 +392,6 @@ export const CUSTOMIZATION_CATEGORY_SPECIFIC_VARS = {
 		"CustomizationSourceField": "source",
 		"CustomizationSourceTypeField": "sourceTypeReference",
 		"CustomizationWaypointIdField": "waypointId",
-		"EmblemPaletteReferenceField": "emblemPalettes",
 		"CustomizationItemETagField": "itemETag",
 		"CustomizationHiddenField": "hidden",
 		"CustomizationNeedsReviewField": "needsReview",
@@ -602,7 +575,6 @@ export const CUSTOMIZATION_CATEGORY_FOLDER_DICT = {
 	[ShopConstants.SHOP_KEY]: "Shop",
 	[ExchangeConstants.EXCHANGE_KEY]: "Exchange",
 	[PassConstants.PASS_KEY]: "Passes",
-	[EMBLEM_PALETTE_KEY]: "Emblem Palettes",
 	[MANUFACTURER_KEY]: "Manufacturer Logos"
 }
 

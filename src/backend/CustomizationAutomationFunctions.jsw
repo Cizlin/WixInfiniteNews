@@ -34,54 +34,6 @@ import _ from 'lodash';
 
 let _numCores; // This is global so we can just set it once. Not the best option but we'll only write the variable when we start the customization import of a particular type.
 
-// Retrieves an item's JSON file from the Waypoint API.
-export async function getEmblemPaletteMapping(headers) {
-	// Query the Waypoint API.
-	let retry = true;
-	let headerFailure = false; // If the failure was likely due to issues with headers.
-	let waypointJson = {};
-
-	let retryCount = 0;
-	const maxRetries = 10;
-
-	while (retry && retryCount < maxRetries) {
-		waypointJson = await wixFetch.fetch(ApiConstants.WAYPOINT_URL_BASE_WAYPOINT + ApiConstants.WAYPOINT_URL_SUFFIX_WAYPOINT_EMBLEM_MAPPING, {
-			"method": "get",
-			"headers": headers
-		})
-			.then((httpResponse) => {
-				if (httpResponse.ok) {
-					retry = false;
-					return httpResponse.json();
-				}
-				else { // We want to retry once with updated headers if we got an error.
-					console.warn("Headers did not work. Got HTTP response " + httpResponse.status + ": " + httpResponse.statusText + " when trying to retrieve from " + httpResponse.url);
-					headerFailure = true;
-					return {};
-				}
-			})
-			.then((json) => {
-				return json;
-			})
-			.catch(err => {
-				console.error(err + " occurred while fetching " + ApiConstants.WAYPOINT_URL_BASE_PROGRESSION + ApiConstants.WAYPOINT_URL_SUFFIX_WAYPOINT_EMBLEM_MAPPING + ". Try " + (++retryCount) + " of " + maxRetries);
-				return {};
-			});
-
-		if (retry && headerFailure) { // We need to remake the headers, but we do it by adjusting the actual contents of the JSON.
-			let spartanToken = await ApiFunctions.getSpartanToken();
-			let clearance = await ApiFunctions.getClearance();
-
-			headers[ApiConstants.WAYPOINT_SPARTAN_TOKEN_HEADER] = spartanToken;
-			headers[ApiConstants.WAYPOINT_343_CLEARANCE_HEADER] = clearance;
-
-			headerFailure = false;
-		}
-	}
-
-	return waypointJson;
-}
-
 // Retrieves a list of paths to owned Cores from the Waypoint API matching the customizationCategory. Ownership of Weapon, Vehicle, and AI Cores is guaranteed.
 async function getCoreList(headers, customizationCategory) {
 // Query the Waypoint API.
@@ -494,7 +446,6 @@ export async function getCategorySpecificDictsAndArraysFromDbs(customizationCate
 		"IsKitItem": [isKitItem] // If this is true, this item was found as a child of a Kit.
 		"ChildItems": [kitChildItemArray],
 		"ChildAttachments": [kitChildAttachmentArray],
-		"EmblemPalettes": [emblemPaletteDbIdArray] // This is only populated for emblems, and it allows the child Emblem Palettes to be linked.
 		"WaypointPath": [waypointPath] // We need to use this to fetch the ETag.
 	}
 */
@@ -906,44 +857,6 @@ export async function getCustomizationItemToSave(folderDict, headers, customizat
 		}
 	}
 
-	// We need to query the Emblem Palettes if we're adding some.
-	let originalEmblemPaletteIds = [];
-	if (existingItem && CustomizationConstants.HAS_EMBLEM_PALETTES_ARRAY.includes(customizationCategory)) {
-		const HAS_PALETTES_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].SocketHasPalettesField;
-
-		if (customizationType[HAS_PALETTES_FIELD]) {
-			const CUSTOMIZATION_DB = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationDb;
-			const CUSTOMIZATION_PALETTE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].EmblemPaletteReferenceField;
-
-			let retry = true;
-			let retryCount = 0;
-			const maxRetries = 10;
-
-			while (retry && retryCount < maxRetries) {
-				await wixData.queryReferenced(CUSTOMIZATION_DB, existingItem._id, CUSTOMIZATION_PALETTE_REFERENCE_FIELD, { suppressAuth: true })
-					.then((results) => {
-						retry = false;
-
-						if (results.items.length > 0) {
-							// Push each ID onto the array.
-							results.items.forEach((item) => {
-								originalEmblemPaletteIds.push(item._id);
-							});
-						}
-					})
-					.catch((error) => {
-						console.error(error + " occurred. Try " + (++retryCount) + " of " + maxRetries + "...");
-					});
-			}
-
-			if (retry) {
-				return -1;
-			}
-
-			existingItem[CUSTOMIZATION_PALETTE_REFERENCE_FIELD] = originalEmblemPaletteIds;
-		}
-	}
-
 	let originalDefaultOfCoreIdArray = []; // This array can be longer if the item is a default for multiple cores.
 	//console.info(customizationDetails);
 	if (existingItem && CustomizationConstants.HAS_CORE_ARRAY.includes(customizationCategory)) {
@@ -1190,21 +1103,6 @@ export async function getCustomizationItemToSave(folderDict, headers, customizat
 			}
 		}
 
-		// If this is an Emblem, we need to check the Emblem Palettes
-		if (CustomizationConstants.HAS_EMBLEM_PALETTES_ARRAY.includes(customizationCategory)) {
-			const HAS_PALETTES_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].SocketHasPalettesField;
-			if (customizationType[HAS_PALETTES_FIELD] && !arrayCompare(originalEmblemPaletteIds, customizationDetails.EmblemPalettes)) {
-				const EMBLEM_PALETTE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].EmblemPaletteReferenceField;
-				itemJson[EMBLEM_PALETTE_REFERENCE_FIELD] = customizationDetails.EmblemPalettes;
-
-				// Update the needs review item and add a log to the changelog.
-				changed = true;
-				let returnedJsons = markItemAsChanged(itemJson, existingItem, EMBLEM_PALETTE_REFERENCE_FIELD, customizationCategory);
-				itemJson = returnedJsons[0];
-				existingItem = returnedJsons[1];
-			}
-		}
-
 		const QUALITY_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationQualityReferenceField;
 		if (qualityId != existingItem[QUALITY_REFERENCE_FIELD]) {
 			itemJson[QUALITY_REFERENCE_FIELD] = qualityId;
@@ -1429,14 +1327,6 @@ export async function getCustomizationItemToSave(folderDict, headers, customizat
 				const CUSTOMIZATION_KIT_CUSTOMIZABLE_TYPES_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationKitCustomizableTypesReferenceField;
 				
 				itemJson[CUSTOMIZATION_KIT_CUSTOMIZABLE_TYPES_REFERENCE_FIELD] = customizationDetails.CustomizableTypes;
-			}
-		}
-
-		if (CustomizationConstants.HAS_EMBLEM_PALETTES_ARRAY.includes(customizationCategory)) {
-			const HAS_PALETTES_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].SocketHasPalettesField;
-			if (customizationType[HAS_PALETTES_FIELD]) {
-				const EMBLEM_PALETTE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].EmblemPaletteReferenceField;
-				itemJson[EMBLEM_PALETTE_REFERENCE_FIELD] = customizationDetails.EmblemPalettes;
 			}
 		}
 
@@ -2033,81 +1923,6 @@ export function getCustomizationDetailsFromWaypointJson(customizationCategory, w
 	return itemJson;
 }
 
-// Keys are Configuration IDs and values are corresponding DB IDs.
-let processedEmblemPaletteConfigurationIdsDict = {};
-
-export async function fetchEmblemPaletteDbIds(emblemPalettePathArray) {
-	let emblemPaletteDbIdArray = [];
-
-	for (let i = 0; i < emblemPalettePathArray.length; ++i) {
-		let emblemPalettePathObject = emblemPalettePathArray[i];
-
-		if (emblemPalettePathObject.ConfigurationId in processedEmblemPaletteConfigurationIdsDict) { // We've processed this configuration ID before. Let's grab the DB ID and go.
-			if (!emblemPaletteDbIdArray.includes(processedEmblemPaletteConfigurationIdsDict[emblemPalettePathObject.ConfigurationId])) {
-				emblemPaletteDbIdArray.push(processedEmblemPaletteConfigurationIdsDict[emblemPalettePathObject.ConfigurationId]);
-			}
-			continue;
-		}
-
-		try {
-			let emblemPaletteDbId;
-
-			let retry = true;
-			let retryCount = 0;
-			const MAX_RETRIES = 10;
-
-			while (retry && retryCount < MAX_RETRIES) {
-				emblemPaletteDbId = await wixData.query(CustomizationConstants.EMBLEM_PALETTE_DB)
-					.eq(CustomizationConstants.EMBLEM_PALETTE_CONFIGURATION_ID_FIELD, emblemPalettePathObject.ConfigurationId)
-					.find({ suppressAuth: true })
-					.then((results) => {
-						retry = false;
-
-						if (results.items.length > 0) {
-							if (results.items.length > 1) {
-								console.error("Uniqueness was assumed but not upheld for configuration ID " + emblemPalettePathObject.ConfigurationId);
-								return -1;
-							}
-							else {
-								// Only one item returned. Send up its DB ID.
-								return results.items[0]._id;
-							}
-						}
-						else { // No emblem palettes found. We need to add it.
-							return null;
-						}
-					})
-					.catch((error) => {
-						console.error(error + " occurred while validating emblem configuration ID " + emblemPalettePathObject.ConfigurationId + "." +
-							((retry) ? ("Try " + (++retryCount) + " of " + MAX_RETRIES + "...") : ""));
-						return -1;
-					});
-			}
-
-			if (emblemPaletteDbId == -1) { // If the emblem palette config ID fetch failed.
-				throw "Failed to confirm presence of Emblem Palette Configuration ID" + emblemPalettePathObject.ConfigurationId;
-			}
-
-			if (!emblemPaletteDbId) {
-				throw "Expected Emblem Palette with Configuration ID " + emblemPalettePathObject.ConfigurationId + " but could not find it in the DB.";
-			}
-
-			if (!emblemPaletteDbIdArray.includes(emblemPaletteDbId)) { // If we haven't already added this Emblem Palette to the array.
-				emblemPaletteDbIdArray.push(emblemPaletteDbId);
-			}
-
-			// Add this ID to our dictionary.
-			processedEmblemPaletteConfigurationIdsDict[emblemPalettePathObject.ConfigurationId] = emblemPaletteDbId
-		}
-		catch (error) {
-			console.error(error + " occurred while retrieving Emblem Palette with Configuration ID " + emblemPalettePathObject.ConfigurationId + " from the DB. Exiting...");
-			throw error;
-		}
-	}
-
-	return emblemPaletteDbIdArray;
-}
-
 // This function accepts a path and other performance variables and performs various tasks to generate an item to insert in the DB. Returns the site JSON for the item (or 1 if item should be skipped, or -1 if error occurred).
 // headers: The headers used to access Waypoint endpoints.
 // customizationCategory: One of the predefined category keys (e.g. KeyConstants.ARMOR_KEY)
@@ -2443,34 +2258,6 @@ async function processItem(headers,
 		options.customizationWaypointIdArray.push(itemWaypointJson.CommonData.Id);
 	}
 
-	let emblemPaletteDbIds = []; // The list of emblem palette DB IDs to add to our item.
-
-	if (CustomizationConstants.HAS_EMBLEM_PALETTES_ARRAY.includes(customizationCategory) && itemType != CustomizationConstants.ITEM_TYPES.core) {
-		if (categorySpecificDictsAndArrays.length != 3) { // Ensure we can get the type array.
-			console.error("categorySpecificDictsAndArrays does not have expected length of 3 in processItem().");
-		}
-
-		// We only need the customization type array.
-		let customizationTypeArray = categorySpecificDictsAndArrays[0];
-
-		const TYPE_WAYPOINT_ID_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].SocketWaypointIdField;
-		const TYPE_HAS_PALETTES_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].SocketHasPalettesField;
-
-		// Find the matching type and check to see if it has palettes.
-		let itemHasPalettes = false;
-		customizationTypeArray.some((type) => {
-			if (type[TYPE_WAYPOINT_ID_FIELD] == itemWaypointJson.CommonData.Type) {
-				itemHasPalettes = type[TYPE_HAS_PALETTES_FIELD];
-				return true;
-			}
-		});
-
-		if (itemHasPalettes) { // If the item has Emblem Palettes.
-			//emblemPaletteDbIds = await addEmblemPalettesToDb(itemWaypointJson.AvailableConfigurations, folderDict, headers);
-			emblemPaletteDbIds = await fetchEmblemPaletteDbIds(itemWaypointJson.AvailableConfigurations); // We already added the Emblem Palettes at the start, so we just need to know their IDs.
-		}
-	}
-
 	// Get the details for the core to pass into our site JSON generation function.
 	let itemDetails;
 
@@ -2493,9 +2280,6 @@ async function processItem(headers,
 			"parentCoreArray": parentCoreArray
 		}
 	);
-
-	// Add the Emblem Palettes to the itemDetails JSON.
-	itemDetails.EmblemPalettes = emblemPaletteDbIds;
 
 	let itemSiteJson;
 
@@ -3212,7 +2996,6 @@ async function saveItemsToDbFromList(customizationCategory, customizationItemDbA
 	const KIT_ITEM_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationKitItemReferenceField;
 	const KIT_ATTACHMENT_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationKitAttachmentReferenceField;
 	const KIT_CUSTOMIZABLE_TYPES_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationKitCustomizableTypesReferenceField;
-	const EMBLEM_PALETTE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].EmblemPaletteReferenceField;
 	const SOURCE_TYPE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationSourceTypeField;
 	const DEFAULT_OF_CORE_REFERENCE_FIELD = CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationDefaultOfCoreReferenceField;
 
@@ -3357,27 +3140,6 @@ async function saveItemsToDbFromList(customizationCategory, customizationItemDbA
 								.catch((error) => {
 									console.error("Error ", error, " occurred. Try " + (++retryCount) + " of " + maxRetries + ". Was adding source type references for ",
 										customizationItemDbJson._id, " in ", CUSTOMIZATION_DB, " with ", customizationItemDbJson[SOURCE_TYPE_REFERENCE_FIELD]);
-								});
-						}
-					}
-
-					if (CustomizationConstants.HAS_EMBLEM_PALETTES_ARRAY.includes(customizationCategory) &&
-						customizationItemDbJson[EMBLEM_PALETTE_REFERENCE_FIELD] &&
-						customizationItemDbJson[EMBLEM_PALETTE_REFERENCE_FIELD].length > 0) {
-						// If the item has the Emblem Palette reference field, we need to insert the references.
-						//console.info("Emblem: " + customizationItemDbJson[CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationNameField] + " has palettes ", customizationItemDbJson[emblemPaletteReferenceField]);
-						let retry = true;
-						let retryCount = 0;
-
-						while (retry && retryCount < maxRetries) {
-							await wixData.replaceReferences(CUSTOMIZATION_DB, EMBLEM_PALETTE_REFERENCE_FIELD, item._id, customizationItemDbJson[EMBLEM_PALETTE_REFERENCE_FIELD], options)
-								.then(() => {
-									retry = false;
-									//console.info("Emblem palette references added for ", customizationItemDbJson[CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationNameField]);
-								})
-								.catch((error) => {
-									console.error("Error ", error, " occurred. Try " + (++retryCount) + " of " + maxRetries + ". Was adding Emblem palette references for ",
-										customizationItemDbJson._id, " in ", CUSTOMIZATION_DB, " with ", customizationItemDbJson[EMBLEM_PALETTE_REFERENCE_FIELD]);
 								});
 						}
 					}
@@ -3946,303 +3708,7 @@ export async function importManufacturers(headers) {
 
 }
 
-// Let's add the emblem palette. We need to get all the field data now.
-async function processEmblemPalette(headers, emblemPalettePath, eTag, existingDbObject = null) {
-	let emblemPaletteWaypointJson = await ApiFunctions.getCustomizationItem(headers, emblemPalettePath);
-
-	let emblemPaletteName = emblemPaletteWaypointJson.CommonData.Title;
-
-	let emblemPaletteWaypointId = emblemPaletteWaypointJson.CommonData.Id;
-
-	let emblemPaletteConfigurationId = emblemPaletteWaypointJson.ConfigurationId.m_identifier;
-
-	let emblemPaletteDbJson = {
-		[CustomizationConstants.EMBLEM_PALETTE_NAME_FIELD]: emblemPaletteName,
-		[CustomizationConstants.EMBLEM_PALETTE_IMAGE_FIELD]: "",
-		[CustomizationConstants.EMBLEM_PALETTE_WAYPOINT_ID_FIELD]: emblemPaletteWaypointId,
-		[CustomizationConstants.EMBLEM_PALETTE_CONFIGURATION_ID_FIELD]: emblemPaletteConfigurationId,
-		[CustomizationConstants.EMBLEM_PALETTE_ITEM_E_TAG_FIELD]: eTag
-	};
-
-	if (existingDbObject) { // If we have a DB ID for an existing Emblem Palette, add it now.
-		emblemPaletteDbJson._id = existingDbObject._id;
-
-		// We use this dictionary to keep track of which Emblem Palettes we already know the DbIds for, so we can populate it a bit here.
-		processedEmblemPaletteConfigurationIdsDict[emblemPaletteWaypointJson.ConfigurationId.m_identifier] = existingDbObject._id;
-
-		if (emblemPaletteDbJson[CustomizationConstants.EMBLEM_PALETTE_NAME_FIELD] != existingDbObject[CustomizationConstants.EMBLEM_PALETTE_NAME_FIELD]) {
-			// If the names don't match.
-			emblemPaletteDbJson[CustomizationConstants.EMBLEM_PALETTE_CHANGE_LOG_FIELD] = existingDbObject[CustomizationConstants.EMBLEM_PALETTE_CHANGE_LOG_FIELD] || []; // Copy the existing array over or make a new one if necessary.
-			var datetime = getCurrentDateTimeString();
-			emblemPaletteDbJson[CustomizationConstants.EMBLEM_PALETTE_CHANGE_LOG_FIELD].unshift(datetime + ": Changed " + CustomizationConstants.EMBLEM_PALETTE_NAME_FIELD +
-				", Was: " + existingDbObject[CustomizationConstants.EMBLEM_PALETTE_NAME_FIELD] + ", Is: " + emblemPaletteDbJson[CustomizationConstants.EMBLEM_PALETTE_NAME_FIELD]);
-		}
-
-		if (emblemPaletteDbJson[CustomizationConstants.EMBLEM_PALETTE_CONFIGURATION_ID_FIELD] != existingDbObject[CustomizationConstants.EMBLEM_PALETTE_CONFIGURATION_ID_FIELD]) {
-			// If the Configuration IDs don't match.
-			emblemPaletteDbJson[CustomizationConstants.EMBLEM_PALETTE_CHANGE_LOG_FIELD] = existingDbObject[CustomizationConstants.EMBLEM_PALETTE_CHANGE_LOG_FIELD] || []; // Copy the existing array over or make a new one if necessary.
-			var datetime = getCurrentDateTimeString();
-			emblemPaletteDbJson[CustomizationConstants.EMBLEM_PALETTE_CHANGE_LOG_FIELD].unshift(datetime + ": Changed " + CustomizationConstants.EMBLEM_PALETTE_CONFIGURATION_ID_FIELD +
-				", Was: " + existingDbObject[CustomizationConstants.EMBLEM_PALETTE_CONFIGURATION_ID_FIELD] + ", Is: " + emblemPaletteDbJson[CustomizationConstants.EMBLEM_PALETTE_CONFIGURATION_ID_FIELD]);
-		}
-
-		// Initialize or copy over the Image Mapping value from the existing item.
-		emblemPaletteDbJson[CustomizationConstants.EMBLEM_PALETTE_IMAGE_MAPPING_FIELD] = existingDbObject[CustomizationConstants.EMBLEM_PALETTE_IMAGE_MAPPING_FIELD] || {};
-		emblemPaletteDbJson[CustomizationConstants.EMBLEM_PALETTE_IMAGE_FIELD] = existingDbObject[CustomizationConstants.EMBLEM_PALETTE_IMAGE_FIELD]; // For backwards compatibility, carry it forward.
-	}
-	else {
-		var datetime = getCurrentDateTimeString();
-		emblemPaletteDbJson[CustomizationConstants.EMBLEM_PALETTE_CHANGE_LOG_FIELD] = [datetime + ": Added to DB"];
-		emblemPaletteDbJson[CustomizationConstants.EMBLEM_PALETTE_IMAGE_MAPPING_FIELD] = {}; // Initialize the Image Mapping field.
-	}
-
-	return emblemPaletteDbJson;
-}
-
-// The keys in this dictionary are going to be the offset values used for each palette thread, and the values will be a simple boolean indicating whether processing has finished.
-let emblemPaletteThreadDict = {};
-
-// Counts the number of active threads based on the dictionary contents and returns the value.
-function getNumberOfActiveThreads() {
-	let threadCount = 0;
-	for (let pid in emblemPaletteThreadDict) {
-		if (!emblemPaletteThreadDict[pid]) {
-			threadCount++;
-		}
-	}
-	return threadCount;
-}
-
-async function importPaletteImages(headers, emblemPaletteFolderDict, emblemMappingJson, emblemPaletteDict, limit=10, offset=0) {
-	let index = 0;
-	for (let nameplateWaypointId in emblemMappingJson) { // Each Nameplate Waypoint ID will be listed in here.
-		// Our setup makes it a little easier if we first reverse how this tree is organized. 
-		// Rather than Nameplate Waypoint IDs at the root, we'll use Emblem Palette Configuration IDs.
-		index++;
-		if (index <= offset) { // Keep skipping forward.
-			continue;
-		} else if (index > offset + limit) { // Stop processing further.
-			break;
-		}
-
-		let nameplateMapping = emblemMappingJson[nameplateWaypointId];
-		for (let emblemConfigurationId in nameplateMapping) {
-
-			let existingNameplateETag = null;
-			let existingEmblemETag = null;
-
-			if (!(emblemConfigurationId in emblemPaletteDict)) {
-				console.error("Could not find an emblem palette matching config ID " + emblemConfigurationId + ". Continuing...");
-				continue;
-			}
-
-			// Retrieve the existing Nameplate ETag if we have one.
-			if (nameplateWaypointId in emblemPaletteDict[emblemConfigurationId]) {
-				if ("Nameplate" in emblemPaletteDict[emblemConfigurationId][nameplateWaypointId]
-				&& "ETag" in emblemPaletteDict[emblemConfigurationId][nameplateWaypointId].Nameplate) {
-					existingNameplateETag = emblemPaletteDict[emblemConfigurationId][nameplateWaypointId].Nameplate.ETag;
-				}
-
-				if ("Emblem" in emblemPaletteDict[emblemConfigurationId][nameplateWaypointId]
-				&& "ETag" in emblemPaletteDict[emblemConfigurationId][nameplateWaypointId].Emblem) {
-					existingEmblemETag = emblemPaletteDict[emblemConfigurationId][nameplateWaypointId].Emblem.ETag;
-				}
-			}
-
-			//console.info("Fetching emblem palette images for " + emblemConfigurationId + " and " + nameplateWaypointId + "...");
-			let nameplateImageObject = await MediaManagerFunctions.getEmblemPaletteImageUrl(
-				emblemPaletteFolderDict, 
-				headers, 
-				emblemConfigurationId, 
-				nameplateWaypointId, 
-				"Nameplate", 
-				nameplateMapping[emblemConfigurationId].nameplateCmsPath, 
-				existingNameplateETag, 
-				"image/png");
-
-			let emblemImageObject = await MediaManagerFunctions.getEmblemPaletteImageUrl(
-				emblemPaletteFolderDict, 
-				headers, 
-				emblemConfigurationId, 
-				nameplateWaypointId, 
-				"Emblem", 
-				nameplateMapping[emblemConfigurationId].emblemCmsPath, 
-				existingEmblemETag, 
-				"image/png");
-			
-			let imageMapping = {
-				"Nameplate": {
-					"URL": nameplateImageObject[0], // URL is stored in [0], while ETag is stored in [1].
-					"ETag": nameplateImageObject[1]
-				},
-				"Emblem": {
-					"URL": emblemImageObject[0], // URL is stored in [0], while ETag is stored in [1].
-					"ETag": emblemImageObject[1],
-				},
-				"TextColor": nameplateMapping[emblemConfigurationId].textColor
-			}
-			emblemPaletteDict[emblemConfigurationId][nameplateWaypointId] = imageMapping;
-		}
-	}
-
-	emblemPaletteThreadDict[offset] = true; // We are done processing, notify the parent thread.
-	return emblemPaletteDict;
-}
-
-// The limit parameter indicates how many nameplates to look at for the Palette Image import, and the offset indicates how far to skip before looking at nameplates.
-export async function importEmblemPalettes(headers, generalDictsAndArrays, doImportPaletteImages=false, nameplatesPerProcess=10, threadLimit=5) {
-	try {
-		// [0]: qualityDict
-		// [1]: releaseDict
-		// [2]: manufacturerArray (index aligns with Waypoint ID num)
-		// [3]: sourceTypeDict
-		// [4]: eTagDict
-		if (generalDictsAndArrays.length != 5) { // We expect 5 dicts/arrays in this construct.
-			console.error("Unexpected length for generalDictsAndArrays. Expected 5, got ", generalDictsAndArrays.length);
-		}
-
-		let eTagDict = generalDictsAndArrays[4]; // We just need the ETags for the Emblem Palettes.
-
-		let existingEmblemPaletteETags = {}; // This dictionary will convert the Waypoint ID of an Emblem Palette into its ETag from the DB.
-		let existingEmblemPaletteDbObjects = {}; // This dictionary will convert the Waypoint ID of an Emblem Palette into its _id from the DB.
-
-		let existingEmblemPaletteResults = await wixData.query(CustomizationConstants.EMBLEM_PALETTE_DB)
-			.limit(1000)
-			.find({ suppressAuth: true });
-
-		existingEmblemPaletteResults.items.forEach((emblemPaletteDbObject) => {
-			existingEmblemPaletteETags[emblemPaletteDbObject[CustomizationConstants.EMBLEM_PALETTE_WAYPOINT_ID_FIELD]] = emblemPaletteDbObject[CustomizationConstants.EMBLEM_PALETTE_ITEM_E_TAG_FIELD];
-			existingEmblemPaletteDbObjects[emblemPaletteDbObject[CustomizationConstants.EMBLEM_PALETTE_WAYPOINT_ID_FIELD]] = emblemPaletteDbObject;
-			processedEmblemPaletteConfigurationIdsDict[emblemPaletteDbObject[CustomizationConstants.EMBLEM_PALETTE_CONFIGURATION_ID_FIELD]] = emblemPaletteDbObject._id;
-		});
-
-		let inventoryJson = await ApiFunctions.getCustomizationItem(headers, ApiConstants.WAYPOINT_URL_SUFFIX_PROGRESSION_INVENTORY_CATALOG);
-
-		//console.info(inventoryJson.EmblemCoatings.length);
-		//console.info(existingEmblemPaletteResults.items.length);
-
-		let emblemPalettesToPushToDb = []; // An array of DB dictionaries
-
-		for (let i = 0; i < inventoryJson.EmblemCoatings.length; ++i) {
-			let emblemPalettePathObject = inventoryJson.EmblemCoatings[i];
-			let waypointId = emblemPalettePathObject.ItemId;
-			let waypointPath = (ApiConstants.WAYPOINT_URL_MIDFIX_PROGRESSION + emblemPalettePathObject.ItemPath).toLowerCase();
-			if (doImportPaletteImages ||											// If we're importing images, we have to process everything since the palette itself can remain unchanged.
-				!(waypointId in existingEmblemPaletteETags && 						// If the ID isn't in the existing Dict, it's a new Emblem Palette.
-				waypointPath in eTagDict && 											// If the Path isn't in the ETag Dict from Waypoint, we have to process it anyway.
-				existingEmblemPaletteETags[waypointId] == eTagDict[waypointPath])) {	// If the ETags exist and don't match one another, we have to process the data since it's changed.
-
-				// Otherwise, it's changed and we gotta process it.
-				//console.info("Need to process " + waypointId + " with DB ID " + existingEmblemPaletteDbIds[waypointId]);
-
-				if (waypointId in existingEmblemPaletteETags) { // Item was in DB.
-					emblemPalettesToPushToDb.push(await processEmblemPalette(headers, emblemPalettePathObject.ItemPath, eTagDict[waypointPath], existingEmblemPaletteDbObjects[waypointId]));
-				}
-				else {
-					emblemPalettesToPushToDb.push(await processEmblemPalette(headers, emblemPalettePathObject.ItemPath, eTagDict[waypointPath]));
-				}
-			}
-		}
-
-		// The following code will let us fetch all the Emblem Palette images from Waypoint and load them into our site.
-		// This will take a boatload of time due to the volume of images, so we're going to use ETags whenever possible.
-		// We're also making it optional so that the normal customization functions don't have to do this work.
-
-		if (doImportPaletteImages) {
-			let emblemPaletteFolderDict; // This will be passed to our image grabbing function. 
-			let results = await wixData.query(KeyConstants.KEY_VALUE_DB) // This might still be a bit inefficient. Consider moving query out and passing folderDict as arg.
-				.eq("key", KeyConstants.KEY_VALUE_EMBLEM_PALETTE_FOLDERS_KEY)
-				.find({ suppressAuth: true });
-
-			if (results.items.length > 0) {
-				emblemPaletteFolderDict = results.items[0].value;
-				let timeOneHourAgo = new Date();
-				timeOneHourAgo.setHours(timeOneHourAgo.getHours() - 1);
-				if (results.items[0]._updatedDate < timeOneHourAgo)
-				{
-					console.error("Emblem Palette Folder Dict has not been updated recently.");
-					throw "Emblem Palette folder dict is out-of-date and was last updated at " + results.items[0]._updatedDate.toString();
-				}
-			}
-			else {
-				throw "Could not retrieve emblem palette folder dict. Cannot get customization image urls.";
-			}
-
-			console.info("Importing Emblem Palette Images");
-			let emblemMappingJson = await getEmblemPaletteMapping(headers);
-			let emblemPaletteDict = {}; // Keys will be Emblem Palette Configuration IDs, values will be the objects to attach to each Emblem Palette.
-
-			// Initialize the emblemPaletteDict with the Emblem Palette Configuration IDs.
-			for (let i = 0; i < emblemPalettesToPushToDb.length; ++i) {
-				emblemPaletteDict[emblemPalettesToPushToDb[i][CustomizationConstants.EMBLEM_PALETTE_CONFIGURATION_ID_FIELD]] = emblemPalettesToPushToDb[i][CustomizationConstants.EMBLEM_PALETTE_IMAGE_MAPPING_FIELD];
-			}
-
-			console.info("Mapping found. Spawning child threads to parse through the mapping... Expecting " + Math.ceil(((Object.keys(emblemMappingJson).length) / nameplatesPerProcess)) + " threads");
-
-			for (let i = 0; i < Object.keys(emblemMappingJson).length; i += nameplatesPerProcess) {
-				emblemPaletteThreadDict[i] = false; // Starting processing on this thread.
-				console.info("Spawning thread with PID " + i);
-				importPaletteImages(headers, emblemPaletteFolderDict, emblemMappingJson, emblemPaletteDict, nameplatesPerProcess, i);
-				while (getNumberOfActiveThreads() >= threadLimit) {
-					console.info("Temporarily at max thread count:" + threadLimit + ". Sleeping for 5 s...; emblemPaletteThreadDict: ", emblemPaletteThreadDict);
-					await GeneralFunctions.sleep(5000);
-				} 
-			}
-
-			for (let pid in emblemPaletteThreadDict) {
-				while (!emblemPaletteThreadDict[pid]) {
-					console.info("PID " + pid + " is still active. Sleeping for 5 s...; emblemPaletteThreadDict: ", emblemPaletteThreadDict);
-					await GeneralFunctions.sleep(5000); // Sleep for 10 seconds.
-				}
-			}
-
-			// Now that we've filled in all our Emblem Palette Image Mappings by configuration ID, we need to put them back in the original objects.
-			for (let i = 0; i < emblemPalettesToPushToDb.length; ++i) {
-
-				// Use Lodash so that we can see if this information changed. It might be useful to know.
-				if (!_.isEqual(emblemPalettesToPushToDb[i][CustomizationConstants.EMBLEM_PALETTE_IMAGE_MAPPING_FIELD], 
-				emblemPaletteDict[emblemPalettesToPushToDb[i][CustomizationConstants.EMBLEM_PALETTE_CONFIGURATION_ID_FIELD]])) {
-					var datetime = getCurrentDateTimeString();
-					emblemPalettesToPushToDb[i][CustomizationConstants.EMBLEM_PALETTE_CHANGE_LOG_FIELD].unshift(datetime + ": Changed " + CustomizationConstants.EMBLEM_PALETTE_IMAGE_MAPPING_FIELD +
-						", Was: " + emblemPalettesToPushToDb[i][CustomizationConstants.EMBLEM_PALETTE_IMAGE_MAPPING_FIELD] + 
-						", Is: " + emblemPaletteDict[emblemPalettesToPushToDb[i][CustomizationConstants.EMBLEM_PALETTE_CONFIGURATION_ID_FIELD]]);
-
-					emblemPalettesToPushToDb[i][CustomizationConstants.EMBLEM_PALETTE_IMAGE_MAPPING_FIELD] = emblemPaletteDict[emblemPalettesToPushToDb[i][CustomizationConstants.EMBLEM_PALETTE_CONFIGURATION_ID_FIELD]];
-				}
-			}
-		}
-
-		let retry = true;
-		let retryCount = 0;
-		const MAX_RETRIES = 10;
-
-		console.info("Saving the following Emblem Palettes to the DB: ", emblemPalettesToPushToDb);
-
-		while (retry && retryCount < MAX_RETRIES) {
-			await wixData.bulkSave(CustomizationConstants.EMBLEM_PALETTE_DB, emblemPalettesToPushToDb, { suppressAuth: true })
-				.then((results) => {
-					retry = false;
-					console.info("Inserted/Updated Emblem Palette results: ", results);
-					return results;
-				})
-				.catch((error) => {
-					console.error(error + " occurred while adding emblem palettes to DB." +
-						((retry) ? ("Try " + (++retryCount) + " of " + MAX_RETRIES + "...") : ""));
-				});
-		}
-
-		if (retryCount >= MAX_RETRIES) {
-			throw "Unable to add Emblem Palettes after 10 attempts.";
-		}
-
-	}
-	catch (error) {
-		console.error(error + " occurred while importing Emblem Palettes. Throwing an exception to prevent data poisoning.");
-		throw error;
-	}
-}
-
-export async function armorImportPartOne(headers = null, manufacturerImportCompleted = false, emblemPaletteImportCompleted = false) {
+export async function armorImportPartOne(headers = null, manufacturerImportCompleted = false) {
 	if (!headers) {
 		headers = await ApiFunctions.makeWaypointHeaders(); // Getting the headers once and then using them a bunch is way more efficient than getting them for each request.
 	}
@@ -4266,10 +3732,6 @@ export async function armorImportPartOne(headers = null, manufacturerImportCompl
 		let categorySpecificDictsAndArrays = await getCategorySpecificDictsAndArraysFromDbs(customizationCategory);
 
 		// Add the Kits next.
-		if (!emblemPaletteImportCompleted) { // Need to process emblems before adding Kits.
-			await importEmblemPalettes(headers, generalDictsAndArrays);
-		}
-
 		returnCode = await updateDbsFromApi(headers, customizationCategory, [CustomizationConstants.KIT_PROCESSING_KEY], generalDictsAndArrays, categorySpecificDictsAndArrays)
 			.catch((error) => {
 				console.error("Error occurred while processing Kits for " + customizationCategory, error);
@@ -4299,7 +3761,7 @@ export async function armorImportPartOne(headers = null, manufacturerImportCompl
 	}
 }
 
-export async function armorImportPartTwo(headers = null, manufacturerImportCompleted = false, emblemPaletteImportCompleted = false) {
+export async function armorImportPartTwo(headers = null, manufacturerImportCompleted = false) {
 	if (!headers) {
 		headers = await ApiFunctions.makeWaypointHeaders(); // Getting the headers once and then using them a bunch is way more efficient than getting them for each request.
 	}
@@ -4323,10 +3785,6 @@ export async function armorImportPartTwo(headers = null, manufacturerImportCompl
 		let categorySpecificDictsAndArrays = await getCategorySpecificDictsAndArraysFromDbs(customizationCategory);
 
 		// Add the Kits next.
-		if (!emblemPaletteImportCompleted) { // Need to process emblems before adding Kits.
-			await importEmblemPalettes(headers, generalDictsAndArrays);
-		}
-
 		returnCode = await updateDbsFromApi(headers, customizationCategory, [CustomizationConstants.KIT_PROCESSING_KEY], generalDictsAndArrays, categorySpecificDictsAndArrays)
 			.catch((error) => {
 				console.error("Error occurred while processing Kits for " + customizationCategory, error);
@@ -4355,7 +3813,7 @@ export async function armorImportPartTwo(headers = null, manufacturerImportCompl
 	}
 }
 
-export async function weaponImportFull(headers = null, manufacturerImportCompleted = false, emblemPaletteImportCompleted = false) {
+export async function weaponImportFull(headers = null, manufacturerImportCompleted = false) {
 	if (!headers) {
 		headers = await ApiFunctions.makeWaypointHeaders(); // Getting the headers once and then using them a bunch is way more efficient than getting them for each request.
 	}
@@ -4378,10 +3836,6 @@ export async function weaponImportFull(headers = null, manufacturerImportComplet
 
 	if (!returnCode) { // Return code 0 means success.
 		let categorySpecificDictsAndArrays = await getCategorySpecificDictsAndArraysFromDbs(customizationCategory);
-
-		if (!emblemPaletteImportCompleted) { // Need to process emblems before adding Kits.
-			await importEmblemPalettes(headers, generalDictsAndArrays);
-		}
 
 		// Add the Kits next.
 		returnCode = await updateDbsFromApi(headers, customizationCategory, [CustomizationConstants.KIT_PROCESSING_KEY], generalDictsAndArrays, categorySpecificDictsAndArrays)
@@ -4413,7 +3867,7 @@ export async function weaponImportFull(headers = null, manufacturerImportComplet
 	}
 }
 
-export async function vehicleImportFull(headers = null, manufacturerImportCompleted = false, emblemPaletteImportCompleted = false) {
+export async function vehicleImportFull(headers = null, manufacturerImportCompleted = false) {
 	if (!headers) {
 		headers = await ApiFunctions.makeWaypointHeaders(); // Getting the headers once and then using them a bunch is way more efficient than getting them for each request.
 	}
@@ -4436,10 +3890,6 @@ export async function vehicleImportFull(headers = null, manufacturerImportComple
 
 	if (!returnCode) { // Return code 0 means success.
 		let categorySpecificDictsAndArrays = await getCategorySpecificDictsAndArraysFromDbs(customizationCategory);
-
-		if (!emblemPaletteImportCompleted) { // Need to process emblems before adding Kits.
-			await importEmblemPalettes(headers, generalDictsAndArrays);
-		}
 
 		let processingGroups = [
 			{ groups: ["Coatings"], crossCore: false, checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_VEHICLE_COATINGS_KEY },
@@ -4484,7 +3934,7 @@ export async function bodyAiImport(headers = null, manufacturerImportCompleted =
 	});
 }
 
-export async function spartanIdImport(headers = null, manufacturerImportCompleted = false, emblemPaletteImportCompleted = false) {
+export async function spartanIdImport(headers = null, manufacturerImportCompleted = false) {
 	if (!headers) {
 		headers = await ApiFunctions.makeWaypointHeaders(); // Getting the headers once and then using them a bunch is way more efficient than getting them for each request.
 	}
@@ -4504,11 +3954,7 @@ export async function spartanIdImport(headers = null, manufacturerImportComplete
 		{ groups: ["SpartanEmblem"], checkpointKey: KeyConstants.KEY_VALUE_CUSTOMIZATION_SPARTAN_ID_EMBLEMS_KEY }
 	];
 
-	processingGroups.forEach(async (processingGroup) => {
-		if (processingGroup.groups.includes("SpartanEmblem") && !emblemPaletteImportCompleted) {
-			await importEmblemPalettes(headers, generalDictsAndArrays);
-		}
-		
+	processingGroups.forEach(async (processingGroup) => {		
 		updateDbsFromApi(headers, customizationCategory, processingGroup.groups, generalDictsAndArrays, categorySpecificDictsAndArrays, false, processingGroup.checkpointKey)
 			.then(() => console.info("Finished processing ", processingGroup.groups, " for " + customizationCategory))
 			.catch((error) => console.error("Error occurred while processing ", processingGroup.groups, " for " + customizationCategory, error));
@@ -4520,23 +3966,14 @@ export function generalCustomizationImport() {
 		.then((headers) => {
 			importManufacturers(headers)
 				.then(() => {
-					importEmblemPalettes(headers)
-						.then(() => {
-							armorImportPartOne(headers, true);
-							armorImportPartTwo(headers, true);
-							weaponImportFull(headers, true);
-							vehicleImportFull(headers, true);
-							bodyAiImport(headers, true);
-							spartanIdImport(headers, true);
-						});
+					armorImportPartOne(headers, true);
+					armorImportPartTwo(headers, true);
+					weaponImportFull(headers, true);
+					vehicleImportFull(headers, true);
+					bodyAiImport(headers, true);
+					spartanIdImport(headers, true);
 				});
 		});
-}
-
-export async function importEmblemPaletteImagesFull() {
-	let headers = await ApiFunctions.makeWaypointHeaders();
-	let generalDictsAndArrays = await getGeneralDictsAndArraysFromDbs(headers);
-	await importEmblemPalettes(headers, generalDictsAndArrays, true, 4, 10);
 }
 
 export async function deleteAllETags(customizationCategory) {

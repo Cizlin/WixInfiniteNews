@@ -48,7 +48,6 @@ export const FILE_DICT_RETURNED_FOLDERS_LIMIT = 100;
 
 // The root folder for Customization Images.
 export const CUSTOMIZATION_ROOT_FOLDER = "Customization Images";
-export const EMBLEM_PALETTE_ROOT_FOLDER = "Emblem Palettes";
 export const SHOP_ROOT_FOLDER = "Shop";
 export const ARMOR_ROOT_FOLDER = "Armor Customization";
 export const WEAPON_ROOT_FOLDER = "Weapon Customization";

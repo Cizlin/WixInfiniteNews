@@ -254,62 +254,6 @@ export function initialItemSetup(customizationCategory, isCore = false) {
 			console.warn("This is likely because #exchangeContainer does not exist on this page.");
 		}
 
-		try { // This should only exist on pages that can have emblems/nameplates.
-			$w("#emblemPaletteDataset").onReady(function() {
-				if ($w("#emblemPaletteRepeater").data.length > 0) {
-					$w("#emblemPaletteRepeater").onItemReady(($item, itemData) => {
-						let emblemPaletteImageMapping = itemData[CustomizationConstants.EMBLEM_PALETTE_IMAGE_MAPPING_FIELD];
-						let itemWaypointId = currentItem[CustomizationConstants.CUSTOMIZATION_CATEGORY_SPECIFIC_VARS[customizationCategory].CustomizationWaypointIdField];
-
-						try {
-							if (customizationCategory != SpartanIdConstants.SPARTAN_ID_KEY) { // If we're working with an Emblem.
-								let matches = itemWaypointId.match(/-(\w+)$/);
-
-								if (matches.length > 0) {
-									let commonIdString = matches[0];
-									console.log(commonIdString);
-									for (let waypointId in emblemPaletteImageMapping) {
-										if (waypointId.includes(commonIdString)) {
-											$item("#emblemPaletteImage").src = emblemPaletteImageMapping[waypointId].Emblem.URL;
-										}
-									}
-								}
-							}
-							else { // If we're working with a Nameplate.
-								console.log(emblemPaletteImageMapping[itemWaypointId].Emblem.URL);
-								$item("#emblemPaletteImage").src = emblemPaletteImageMapping[itemWaypointId].Emblem.URL;
-								$item("#nameplateBackgroundImage").src = emblemPaletteImageMapping[itemWaypointId].Nameplate.URL;
-
-								// Change the text color to match the one specified in the API.
-								while (!$item("#emblemPaletteName").html.includes("color:" + emblemPaletteImageMapping[itemWaypointId].TextColor)) {
-									$item("#emblemPaletteName").html = $item("#emblemPaletteName").html.replace("color:#FFFFFF", "color:" + emblemPaletteImageMapping[itemWaypointId].TextColor);
-								}
-
-								while (!$item("#emblemPaletteType").html.includes("color:" + emblemPaletteImageMapping[itemWaypointId].TextColor)) {
-									console.log("Updating Emblem Palette text color");
-									$item("#emblemPaletteType").html = $item("#emblemPaletteType").html.replace("color:#FFFFFF", "color:" + emblemPaletteImageMapping[itemWaypointId].TextColor);
-								}
-							}
-						}
-						catch (error) {
-							console.warn("Unable to properly set images due to " + error + ". Using fallback images.");
-							$item("#emblemPaletteImage").src = itemData[CustomizationConstants.EMBLEM_PALETTE_IMAGE_FIELD];
-							$item("#nameplateBackgroundImage").hide();
-						}
-
-						$item("#emblemPaletteImage").fitMode = "fit";
-					});
-				}
-				else {
-					$w("#emblemPaletteContainer").collapse();
-				}
-			})
-		}
-		catch (error) {
-			console.warn("Error found: " + error);
-			console.warn("This is likely because #emblemPaletteContainer does not exist on this page.");
-		}
-
 		let customizableTypesText = "";
 		// Populate the Kit Items repeater with the desired data or hide it if no data is available.
 		try {
