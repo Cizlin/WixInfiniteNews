@@ -41,10 +41,10 @@ export const URL_SPARTAN_ID_CUSTOMIZATION = "/spartan-id-customizations";
 export const URL_SPARTAN_ID_SOCKET_PARAM = "spartanIDSocket";
 
 // The limit to the number of files returned by the listFiles() function when assembling the file dictionary.
-export const FILE_DICT_RETURNED_FILES_LIMIT = 25;
+export const FILE_DICT_RETURNED_FILES_LIMIT = 100;
 
 // The limit to the number of folders returned by the listFolders() function when assembling the file dictionary.
-export const FILE_DICT_RETURNED_FOLDERS_LIMIT = 25;
+export const FILE_DICT_RETURNED_FOLDERS_LIMIT = 100;
 
 // The root folder for Customization Images.
 export const CUSTOMIZATION_ROOT_FOLDER = "Customization Images";
