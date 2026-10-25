@@ -396,6 +396,8 @@ export async function generateArmorFolderDict() {
 			parentFolderId = typeElement.folderId;
 			customizationTypeFolderName = typeElement.folderName;
 
+			console.log("Processing ", customizationTypeFolderName);
+
 			// Same for the type folders.
 			let customizationTypeFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 			let customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
@@ -542,6 +544,8 @@ export async function generateWeaponFolderDict() {
 			folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][typeElement.folderName + "/"] = { "_id": typeElement.folderId }
 			parentFolderId = typeElement.folderId;
 			customizationTypeFolderName = typeElement.folderName;
+
+			console.log("Processing ", customizationTypeFolderName);
 
 			// Same for the type folders.
 			let customizationTypeFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
