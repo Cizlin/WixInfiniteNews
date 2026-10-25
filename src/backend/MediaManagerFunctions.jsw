@@ -248,10 +248,11 @@ export async function generateFolderDict() {
 
 				for (let l = 0; l < customizationCoreFolderList.length; l++) {
 					let parentTypeElement = customizationCoreFolderList[l];
+					parentFolderId = parentTypeElement.folderId;
 					// This is actually insane at this point. Beware the giant AF line below!
 					folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][customizationTypeFolderName + "/"][customizationCoreFolderName + "/"][parentTypeElement.folderName + "/"] = { "_id": parentTypeElement.folderId }
 
-					let customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentTypeElement.folderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+					let customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
 					iterations = 0;
 					while (customizationParentTypeFileList.length > 0) {
 						customizationParentTypeFileList.forEach((file) => {
@@ -348,8 +349,10 @@ export async function generateArmorFolderDict() {
 	});
 
 	// Now that we're in the Customization Images folder, we need to get the list of folders within it.
+	console.log("Listing files and folders in " + customizationImageFolderName + " with parent folder ID " + parentFolderId + " and skip " + 0);
 	let customizationImagesFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 	let customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
+	console.log("Found " + customizationImagesFolderList.length + " folders and " + customizationImagesFileList.length + " files in " + customizationImageFolderName);
 	let iterations = 0;
 	while (customizationImagesFileList.length > 0) {
 		customizationImagesFileList.forEach((file) => {
@@ -358,8 +361,10 @@ export async function generateArmorFolderDict() {
 
 		iterations++;
 
+		console.log("Listing files in " + customizationImageFolderName + " with parent folder ID " + parentFolderId + " and skip " + (GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations));
 		customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
 			{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+		console.log("Found " + customizationImagesFileList.length + " files in " + customizationImageFolderName);
 	}
 
 	let customizationCategoryFolderName;
@@ -375,8 +380,10 @@ export async function generateArmorFolderDict() {
 		}
 
 		// For each of these category folders, we need to get the folders within.
+		console.log("Listing files and folders in " + customizationImageFolderName + " with parent folder ID " + parentFolderId + " and skip " + 0);
 		let customizationCategoryFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 		let customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
+		console.log("Found " + customizationCategoryFolderList.length + " folders and " + customizationCategoryFileList.length + " files in " + customizationCategoryFolderName);
 		iterations = 0;
 		while (customizationCategoryFileList.length > 0)
 		{
@@ -385,8 +392,10 @@ export async function generateArmorFolderDict() {
 			});
 
 			iterations++;
+			console.log("Listing files in " + customizationImageFolderName + " with parent folder ID " + parentFolderId + " and skip " + (GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations));
 			customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
 				{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+			console.log("Found " + customizationCategoryFileList.length + " files in " + customizationCategoryFolderName);
 		}
 
 		let customizationTypeFolderName;
@@ -396,11 +405,11 @@ export async function generateArmorFolderDict() {
 			parentFolderId = typeElement.folderId;
 			customizationTypeFolderName = typeElement.folderName;
 
-			console.log("Processing ", customizationTypeFolderName);
-
 			// Same for the type folders.
+			console.log("Listing files and folders in " + customizationImageFolderName + " with parent folder ID " + parentFolderId);
 			let customizationTypeFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 			let customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
+			console.log("Found " + customizationTypeFolderList.length + " folders and " + customizationTypeFileList.length + " files in " + customizationTypeFolderName);
 			iterations = 0;
 			while (customizationTypeFileList.length > 0)
 			{
@@ -409,8 +418,10 @@ export async function generateArmorFolderDict() {
 				});
 
 				iterations++;
+				console.log("Listing files in " + customizationImageFolderName + " with parent folder ID " + parentFolderId + " and skip " + (GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations));
 				customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
 					{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+				console.log("Found " + customizationTypeFileList.length + " files in " + customizationTypeFolderName);
 			}
 
 			let customizationCoreFolderName;
@@ -422,8 +433,10 @@ export async function generateArmorFolderDict() {
 				customizationCoreFolderName = coreElement.folderName;
 
 				// And for attachments, the parent customization type...
+				console.log("Listing folders and files in " + customizationImageFolderName + " with parent folder ID " + parentFolderId);
 				let customizationCoreFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 				let customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
+				console.log("Found " + customizationCoreFolderList.length + " folders and " + customizationCoreFileList.length + " files in " + customizationCoreFolderName);
 				iterations = 0;
 				while (customizationCoreFileList.length > 0)
 				{
@@ -432,16 +445,21 @@ export async function generateArmorFolderDict() {
 					});
 
 					iterations++;
+					console.log("Listing files in " + customizationImageFolderName + " with parent folder ID " + parentFolderId + " and skip " + (GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations));
 					customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
 						{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+					console.log("Found " + customizationCoreFileList.length + " files in " + customizationCoreFolderName);
 				}
 
 				for (let l = 0; l < customizationCoreFolderList.length; l++) {
 					let parentTypeElement = customizationCoreFolderList[l];
+					parentFolderId = parentTypeElement.folderId;
 					// This is actually insane at this point. Beware the giant AF line below!
 					folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][customizationTypeFolderName + "/"][customizationCoreFolderName + "/"][parentTypeElement.folderName + "/"] = { "_id": parentTypeElement.folderId }
 
-					let customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentTypeElement.folderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+					console.log("Listing files in " + customizationImageFolderName + " with parent folder ID " + parentFolderId);
+					let customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
+					console.log("Found " + customizationParentTypeFileList.length + " files in " + parentTypeElement.folderName);
 					iterations = 0;
 					while (customizationParentTypeFileList.length > 0) {
 						customizationParentTypeFileList.forEach((file) => {
@@ -450,8 +468,10 @@ export async function generateArmorFolderDict() {
 						});
 
 						iterations++;
+						console.log("Listing files in " + customizationImageFolderName + " with parent folder ID " + parentFolderId + " and skip " + (GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations));
 						customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
 							{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+						console.log("Found " + customizationParentTypeFileList.length + " files in " + parentTypeElement.folderName);
 					}
 				}
 			}
@@ -587,10 +607,11 @@ export async function generateWeaponFolderDict() {
 
 				for (let l = 0; l < customizationCoreFolderList.length; l++) {
 					let parentTypeElement = customizationCoreFolderList[l];
+					parentFolderId = parentTypeElement.folderId;
 					// This is actually insane at this point. Beware the giant AF line below!
 					folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][customizationTypeFolderName + "/"][customizationCoreFolderName + "/"][parentTypeElement.folderName + "/"] = { "_id": parentTypeElement.folderId }
 
-					let customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentTypeElement.folderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+					let customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
 					iterations = 0;
 					while (customizationParentTypeFileList.length > 0) {
 						customizationParentTypeFileList.forEach((file) => {
