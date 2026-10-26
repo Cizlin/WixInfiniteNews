@@ -180,7 +180,7 @@ export async function generateFolderDict() {
 
 	// Now that we're in the Customization Images folder, we need to get the list of folders within it.
 	let customizationImagesFolderList = await withMediaRetry(
-		`listFolders type=${customizationImagesFolderName} folder=${parentFolderId}`,
+		`listFolders type=${customizationImageFolderName} folder=${parentFolderId}`,
 		() => mediaManager.listFolders(
 			{ parentFolderId },
 			null,
@@ -188,7 +188,7 @@ export async function generateFolderDict() {
 		)
 	);
 	let customizationImagesFileList = await withMediaRetry(
-		`listFiles folder=${parentFolderId}`,
+		`listFiles type=${customizationImageFolderName} folder=${parentFolderId}`,
 		() => mediaManager.listFiles(
 			{ parentFolderId: parentFolderId },
 			null,
@@ -204,7 +204,7 @@ export async function generateFolderDict() {
 		iterations++;
 
 		customizationImagesFileList = await withMediaRetry(
-			`listFiles type=${customizationImagesFolderName} folder=${parentFolderId} skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+			`listFiles type=${customizationImageFolderName} folder=${parentFolderId} skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
 			() => mediaManager.listFiles(
 				{ parentFolderId: parentFolderId },
 				null,
@@ -763,7 +763,7 @@ export async function generateWeaponFolderDict() {
 					folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][customizationTypeFolderName + "/"][customizationCoreFolderName + "/"][parentTypeElement.folderName + "/"] = { "_id": parentTypeElement.folderId }
 
 					let customizationParentTypeFileList = await withMediaRetry(
-						`listFiles type=${customizationParentTypeFolderName} folder=${parentFolderId}`,
+						`listFiles type=${parentTypeElement.folderName} folder=${parentFolderId}`,
 						() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
 					);
 					iterations = 0;
@@ -775,7 +775,7 @@ export async function generateWeaponFolderDict() {
 
 						iterations++;
 						customizationParentTypeFileList = await withMediaRetry(
-							`listFiles type=${customizationParentTypeFolderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+							`listFiles type=${parentTypeElement.folderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
 							() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
 								{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
 						);
