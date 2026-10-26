@@ -14,7 +14,7 @@ import * as GeneralConstants from 'public/Constants/GeneralConstants.js';
 import * as ShopConstants from 'public/Constants/ShopConstants.js';
 //#endregion
 
-async function withMediaRetry(label, operation, maxAttempts = 4) {
+async function withMediaRetry(label, operation, maxAttempts = 10) {
     for (let attempt = 1; ; attempt++) {
         try {
             return await operation();
@@ -23,8 +23,7 @@ async function withMediaRetry(label, operation, maxAttempts = 4) {
                 throw error;
             }
 
-            const delayMs = Math.min(500 * (2 ** (attempt - 1)), 4000)
-                + Math.floor(Math.random() * 250);
+            const delayMs = 10000; // 10 seconds
 
             console.warn(
                 `${label} failed on attempt ${attempt}/${maxAttempts}; retrying in ${delayMs}ms.`,
