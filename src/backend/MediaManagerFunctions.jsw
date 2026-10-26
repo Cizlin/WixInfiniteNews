@@ -354,7 +354,7 @@ export async function generateArmorFolderDict() {
 	let customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 	console.log("Found " + customizationImagesFolderList.length + " folders and " + customizationImagesFileList.length + " files in " + customizationImageFolderName);
 	let iterations = 0;
-	while (customizationImagesFileList.length > 0) {
+	while (customizationImagesFileList.length >= GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT) {
 		customizationImagesFileList.forEach((file) => {
 			folderDict["/"][customizationImageFolderName + "/"][file.originalFileName.replace(/\./g, ",")] = file.fileName;
 		});
@@ -385,7 +385,7 @@ export async function generateArmorFolderDict() {
 		let customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 		console.log("Found " + customizationCategoryFolderList.length + " folders and " + customizationCategoryFileList.length + " files in " + customizationCategoryFolderName);
 		iterations = 0;
-		while (customizationCategoryFileList.length > 0)
+		while (customizationCategoryFileList.length >= GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT)
 		{
 			customizationCategoryFileList.forEach((file) => {
 				folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][file.originalFileName.replace(/\./g, ",")] = file.fileName;
@@ -411,7 +411,7 @@ export async function generateArmorFolderDict() {
 			let customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 			console.log("Found " + customizationTypeFolderList.length + " folders and " + customizationTypeFileList.length + " files in " + customizationTypeFolderName);
 			iterations = 0;
-			while (customizationTypeFileList.length > 0)
+			while (customizationTypeFileList.length >= GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT)
 			{
 				customizationTypeFileList.forEach((file) => {
 					folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][customizationTypeFolderName + "/"][file.originalFileName.replace(/\./g, ",")] = file.fileName;
@@ -438,7 +438,7 @@ export async function generateArmorFolderDict() {
 				let customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 				console.log("Found " + customizationCoreFolderList.length + " folders and " + customizationCoreFileList.length + " files in " + customizationCoreFolderName);
 				iterations = 0;
-				while (customizationCoreFileList.length > 0)
+				while (customizationCoreFileList.length >= GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT)
 				{
 					customizationCoreFileList.forEach((file) => {
 						folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][customizationTypeFolderName + "/"][customizationCoreFolderName + "/"][file.originalFileName.replace(/\./g, ",")] = file.fileName;
@@ -461,7 +461,7 @@ export async function generateArmorFolderDict() {
 					let customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 					console.log("Found " + customizationParentTypeFileList.length + " files in " + parentTypeElement.folderName);
 					iterations = 0;
-					while (customizationParentTypeFileList.length > 0) {
+					while (customizationParentTypeFileList.length >= GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT) {
 						customizationParentTypeFileList.forEach((file) => {
 							// Even larger line here. :(
 							folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][customizationTypeFolderName + "/"][customizationCoreFolderName + "/"][parentTypeElement.folderName + "/"][file.originalFileName.replace(/\./g, ",")] = file.fileName;
@@ -520,7 +520,7 @@ export async function generateWeaponFolderDict() {
 	let customizationImagesFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 	let customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 	let iterations = 0;
-	while (customizationImagesFileList.length > 0) {
+	while (customizationImagesFileList.length >= GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT) {
 		customizationImagesFileList.forEach((file) => {
 			folderDict["/"][customizationImageFolderName + "/"][file.originalFileName.replace(/\./g, ",")] = file.fileName;
 		});
@@ -547,7 +547,7 @@ export async function generateWeaponFolderDict() {
 		let customizationCategoryFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 		let customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 		iterations = 0;
-		while (customizationCategoryFileList.length > 0)
+		while (customizationCategoryFileList.length >= GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT)
 		{
 			customizationCategoryFileList.forEach((file) => {
 				folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][file.originalFileName.replace(/\./g, ",")] = file.fileName;
@@ -571,7 +571,7 @@ export async function generateWeaponFolderDict() {
 			let customizationTypeFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 			let customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 			iterations = 0;
-			while (customizationTypeFileList.length > 0)
+			while (customizationTypeFileList.length >= GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT)
 			{
 				customizationTypeFileList.forEach((file) => {
 					folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][customizationTypeFolderName + "/"][file.originalFileName.replace(/\./g, ",")] = file.fileName;
@@ -594,7 +594,7 @@ export async function generateWeaponFolderDict() {
 				let customizationCoreFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
 				let customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
 				iterations = 0;
-				while (customizationCoreFileList.length > 0)
+				while (customizationCoreFileList.length >= GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT)
 				{
 					customizationCoreFileList.forEach((file) => {
 						folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][customizationTypeFolderName + "/"][customizationCoreFolderName + "/"][file.originalFileName.replace(/\./g, ",")] = file.fileName;
@@ -613,7 +613,7 @@ export async function generateWeaponFolderDict() {
 
 					let customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
 					iterations = 0;
-					while (customizationParentTypeFileList.length > 0) {
+					while (customizationParentTypeFileList.length >= GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT) {
 						customizationParentTypeFileList.forEach((file) => {
 							// Even larger line here. :(
 							folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][customizationTypeFolderName + "/"][customizationCoreFolderName + "/"][parentTypeElement.folderName + "/"][file.originalFileName.replace(/\./g, ",")] = file.fileName;
