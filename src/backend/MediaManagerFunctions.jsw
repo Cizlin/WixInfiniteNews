@@ -14,6 +14,28 @@ import * as GeneralConstants from 'public/Constants/GeneralConstants.js';
 import * as ShopConstants from 'public/Constants/ShopConstants.js';
 //#endregion
 
+async function withMediaRetry(label, operation, maxAttempts = 4) {
+    for (let attempt = 1; ; attempt++) {
+        try {
+            return await operation();
+        } catch (error) {
+            if (attempt >= maxAttempts) {
+                throw error;
+            }
+
+            const delayMs = Math.min(500 * (2 ** (attempt - 1)), 4000)
+                + Math.floor(Math.random() * 250);
+
+            console.warn(
+                `${label} failed on attempt ${attempt}/${maxAttempts}; retrying in ${delayMs}ms.`,
+                error?.code ?? error?.message ?? error
+            );
+
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+    }
+}
+
 // Returns the ETag provided by the headers of a remote image file.
 export async function getETag(headers, waypointPath, urlBase = ApiConstants.WAYPOINT_URL_BASE_IMAGE) {
 	var https = require('https');
@@ -157,8 +179,22 @@ export async function generateFolderDict() {
 	});
 
 	// Now that we're in the Customization Images folder, we need to get the list of folders within it.
-	let customizationImagesFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
-	let customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
+	let customizationImagesFolderList = await withMediaRetry(
+		`listFolders type=${customizationImagesFolderName} folder=${parentFolderId}`,
+		() => mediaManager.listFolders(
+			{ parentFolderId },
+			null,
+			{ limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT }
+		)
+	);
+	let customizationImagesFileList = await withMediaRetry(
+		`listFiles folder=${parentFolderId}`,
+		() => mediaManager.listFiles(
+			{ parentFolderId: parentFolderId },
+			null,
+			{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT }
+		)
+	);
 	let iterations = 0;
 	while (customizationImagesFileList.length > 0) {
 		customizationImagesFileList.forEach((file) => {
@@ -167,8 +203,14 @@ export async function generateFolderDict() {
 
 		iterations++;
 
-		customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-			{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+		customizationImagesFileList = await withMediaRetry(
+			`listFiles type=${customizationImagesFolderName} folder=${parentFolderId} skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+			() => mediaManager.listFiles(
+				{ parentFolderId: parentFolderId },
+				null,
+				{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations }
+			)
+		);
 	}
 
 	let customizationCategoryFolderName;
@@ -187,8 +229,22 @@ export async function generateFolderDict() {
 		}
 
 		// For each of these category folders, we need to get the folders within.
-		let customizationCategoryFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
-		let customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
+		let customizationCategoryFolderList = await withMediaRetry(
+			`listFolders type=${customizationCategoryFolderName} folder=${parentFolderId}`,
+			() => mediaManager.listFolders(
+				{ parentFolderId: parentFolderId },
+				null,
+				{ limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT }
+			)
+		);
+		let customizationCategoryFileList = await withMediaRetry(
+			`listFiles type=${customizationCategoryFolderName} folder=${parentFolderId}`,
+			() => mediaManager.listFiles(
+				{ parentFolderId: parentFolderId },
+				null,
+				{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT }
+			)
+		);
 		iterations = 0;
 		while (customizationCategoryFileList.length > 0)
 		{
@@ -197,8 +253,14 @@ export async function generateFolderDict() {
 			});
 
 			iterations++;
-			customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-				{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+			customizationCategoryFileList = await withMediaRetry(
+				`listFiles type=${customizationCategoryFolderName} folder=${parentFolderId} skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+				() => mediaManager.listFiles(
+					{ parentFolderId: parentFolderId },
+					null,
+					{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations }
+				)
+			);
 		}
 
 		let customizationTypeFolderName;
@@ -209,8 +271,22 @@ export async function generateFolderDict() {
 			customizationTypeFolderName = typeElement.folderName;
 
 			// Same for the type folders.
-			let customizationTypeFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
-			let customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
+			let customizationTypeFolderList = await withMediaRetry(
+				`listFolders type=${customizationTypeFolderName} folder=${parentFolderId}`,
+				() => mediaManager.listFolders(
+					{ parentFolderId: parentFolderId },
+					null,
+					{ limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT }
+				)
+			);
+			let customizationTypeFileList = await withMediaRetry(
+				`listFiles type=${customizationTypeFolderName} folder=${parentFolderId}`,
+				() => mediaManager.listFiles(
+					{ parentFolderId: parentFolderId },
+					null,
+					{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT }
+				)
+			);
 			iterations = 0;
 			while (customizationTypeFileList.length > 0)
 			{
@@ -219,8 +295,14 @@ export async function generateFolderDict() {
 				});
 
 				iterations++;
-				customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-					{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+				customizationTypeFileList = await withMediaRetry(
+					`listFiles type=${customizationTypeFolderName} folder=${parentFolderId} skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+					() => mediaManager.listFiles(
+						{ parentFolderId: parentFolderId },
+						null,
+						{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations }
+					)
+				);
 			}
 
 			let customizationCoreFolderName;
@@ -232,8 +314,22 @@ export async function generateFolderDict() {
 				customizationCoreFolderName = coreElement.folderName;
 
 				// And for attachments, the parent customization type...
-				let customizationCoreFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
-				let customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
+				let customizationCoreFolderList = await withMediaRetry(
+					`listFolders type=${customizationCoreFolderName} folder=${parentFolderId}`,
+					() => mediaManager.listFolders(
+						{ parentFolderId: parentFolderId },
+						null,
+						{ limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT }
+					)
+				);
+				let customizationCoreFileList = await withMediaRetry(
+					`listFiles type=${customizationCoreFolderName} folder=${parentFolderId}`,
+					() => mediaManager.listFiles(
+						{ parentFolderId: parentFolderId },
+						null,
+						{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT }
+					)
+				);
 				iterations = 0;
 				while (customizationCoreFileList.length > 0)
 				{
@@ -242,8 +338,14 @@ export async function generateFolderDict() {
 					});
 
 					iterations++;
-					customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-						{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+					customizationCoreFileList = await withMediaRetry(
+						`listFiles type=${customizationCoreFolderName} folder=${parentFolderId} skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+						() => mediaManager.listFiles(
+							{ parentFolderId: parentFolderId },
+							null,
+							{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations }
+						)
+					);
 				}
 
 				for (let l = 0; l < customizationCoreFolderList.length; l++) {
@@ -252,7 +354,14 @@ export async function generateFolderDict() {
 					// This is actually insane at this point. Beware the giant AF line below!
 					folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][customizationTypeFolderName + "/"][customizationCoreFolderName + "/"][parentTypeElement.folderName + "/"] = { "_id": parentTypeElement.folderId }
 
-					let customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+					let customizationParentTypeFileList = await withMediaRetry(
+						`listFiles type=${parentTypeElement.folderName} folder=${parentFolderId}`,
+						() => mediaManager.listFiles(
+							{ parentFolderId: parentFolderId },
+							null,
+							{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT }
+						)
+					);
 					iterations = 0;
 					while (customizationParentTypeFileList.length > 0) {
 						customizationParentTypeFileList.forEach((file) => {
@@ -261,8 +370,14 @@ export async function generateFolderDict() {
 						});
 
 						iterations++;
-						customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-							{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+						customizationParentTypeFileList = await withMediaRetry(
+							`listFiles type=${parentTypeElement.folderName} folder=${parentFolderId} skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+							() => mediaManager.listFiles(
+								{ parentFolderId: parentFolderId },
+								null,
+								{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations }
+							)
+						);
 					}
 				}
 			}
@@ -270,20 +385,6 @@ export async function generateFolderDict() {
 	}
 
 	console.log("Folder dict generated: ", folderDict);
-
-	/*wixData.query(KeyConstants.KEY_VALUE_DB)
-		.eq("key", KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY)
-		.find({ suppressAuth: true })
-		.then((results) => {
-			if (results.items.length > 0) {
-				let item = results.items[0];
-				item.value = folderDict;
-				wixData.save(KeyConstants.KEY_VALUE_DB, item, { suppressAuth: true });
-			}
-			else {
-				wixData.save(KeyConstants.KEY_VALUE_DB, { "key": KeyConstants.KEY_VALUE_CUSTOMIZATION_FOLDERS_KEY, "value": folderDict }, { suppressAuth: true });
-			}
-		});*/
 
 	// Save the specific categories as well.
 	for (let category in folderDict["/"][customizationImageFolderName + "/"]) {
@@ -350,10 +451,14 @@ export async function generateArmorFolderDict() {
 		});
 
 		// Now that we're in the Customization Images folder, we need to get the list of folders within it.
-		console.log("Listing files and folders in " + customizationImageFolderName + " with parent folder ID " + parentFolderId + " and skip " + 0);
-		let customizationImagesFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
-		let customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
-		console.log("Found " + customizationImagesFolderList.length + " folders and " + customizationImagesFileList.length + " files in " + customizationImageFolderName);
+		let customizationImagesFolderList = await withMediaRetry(
+			`listFolders type=${customizationImageFolderName} folder=${parentFolderId}`,
+			() => mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT })
+		);
+		let customizationImagesFileList = await withMediaRetry(
+			`listFiles type=${customizationImageFolderName} folder=${parentFolderId}`,
+			() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+		);
 		let iterations = 0;
 		while (customizationImagesFileList.length >= GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT) {
 			customizationImagesFileList.forEach((file) => {
@@ -362,10 +467,14 @@ export async function generateArmorFolderDict() {
 
 			iterations++;
 
-			console.log("Listing files in " + customizationImageFolderName + " with parent folder ID " + parentFolderId + " and skip " + (GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations));
-			customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-				{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
-			console.log("Found " + customizationImagesFileList.length + " files in " + customizationImageFolderName);
+			customizationImagesFileList = await withMediaRetry(
+				`listFiles type=${customizationImageFolderName} folder=${parentFolderId} skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+				() => mediaManager.listFiles(
+					{ parentFolderId: parentFolderId },
+					null,
+					{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations }
+				)
+			);
 		}
 
 		let customizationCategoryFolderName;
@@ -381,10 +490,14 @@ export async function generateArmorFolderDict() {
 			}
 
 			// For each of these category folders, we need to get the folders within.
-			console.log("Listing files and folders in " + customizationCategoryFolderName + " with parent folder ID " + parentFolderId + " and skip " + 0);
-			let customizationCategoryFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
-			let customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
-			console.log("Found " + customizationCategoryFolderList.length + " folders and " + customizationCategoryFileList.length + " files in " + customizationCategoryFolderName);
+			let customizationCategoryFolderList = await withMediaRetry(
+				`listFolders type=${customizationCategoryFolderName} folder=${parentFolderId}`,
+				() => mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT })
+			);
+			let customizationCategoryFileList = await withMediaRetry(
+				`listFiles type=${customizationCategoryFolderName} folder=${parentFolderId}`,
+				() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+			);
 			iterations = 0;
 			while (customizationCategoryFileList.length >= GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT)
 			{
@@ -393,10 +506,10 @@ export async function generateArmorFolderDict() {
 				});
 
 				iterations++;
-				console.log("Listing files in " + customizationCategoryFolderName + " with parent folder ID " + parentFolderId + " and skip " + (GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations));
-				customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-					{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
-				console.log("Found " + customizationCategoryFileList.length + " files in " + customizationCategoryFolderName);
+				customizationCategoryFileList = await withMediaRetry(
+					`listFiles type=${customizationCategoryFolderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+					() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+				);
 			}
 
 			let customizationTypeFolderName;
@@ -407,10 +520,14 @@ export async function generateArmorFolderDict() {
 				customizationTypeFolderName = typeElement.folderName;
 
 				// Same for the type folders.
-				console.log("Listing files and folders in " + customizationTypeFolderName + " with parent folder ID " + parentFolderId);
-				let customizationTypeFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
-				let customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
-				console.log("Found " + customizationTypeFolderList.length + " folders and " + customizationTypeFileList.length + " files in " + customizationTypeFolderName);
+				let customizationTypeFolderList = await withMediaRetry(
+					`listFolders type=${customizationTypeFolderName} folder=${parentFolderId}`,
+					() => mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT })
+				);
+				let customizationTypeFileList = await withMediaRetry(
+					`listFiles type=${customizationTypeFolderName} folder=${parentFolderId}`,
+					() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+				);
 				iterations = 0;
 				while (customizationTypeFileList.length >= GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT)
 				{
@@ -419,10 +536,11 @@ export async function generateArmorFolderDict() {
 					});
 
 					iterations++;
-					console.log("Listing files in " + customizationTypeFolderName + " with parent folder ID " + parentFolderId + " and skip " + (GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations));
-					customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-						{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
-					console.log("Found " + customizationTypeFileList.length + " files in " + customizationTypeFolderName);
+					customizationTypeFileList = await withMediaRetry(
+						`listFiles type=${customizationTypeFolderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+						() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+							{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+					);
 				}
 
 				let customizationCoreFolderName;
@@ -434,10 +552,14 @@ export async function generateArmorFolderDict() {
 					customizationCoreFolderName = coreElement.folderName;
 
 					// And for attachments, the parent customization type...
-					console.log("Listing folders and files in " + customizationCoreFolderName + " with parent folder ID " + parentFolderId);
-					let customizationCoreFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
-					let customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
-					console.log("Found " + customizationCoreFolderList.length + " folders and " + customizationCoreFileList.length + " files in " + customizationCoreFolderName);
+					let customizationCoreFolderList = await withMediaRetry(
+						`listFolders type=${customizationCoreFolderName} folder=${parentFolderId}`,
+						() => mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT })
+					);
+					let customizationCoreFileList = await withMediaRetry(
+						`listFiles type=${customizationCoreFolderName} folder=${parentFolderId}`,
+						() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+					);
 					iterations = 0;
 					while (customizationCoreFileList.length >= GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT)
 					{
@@ -446,10 +568,11 @@ export async function generateArmorFolderDict() {
 						});
 
 						iterations++;
-						console.log("Listing files in " + customizationCoreFolderName + " with parent folder ID " + parentFolderId + " and skip " + (GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations));
-						customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-							{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
-						console.log("Found " + customizationCoreFileList.length + " files in " + customizationCoreFolderName);
+						customizationCoreFileList = await withMediaRetry(
+							`listFiles type=${customizationCoreFolderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+							() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+								{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+						);
 					}
 
 					for (let l = 0; l < customizationCoreFolderList.length; l++) {
@@ -458,9 +581,10 @@ export async function generateArmorFolderDict() {
 						// This is actually insane at this point. Beware the giant AF line below!
 						folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][customizationTypeFolderName + "/"][customizationCoreFolderName + "/"][parentTypeElement.folderName + "/"] = { "_id": parentTypeElement.folderId }
 
-						console.log("Listing files in " + parentTypeElement.folderName + " with parent folder ID " + parentFolderId);
-						let customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
-						console.log("Found " + customizationParentTypeFileList.length + " files in " + parentTypeElement.folderName);
+						let customizationParentTypeFileList = await withMediaRetry(
+							`listFiles type=${parentTypeElement.folderName} folder=${parentFolderId}`,
+							() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+						);
 						iterations = 0;
 						while (customizationParentTypeFileList.length >= GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT) {
 							customizationParentTypeFileList.forEach((file) => {
@@ -469,10 +593,11 @@ export async function generateArmorFolderDict() {
 							});
 
 							iterations++;
-							console.log("Listing files in " + parentTypeElement.folderName + " with parent folder ID " + parentFolderId + " and skip " + (GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations));
-							customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-								{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
-							console.log("Found " + customizationParentTypeFileList.length + " files in " + parentTypeElement.folderName);
+							customizationParentTypeFileList = await withMediaRetry(
+								`listFiles type=${parentTypeElement.folderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+								() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+									{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+							);
 						}
 					}
 				}
@@ -533,8 +658,11 @@ export async function generateWeaponFolderDict() {
 
 		iterations++;
 
-		customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-			{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+		customizationImagesFileList = await withMediaRetry(
+			`listFiles type=${customizationImageFolderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+			() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+			{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+		);
 	}
 
 	let customizationCategoryFolderName;
@@ -560,8 +688,11 @@ export async function generateWeaponFolderDict() {
 			});
 
 			iterations++;
-			customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-				{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+			customizationCategoryFileList = await withMediaRetry(
+				`listFiles type=${customizationImageFolderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+				() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+					{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+			);
 		}
 
 		let customizationTypeFolderName;
@@ -584,8 +715,11 @@ export async function generateWeaponFolderDict() {
 				});
 
 				iterations++;
-				customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-					{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+				customizationTypeFileList = await withMediaRetry(
+					`listFiles type=${customizationTypeFolderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+					() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+						{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+				);
 			}
 
 			let customizationCoreFolderName;
@@ -597,8 +731,16 @@ export async function generateWeaponFolderDict() {
 				customizationCoreFolderName = coreElement.folderName;
 
 				// And for attachments, the parent customization type...
-				let customizationCoreFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
-				let customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
+				let customizationCoreFolderList = await withMediaRetry(
+					`listFolders type=${customizationCoreFolderName} folder=${parentFolderId}`,
+					() => mediaManager.listFolders({ parentFolderId: parentFolderId }, null, 
+						{ limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT })
+				);
+				let customizationCoreFileList = await withMediaRetry(
+					`listFiles type=${customizationCoreFolderName} folder=${parentFolderId}`,
+					() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+						{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+				);
 				iterations = 0;
 				while (customizationCoreFileList.length >= GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT)
 				{
@@ -607,8 +749,11 @@ export async function generateWeaponFolderDict() {
 					});
 
 					iterations++;
-					customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-						{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+					customizationCoreFileList = await withMediaRetry(
+					`listFiles type=${customizationCoreFolderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+					() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+						{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+				);
 				}
 
 				for (let l = 0; l < customizationCoreFolderList.length; l++) {
@@ -617,7 +762,10 @@ export async function generateWeaponFolderDict() {
 					// This is actually insane at this point. Beware the giant AF line below!
 					folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][customizationTypeFolderName + "/"][customizationCoreFolderName + "/"][parentTypeElement.folderName + "/"] = { "_id": parentTypeElement.folderId }
 
-					let customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+					let customizationParentTypeFileList = await withMediaRetry(
+						`listFiles type=${customizationParentTypeFolderName} folder=${parentFolderId}`,
+						() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+					);
 					iterations = 0;
 					while (customizationParentTypeFileList.length >= GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT) {
 						customizationParentTypeFileList.forEach((file) => {
@@ -626,8 +774,11 @@ export async function generateWeaponFolderDict() {
 						});
 
 						iterations++;
-						customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-							{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+						customizationParentTypeFileList = await withMediaRetry(
+							`listFiles type=${customizationParentTypeFolderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+							() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+								{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+						);
 					}
 				}
 			}
@@ -673,8 +824,14 @@ export async function generateVehicleFolderDict() {
 	});
 
 	// Now that we're in the Customization Images folder, we need to get the list of folders within it.
-	let customizationImagesFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
-	let customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
+	let customizationImagesFolderList = await withMediaRetry(
+		`listFolders type=${customizationImageFolderName} folder=${parentFolderId}`,
+		() => mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT })
+	);
+	let customizationImagesFileList = await withMediaRetry(
+		`listFiles type=${customizationImageFolderName} folder=${parentFolderId}`,
+		() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+	);
 	let iterations = 0;
 	while (customizationImagesFileList.length > 0) {
 		customizationImagesFileList.forEach((file) => {
@@ -683,8 +840,11 @@ export async function generateVehicleFolderDict() {
 
 		iterations++;
 
-		customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-			{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+		customizationImagesFileList = await withMediaRetry(
+			`listFiles type=${customizationImageFolderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+			() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+				{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+		);
 	}
 
 	let customizationCategoryFolderName;
@@ -700,8 +860,14 @@ export async function generateVehicleFolderDict() {
 		}
 
 		// For each of these category folders, we need to get the folders within.
-		let customizationCategoryFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
-		let customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
+		let customizationCategoryFolderList = await withMediaRetry(
+			`listFolders type=${customizationCategoryFolderName} folder=${parentFolderId}`,
+			() => mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT })
+		);
+		let customizationCategoryFileList = await withMediaRetry(
+			`listFiles type=${customizationCategoryFolderName} folder=${parentFolderId}`,
+			() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+		);
 		iterations = 0;
 		while (customizationCategoryFileList.length > 0)
 		{
@@ -710,8 +876,11 @@ export async function generateVehicleFolderDict() {
 			});
 
 			iterations++;
-			customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-				{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+			customizationCategoryFileList = await withMediaRetry(
+				`listFiles type=${customizationCategoryFolderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+				() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+					{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+			);
 		}
 
 		let customizationTypeFolderName;
@@ -722,8 +891,14 @@ export async function generateVehicleFolderDict() {
 			customizationTypeFolderName = typeElement.folderName;
 
 			// Same for the type folders.
-			let customizationTypeFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
-			let customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
+			let customizationTypeFolderList = await withMediaRetry(
+				`listFolders type=${customizationTypeFolderName} folder=${parentFolderId}`,
+				() => mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT })
+			);
+			let customizationTypeFileList = await withMediaRetry(
+				`listFiles type=${customizationTypeFolderName} folder=${parentFolderId}`,
+				() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+			);
 			iterations = 0;
 			while (customizationTypeFileList.length > 0)
 			{
@@ -732,8 +907,11 @@ export async function generateVehicleFolderDict() {
 				});
 
 				iterations++;
-				customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-					{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+				customizationTypeFileList = await withMediaRetry(
+					`listFiles type=${customizationTypeFolderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+					() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+					{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+				);
 			}
 
 			let customizationCoreFolderName;
@@ -745,8 +923,14 @@ export async function generateVehicleFolderDict() {
 				customizationCoreFolderName = coreElement.folderName;
 
 				// And for attachments, the parent customization type...
-				let customizationCoreFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
-				let customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
+				let customizationCoreFolderList = await withMediaRetry(
+					`listFolders type=${customizationCoreFolderName} folder=${parentFolderId}`,
+					() => mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT })
+				);
+				let customizationCoreFileList = await withMediaRetry(
+					`listFiles type=${customizationCoreFolderName} folder=${parentFolderId}`,
+					() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+				);
 				iterations = 0;
 				while (customizationCoreFileList.length > 0)
 				{
@@ -755,8 +939,11 @@ export async function generateVehicleFolderDict() {
 					});
 
 					iterations++;
-					customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-						{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+					customizationCoreFileList = await withMediaRetry(
+						`listFiles type=${customizationCoreFolderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+						() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+							{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+					);
 				}
 
 				for (let l = 0; l < customizationCoreFolderList.length; l++) {
@@ -764,7 +951,10 @@ export async function generateVehicleFolderDict() {
 					// This is actually insane at this point. Beware the giant AF line below!
 					folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][customizationTypeFolderName + "/"][customizationCoreFolderName + "/"][parentTypeElement.folderName + "/"] = { "_id": parentTypeElement.folderId }
 
-					let customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentTypeElement.folderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+					let customizationParentTypeFileList = await withMediaRetry(
+						`listFiles type=${parentTypeElement.folderName} folder=${parentTypeElement.folderId}`,
+						() => mediaManager.listFiles({ parentFolderId: parentTypeElement.folderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+					);
 					iterations = 0;
 					while (customizationParentTypeFileList.length > 0) {
 						customizationParentTypeFileList.forEach((file) => {
@@ -773,8 +963,11 @@ export async function generateVehicleFolderDict() {
 						});
 
 						iterations++;
-						customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-							{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+						customizationParentTypeFileList = await withMediaRetry(
+							`listFiles type=${parentTypeElement.folderName} folder=${parentTypeElement.folderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+							() => mediaManager.listFiles({ parentFolderId: parentTypeElement.folderId }, null, 
+								{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+						);
 					}
 				}
 			}
@@ -821,8 +1014,18 @@ export async function generateShopFolderDict() {
 	});
 
 	// Now that we're in the Customization Images folder, we need to get the list of folders within it.
-	let customizationImagesFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
-	let customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
+	let customizationImagesFolderList = await withMediaRetry(
+			`listFolders type=${customizationImageFolderName} folder=${parentFolderId}`,
+			() => mediaManager.listFolders(
+				{ parentFolderId: parentFolderId },
+				null,
+				{ limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT }
+			)
+		);
+	let customizationImagesFileList = await withMediaRetry(
+			`listFiles type=${customizationImageFolderName} folder=${parentFolderId}`,
+			() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+		);
 	let iterations = 0;
 	while (customizationImagesFileList.length > 0) {
 		customizationImagesFileList.forEach((file) => {
@@ -831,8 +1034,11 @@ export async function generateShopFolderDict() {
 
 		iterations++;
 
-		customizationImagesFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-			{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+		customizationImagesFileList = await withMediaRetry(
+			`listFiles type=${customizationImageFolderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+			() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+				{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+		);
 	}
 
 	let customizationCategoryFolderName;
@@ -848,8 +1054,14 @@ export async function generateShopFolderDict() {
 		}
 
 		// For each of these category folders, we need to get the folders within.
-		let customizationCategoryFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
-		let customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
+		let customizationCategoryFolderList = await withMediaRetry(
+			`listFolders type=${customizationCategoryFolderName} folder=${parentFolderId}`,
+			() => mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT })
+		);
+		let customizationCategoryFileList = await withMediaRetry(
+			`listFiles type=${customizationCategoryFolderName} folder=${parentFolderId}`,
+			() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+		);
 		iterations = 0;
 		while (customizationCategoryFileList.length > 0)
 		{
@@ -858,8 +1070,11 @@ export async function generateShopFolderDict() {
 			});
 
 			iterations++;
-			customizationCategoryFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-				{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+			customizationCategoryFileList = await withMediaRetry(
+				`listFiles type=${customizationCategoryFolderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+				() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+					{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+			);
 		}
 
 		let customizationTypeFolderName;
@@ -870,8 +1085,14 @@ export async function generateShopFolderDict() {
 			customizationTypeFolderName = typeElement.folderName;
 
 			// Same for the type folders.
-			let customizationTypeFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
-			let customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
+			let customizationTypeFolderList = await withMediaRetry(
+				`listFolders type=${customizationTypeFolderName} folder=${parentFolderId}`,
+				() => mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT })
+			);
+			let customizationTypeFileList = await withMediaRetry(
+				`listFiles type=${customizationTypeFolderName} folder=${parentFolderId}`,
+				() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+			);
 			iterations = 0;
 			while (customizationTypeFileList.length > 0)
 			{
@@ -880,8 +1101,11 @@ export async function generateShopFolderDict() {
 				});
 
 				iterations++;
-				customizationTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-					{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+				customizationTypeFileList = await withMediaRetry(
+					`listFiles type=${customizationTypeFolderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+					() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+						{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+				);
 			}
 
 			let customizationCoreFolderName;
@@ -893,8 +1117,14 @@ export async function generateShopFolderDict() {
 				customizationCoreFolderName = coreElement.folderName;
 
 				// And for attachments, the parent customization type...
-				let customizationCoreFolderList = await mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT });
-				let customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT });
+				let customizationCoreFolderList = await withMediaRetry(
+					`listFolders type=${customizationCoreFolderName} folder=${parentFolderId}`,
+					() => mediaManager.listFolders({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FOLDERS_LIMIT })
+				);
+				let customizationCoreFileList = await withMediaRetry(
+					`listFiles type=${customizationCoreFolderName} folder=${parentFolderId}`,
+					() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+				);
 				iterations = 0;
 				while (customizationCoreFileList.length > 0)
 				{
@@ -903,8 +1133,11 @@ export async function generateShopFolderDict() {
 					});
 
 					iterations++;
-					customizationCoreFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-						{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+					customizationCoreFileList = await withMediaRetry(
+						`listFiles type=${customizationCoreFolderName} folder=${parentFolderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+						() => mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
+							{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+					);
 				}
 
 				for (let l = 0; l < customizationCoreFolderList.length; l++) {
@@ -912,7 +1145,10 @@ export async function generateShopFolderDict() {
 					// This is actually insane at this point. Beware the giant AF line below!
 					folderDict["/"][customizationImageFolderName + "/"][customizationCategoryFolderName + "/"][customizationTypeFolderName + "/"][customizationCoreFolderName + "/"][parentTypeElement.folderName + "/"] = { "_id": parentTypeElement.folderId }
 
-					let customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentTypeElement.folderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+					let customizationParentTypeFileList = await withMediaRetry(
+						`listFiles type=${customizationTypeFolderName} folder=${parentTypeElement.folderId}`,
+						() => mediaManager.listFiles({ parentFolderId: parentTypeElement.folderId }, null, { limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT })
+					);
 					iterations = 0;
 					while (customizationParentTypeFileList.length > 0) {
 						customizationParentTypeFileList.forEach((file) => {
@@ -921,8 +1157,11 @@ export async function generateShopFolderDict() {
 						});
 
 						iterations++;
-						customizationParentTypeFileList = await mediaManager.listFiles({ parentFolderId: parentFolderId }, null, 
-							{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations });
+						customizationParentTypeFileList = await withMediaRetry(
+							`listFiles type=${customizationTypeFolderName} folder=${parentTypeElement.folderId}, skip=${GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations}`,
+							() => mediaManager.listFiles({ parentFolderId: parentTypeElement.folderId }, null, 
+								{ limit: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT, skip: GeneralConstants.FILE_DICT_RETURNED_FILES_LIMIT * iterations })
+						);
 					}
 				}
 			}
