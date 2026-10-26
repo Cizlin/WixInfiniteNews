@@ -332,11 +332,11 @@ export async function generateArmorFolderDict() {
 	// We will also store the files in this dictionary with the user-readable filename as the key (with . replaced by , since JSON) and the file Name as the value. 
 	// Still need to fetch the file URL, but that should be quick. Speed. I am speed.
 
+	let folderDict = {
+		"/": {}
+	};
 	try {
 		console.log("Starting folder dict generation.");
-		let folderDict = {
-			"/": {}
-		};
 
 		let rootFolderList = await mediaManager.listFolders();
 		let parentFolderId = "";
